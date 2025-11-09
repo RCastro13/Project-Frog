@@ -1,0 +1,73 @@
+cmake_minimum_required(VERSION 3.26)
+# Configurando o padrão c++
+set(CMAKE_CXX_STANDARD 17)
+
+# Configurando o nome e executável do projeto
+set(PROJECT_NAME "Project-Frog")
+project(${PROJECT_NAME})
+
+# Configurar Homebrew paths para macOS (Apple Silicon)
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew;${CMAKE_PREFIX_PATH}")
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/glew")
+endif()
+
+find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL2_image REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
+
+add_executable(${PROJECT_NAME}
+        Source/Renderer/Shader.cpp
+        Source/Renderer/Shader.h
+        Source/Main.cpp
+        Source/Math.cpp
+        Source/Math.h
+        Source/Random.cpp
+        Source/Random.h
+        Source/Game.cpp
+        Source/Game.h
+        Source/Actors/Actor.cpp
+        Source/Actors/Actor.h
+        Source/Components/Component.cpp
+        Source/Components/Component.h
+        Source/Components/Drawing/DrawComponent.cpp
+        Source/Components/Drawing/DrawComponent.h
+        Source/Components/Physics/RigidBodyComponent.cpp
+        Source/Components/Physics/RigidBodyComponent.h
+        Source/Components/Physics/AABBColliderComponent.cpp
+        Source/Components/Physics/AABBColliderComponent.h
+        Source/Components/ParticleSystemComponent.cpp
+        Source/Components/ParticleSystemComponent.h
+        Source/Renderer/Renderer.cpp
+        Source/Renderer/Renderer.h
+        Source/Renderer/VertexArray.h
+        Source/Renderer/VertexArray.cpp
+        Source/Renderer/Texture.cpp
+        Source/Renderer/Texture.h
+        Source/Components/Drawing/AnimatorComponent.cpp
+        Source/Components/Drawing/AnimatorComponent.h
+        Source/Components/Drawing/RectComponent.cpp
+        Source/Components/Drawing/RectComponent.h
+        Source/Interface/UIButton.cpp
+        Source/Interface/UIButton.h
+        Source/Interface/UIImage.cpp
+        Source/Interface/UIImage.h
+        Source/Interface/UIScreen.cpp
+        Source/Interface/UIScreen.h
+        Source/Interface/UIText.cpp
+        Source/Interface/UIText.h
+        Source/Interface/HUD/HUD.h
+        Source/Audio/AudioSystem.h
+        Source/GameScene/GameScene.cpp
+        Source/GameScene/GameScene.h
+)
+
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    GLEW::GLEW
+    OpenGL::GL
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
+)
