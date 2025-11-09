@@ -4,9 +4,15 @@
 
 #pragma once
 #include <SDL_stdinc.h>
+#include <vector>
 
-// Forward declaration
+// Forward declarations
 class Game;
+class CombatManager;
+class Player;
+class Enemy;
+class Card;
+enum class AttackType;
 
 // Enum para identificar tipos de cena
 enum class SceneType
@@ -95,6 +101,26 @@ public:
 
     SceneType GetType() const override { return SceneType::COMBAT; }
     const char* GetName() const override { return "Combat"; }
+
+private:
+    // Sistema de combate
+    CombatManager* mCombatManager;
+    Player* mPlayer;
+    Enemy* mEnemy;
+
+    // UI - Seleção de cartas
+    int mSelectedCardIndex;
+    bool mKeyWasPressed;  // Para detectar single press
+
+    // Helper methods
+    void CreateTestCombatants();
+    void RenderCombatUI();
+    void HandleCombatEnd();
+    const char* GetTypeName(AttackType type);
+    void LogAvailableCards();
+
+    // Estado para controlar quando mostrar cartas
+    bool mCardsShown;
 };
 
 class GameOverScene : public GameScene
