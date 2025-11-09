@@ -98,6 +98,11 @@ void Renderer::Clear()
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
+void Renderer::SetClearColor(float r, float g, float b, float a)
+{
+    glClearColor(r, g, b, a);
+}
+
 void Renderer::Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2 &cameraPos, VertexArray *vertices,
                     const Vector3 &color, Texture *texture, const Vector4 &textureRect, float textureFactor)
 {
