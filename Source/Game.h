@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------
 // From Game Programming in C++ by Sanjay Madhav
 // Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-// 
+//
 // Released under the BSD License
 // See LICENSE in root directory for full details.
 // ----------------------------------------------------------------
@@ -30,11 +30,14 @@ public:
     void RemoveActor(class Actor* actor);
 
     // Game scenes
-    //void Update(GameScene* gameState);
-    //void SetScene(GameScene* gameState);
+    void SetScene(GameScene* scene);
+    GameScene* GetCurrentScene() const { return mCurrentScene; }
 
     // Renderer
     class Renderer* GetRenderer() { return mRenderer; }
+
+    // Window
+    SDL_Window* GetWindow() { return mWindow; }
 
     static const int WINDOW_WIDTH   = 640;
     static const int WINDOW_HEIGHT  = 448;
@@ -98,7 +101,8 @@ private:
     bool mIsPaused;
 
     // Scenes & state
-    //GameScene* mGameState;
+    GameScene* mCurrentScene;
+    GameScene* mPendingScene;  // Para trocar cena no próximo frame
 
     // Game-specific
     class Mario *mMario;
