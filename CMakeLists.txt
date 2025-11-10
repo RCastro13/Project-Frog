@@ -1,28 +1,28 @@
 cmake_minimum_required(VERSION 3.26)
+# Configurando o padrão c++
 set(CMAKE_CXX_STANDARD 17)
 
+# Configurando o nome e executável do projeto
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
-# SDL2 principal
-set(SDL2_DIR "C:/Program Files/SDL2")
-find_package(SDL2 REQUIRED)
+#find_package(SDL2 2.32.2 EXACT REQUIRED)
+#find_package(SDL2_image REQUIRED)
+#find_package(GLEW REQUIRED)
+#find_package(OpenGL REQUIRED)
 
-# SDL2_image manualmente
-set(SDL2_IMAGE_ROOT "C:/Program Files/SDL2_IMAGE")
-set(SDL2_IMAGE_INCLUDE_DIR "${SDL2_IMAGE_ROOT}/include")
-set(SDL2_IMAGE_LIBRARY "${SDL2_IMAGE_ROOT}/lib/x64/SDL2_image.lib")
+find_package(SDL2 2.32.2 EXACT REQUIRED)
+find_package(SDL2_image REQUIRED)
 
-# GLEW
 set(GLEW_ROOT "C:/Program Files/GLEW")
 set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
-set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+set(GLEW_LIBRARIES       "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
 
-include_directories(
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2_IMAGE_INCLUDE_DIR}
-        ${GLEW_INCLUDE_DIRS}
-)
+include_directories(${GLEW_INCLUDE_DIRS})
+
+find_package(OpenGL REQUIRED)
+
+#
 
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
@@ -68,12 +68,18 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Combat/Card.h
+        Source/Combat/Card.cpp
+        Source/Actors/Combatant.h
+        Source/Actors/Combatant.cpp
+        Source/Actors/Player.h
+        Source/Combat/Item.h
+        Source/Actors/Player.cpp
+        Source/Combat/CombatManager.h
+        Source/Combat/CombatManager.cpp
+        Source/Actors/Enemy.h
+        Source/Actors/Enemy.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        ${SDL2_LIBRARIES}
-        ${SDL2_IMAGE_LIBRARY}
-        ${GLEW_LIBRARIES}
-        opengl32
-)
+#target_link_libraries(${PROJECT_NAME} PRIVATE GLEW::GLEW SDL2::SDL2 SDL2_image::SDL2_image)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GLEW_LIBRARIES} ${SDL2_LIBRARIES} opengl32 SDL2_image::SDL2_image)
