@@ -1,5 +1,6 @@
 #include "CombatManager.h"
 #include <algorithm>
+#include <SDL_log.h>
 
 CombatManager::CombatManager(Player* player, Enemy* enemy, int coinReward)
     : mPlayer(player)
@@ -65,6 +66,21 @@ void CombatManager::PlayerSelectCard(Card* selectedCard)
 void CombatManager::EnemySelectCard()
 {
     mEnemySelectedCard = mEnemy->SelectCard();
+
+    // Log da ação do inimigo
+    const char* typeName = "";
+    switch (mEnemySelectedCard->GetType())
+    {
+        case AttackType::Fire:    typeName = "🔥 Fire"; break;
+        case AttackType::Water:   typeName = "💧 Water"; break;
+        case AttackType::Plant:   typeName = "🌿 Plant"; break;
+        case AttackType::Neutral: typeName = "⚪ Neutral"; break;
+    }
+
+    SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
+            mEnemySelectedCard->GetName().c_str(),
+            typeName,
+            mEnemySelectedCard->GetDamage());
 }
 
 // CompareTypes foi removido, pois agora é tratado por Card::Fight
@@ -74,8 +90,31 @@ void CombatManager::ResolveCombat()
     if (!mPlayerSelectedCard || !mEnemySelectedCard)
         return;
 
+    // Guardar HP antes do combate para calcular dano
+    int playerHPBefore = mPlayer->GetHealth();
+    int enemyHPBefore = mEnemy->GetHealth();
+
     // As cartas se enfrentam e o combate é resolvido
     Combatant* winner = mPlayerSelectedCard->Fight(mEnemySelectedCard);
+
+    // Calcular dano causado
+    int playerDamage = playerHPBefore - mPlayer->GetHealth();
+    int enemyDamage = enemyHPBefore - mEnemy->GetHealth();
+
+    // Logar resultado do turno
+    SDL_Log("");
+    if (winner == mPlayer)
+    {
+        SDL_Log("✅ PLAYER VENCEU O TURNO! (Causou %d de dano)", enemyDamage);
+    }
+    else if (winner == mEnemy)
+    {
+        SDL_Log("❌ ENEMY VENCEU O TURNO! (Causou %d de dano)", playerDamage);
+    }
+    else
+    {
+        SDL_Log("🤝 EMPATE! Ninguém causou dano.");
+    }
 
     mEnemy->LearnFromAtack(mPlayerSelectedCard);
 

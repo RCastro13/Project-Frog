@@ -1,4 +1,3 @@
-#pragma once
 #include "Player.h"
 
 Player::Player(Game *game, std::string name, int health, int maxHealth, std::vector<Card *> deck)

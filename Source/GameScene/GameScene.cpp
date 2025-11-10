@@ -4,6 +4,10 @@
 
 #include "GameScene.h"
 #include "../Game.h"
+#include "../Combat/CombatManager.h"
+#include "../Combat/Card.h"
+#include "../Actors/Player.h"
+#include "../Actors/Enemy.h"
 #include <SDL.h>
 #include <SDL_log.h>
 
@@ -193,81 +197,184 @@ void MapScene::Exit()
 
 CombatScene::CombatScene(Game* game)
     : GameScene(game)
+    , mCombatManager(nullptr)
+    , mPlayer(nullptr)
+    , mEnemy(nullptr)
+    , mSelectedCardIndex(0)
+    , mKeyWasPressed(false)
+    , mCardsShown(false)
 {
 }
 
 CombatScene::~CombatScene()
 {
+    // Cleanup será feito no Exit()
 }
 
 void CombatScene::Enter()
 {
-    SDL_Log("Entering CombatScene");
     mStateTime = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [V=Vitoria D=Derrota ESC=Mapa]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [Setas=Selecionar Enter=Confirmar]");
 
     // Cor de fundo: Vermelho escuro (tema batalha)
     mGame->GetRenderer()->SetClearColor(0.5f, 0.2f, 0.2f, 1.0f);
 
-    // TODO (Facundo): Carregar background de combate
-    // TODO (Facundo): Criar player e inimigo
-    // TODO (Facundo): Criar cartas do player
-    // TODO (Facundo): Iniciar sistema de turnos
-    // TODO (Facundo): Carregar música de combate
+    // Criar combatentes e iniciar combate
+    CreateTestCombatants();
+
+    SDL_Log("\n========================================");
+    SDL_Log("       COMBATE INICIADO");
+    SDL_Log("========================================");
+    SDL_Log("Player: %s (HP: %d)", "Frog Hero", mPlayer->GetHealth());
+    SDL_Log("Enemy:  %s (HP: %d)", "Slime", mEnemy->GetHealth());
+    SDL_Log("========================================\n");
+}
+
+void CombatScene::CreateTestCombatants()
+{
+    // Criar cartas de teste para o Player
+    std::vector<Card*> playerDeck;
+    playerDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
+    playerDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 1, nullptr));
+    playerDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
+    playerDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
+
+    // Criar cartas de teste para o Enemy
+    std::vector<Card*> enemyDeck;
+    enemyDeck.push_back(new Card("Enemy Fire", AttackType::Fire, 4, 1, nullptr));
+    enemyDeck.push_back(new Card("Enemy Water", AttackType::Water, 5, 2, nullptr));
+    enemyDeck.push_back(new Card("Enemy Plant", AttackType::Plant, 4, 2, nullptr));
+    enemyDeck.push_back(new Card("Enemy Neutral", AttackType::Neutral, 3, 0, nullptr));
+
+    // Criar Player e Enemy
+    mPlayer = new Player(mGame, "Frog Hero", 20, 20, playerDeck);
+    mEnemy = new Enemy(mGame, "Slime", 15, 15, enemyDeck);
+
+    // Configurar owners das cartas
+    for (Card* card : mPlayer->GetDeck()) {
+        card->SetOwner(mPlayer);
+    }
+    for (Card* card : mEnemy->GetDeck()) {
+        card->SetOwner(mEnemy);
+    }
+
+    // Criar CombatManager
+    mCombatManager = new CombatManager(mPlayer, mEnemy, 10); // 10 moedas de recompensa
+    mCombatManager->StartCombat();
+
+    mSelectedCardIndex = 0;
 }
 
 void CombatScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
-    // TODO (Facundo): Atualizar sistema de combate
-    // TODO (Facundo): Atualizar animações
-    // TODO (Facundo): Verificar condições de vitória/derrota
+    if (!mCombatManager)
+        return;
+
+    // Guardar estado anterior para detectar mudanças
+    static CombatState previousState = CombatState::WAITING_FOR_PLAYER;
+    CombatState currentState = mCombatManager->GetCurrentState();
+
+    // Atualizar o gerenciador de combate
+    mCombatManager->Update();
+
+    // Logar após completar um turno (quando volta a esperar o player)
+    if (previousState != CombatState::WAITING_FOR_PLAYER &&
+        currentState == CombatState::WAITING_FOR_PLAYER)
+    {
+        SDL_Log("----------------------------------------");
+        SDL_Log("Player HP: %d | Enemy HP: %d",
+                mPlayer->GetHealth(), mEnemy->GetHealth());
+        SDL_Log("----------------------------------------\n");
+
+        // Reset flag para mostrar cartas novamente
+        mCardsShown = false;
+    }
+
+    // Mostrar cartas disponíveis quando estiver esperando o player
+    if (currentState == CombatState::WAITING_FOR_PLAYER && !mCardsShown)
+    {
+        LogAvailableCards();
+        mCardsShown = true;
+    }
+
+    previousState = currentState;
+
+    // Verificar fim do combate
+    if (mCombatManager->IsCombatEnded())
+    {
+        HandleCombatEnd();
+    }
+}
+
+void CombatScene::RenderCombatUI()
+{
+    // TODO (Rubens): Adicionar renderização visual com sprites/texto na tela
+    // Por enquanto, mantemos apenas os logs essenciais
 }
 
 void CombatScene::ProcessInput(const Uint8* keyState)
 {
-    // TODO (Facundo): Implementar seleção de cartas (WASD/Setas)
-    // TODO (Facundo): Implementar confirmação de carta (Enter)
-    // TODO (Facundo): Implementar opção de defesa
+    if (!mCombatManager)
+        return;
 
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione V para simular vitória
-    // Pressione D para simular derrota
-    // Pressione ESC para voltar ao mapa
+    // Só processar input se estiver esperando o jogador
+    if (mCombatManager->GetCurrentState() != CombatState::WAITING_FOR_PLAYER)
+        return;
 
-    static bool vWasPressed = false;
-    static bool dWasPressed = false;
+    // Navegação entre cartas (Left/Right ou A/D)
+    if ((keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) && !mKeyWasPressed)
+    {
+        mSelectedCardIndex = (mSelectedCardIndex + 1) % 4;
+        LogAvailableCards(); // Atualizar display
+        mKeyWasPressed = true;
+    }
+    else if ((keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) && !mKeyWasPressed)
+    {
+        mSelectedCardIndex = (mSelectedCardIndex - 1 + 4) % 4;
+        LogAvailableCards(); // Atualizar display
+        mKeyWasPressed = true;
+    }
+    // Confirmar seleção (Enter ou Space)
+    else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    {
+        Card* selectedCard = mPlayer->GetDeck()[mSelectedCardIndex];
+
+        // Verificar se a carta está disponível (não em cooldown)
+        if (selectedCard->IsAvailable())
+        {
+            SDL_Log("TURNO %d", mCombatManager->GetCurrentTurn());
+            SDL_Log("Player usou: %s (Tipo: %s, Dano: %d)",
+                    selectedCard->GetName().c_str(),
+                    GetTypeName(selectedCard->GetType()),
+                    selectedCard->GetDamage());
+            mCombatManager->PlayerSelectCard(selectedCard);
+            mKeyWasPressed = true;
+        }
+        else
+        {
+            SDL_Log("❌ Carta em cooldown! (%d turnos restantes)",
+                    selectedCard->GetCurrentCooldown());
+            mKeyWasPressed = true;
+        }
+    }
+    // Reset do flag quando nenhuma tecla está pressionada
+    else if (!keyState[SDL_SCANCODE_RIGHT] && !keyState[SDL_SCANCODE_LEFT] &&
+             !keyState[SDL_SCANCODE_D] && !keyState[SDL_SCANCODE_A] &&
+             !keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
+    {
+        mKeyWasPressed = false;
+    }
+
+    // ESC para voltar ao menu (apenas para teste)
     static bool escWasPressed = false;
-
-    if (keyState[SDL_SCANCODE_V] && !vWasPressed)
-    {
-        SDL_Log("==> TESTE: Combate -> Vitória");
-        mGame->SetScene(new VictoryScene(mGame));
-        vWasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_V])
-    {
-        vWasPressed = false;
-    }
-
-    if (keyState[SDL_SCANCODE_D] && !dWasPressed)
-    {
-        SDL_Log("==> TESTE: Combate -> Derrota (Game Over)");
-        mGame->SetScene(new GameOverScene(mGame));
-        dWasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_D])
-    {
-        dWasPressed = false;
-    }
-
     if (keyState[SDL_SCANCODE_ESCAPE] && !escWasPressed)
     {
-        SDL_Log("==> TESTE: Combate -> Mapa");
-        mGame->SetScene(new MapScene(mGame));
+        SDL_Log("\n[Voltando ao menu principal]\n");
+        mGame->SetScene(new MainMenuScene(mGame));
         escWasPressed = true;
     }
     else if (!keyState[SDL_SCANCODE_ESCAPE])
@@ -276,13 +383,104 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     }
 }
 
+void CombatScene::LogAvailableCards()
+{
+    SDL_Log("Suas cartas: (A=Anterior D=Próximo)");
+
+    for (int i = 0; i < 4; i++)
+    {
+        Card* card = mPlayer->GetDeck()[i];
+        const char* selector = (i == mSelectedCardIndex) ? "👉 " : "   ";
+
+        if (card->IsAvailable())
+        {
+            SDL_Log("%s[%d] %s (Tipo: %s, Dano: %d)",
+                    selector, i + 1,
+                    card->GetName().c_str(),
+                    GetTypeName(card->GetType()),
+                    card->GetDamage());
+        }
+        else
+        {
+            SDL_Log("%s[%d] %s ⏳ COOLDOWN (%d turnos)",
+                    selector, i + 1,
+                    card->GetName().c_str(),
+                    card->GetCurrentCooldown());
+        }
+    }
+    SDL_Log("");
+}
+
+const char* CombatScene::GetTypeName(AttackType type)
+{
+    switch (type)
+    {
+        case AttackType::Fire:    return "🔥 Fire";
+        case AttackType::Water:   return "💧 Water";
+        case AttackType::Plant:   return "🌿 Plant";
+        case AttackType::Neutral: return "⚪ Neutral";
+        default:                  return "Unknown";
+    }
+}
+
+void CombatScene::HandleCombatEnd()
+{
+    SDL_Log("\n========================================");
+    if (mCombatManager->IsPlayerVictorious())
+    {
+        SDL_Log("       ✨ VITÓRIA! ✨");
+        SDL_Log("========================================");
+        SDL_Log("Recompensa: %d moedas", mCombatManager->GetReward());
+        SDL_Log("========================================\n");
+        SDL_Delay(1000);
+        mGame->SetScene(new VictoryScene(mGame));
+    }
+    else
+    {
+        SDL_Log("       💀 DERROTA! 💀");
+        SDL_Log("========================================");
+        SDL_Log("O sapo foi derrotado...");
+        SDL_Log("========================================\n");
+        SDL_Delay(1000);
+        mGame->SetScene(new GameOverScene(mGame));
+    }
+}
+
 void CombatScene::Exit()
 {
     SDL_Log("Exiting CombatScene");
 
-    // TODO (Facundo): Limpar recursos do combate
-    // TODO (Facundo): Deletar inimigo
-    // TODO (Facundo): Parar música de combate
+    // Limpar recursos
+    if (mCombatManager)
+    {
+        delete mCombatManager;
+        mCombatManager = nullptr;
+    }
+
+    // IMPORTANTE: As cartas são deletadas com o Combatant
+    // Não deletar cartas manualmente aqui
+
+    if (mPlayer)
+    {
+        // Deletar cartas do player
+        for (Card* card : mPlayer->GetDeck())
+        {
+            delete card;
+        }
+        delete mPlayer;
+        mPlayer = nullptr;
+    }
+
+    if (mEnemy)
+    {
+        // Deletar cartas do enemy
+        for (Card* card : mEnemy->GetDeck())
+        {
+            delete card;
+        }
+        delete mEnemy;
+        mEnemy = nullptr;
+    }
 }
 
 // ============================================

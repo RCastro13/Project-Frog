@@ -1,4 +1,3 @@
-#pragma once
 #include "Enemy.h"
 
 Enemy::Enemy(Game *game, std::string name, int health, int maxHealth, std::vector<Card *> deck)

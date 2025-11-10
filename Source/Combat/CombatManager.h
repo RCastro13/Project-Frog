@@ -31,6 +31,7 @@ public:
     Player* GetPlayer() const { return mPlayer; }
     Combatant* GetEnemy() const { return mEnemy; }
     int GetReward() const { return mCoinReward; }
+    int GetCurrentTurn() const { return mCurrentTurn; }
 
     // Métodos de controle de turno
     void PlayerSelectCard(Card* selectedCard);
