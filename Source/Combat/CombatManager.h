@@ -29,7 +29,7 @@ public:
     bool IsCombatEnded() const { return mCurrentState == CombatState::COMBAT_ENDED; }
     bool IsPlayerVictorious() const { return mPlayerVictorious; }
     Player* GetPlayer() const { return mPlayer; }
-    Combatant* GetEnemy() const { return mEnemy; }
+    Enemy* GetEnemy() const { return mEnemy; }
     int GetReward() const { return mCoinReward; }
     int GetCurrentTurn() const { return mCurrentTurn; }
 
