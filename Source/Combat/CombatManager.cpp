@@ -54,12 +54,23 @@ void CombatManager::Update()
     }
 }
 
-void CombatManager::PlayerSelectCard(Card* selectedCard)
+void CombatManager::PlayerSelectCard(Card* selectedCard, Card* enemyCard)
 {
     if (mCurrentState == CombatState::WAITING_FOR_PLAYER)
     {
         mPlayerSelectedCard = selectedCard;
-        mCurrentState = CombatState::ENEMY_TURN;
+
+        // Se a carta do inimigo já foi fornecida (feedback visual), usá-la diretamente
+        if (enemyCard != nullptr)
+        {
+            mEnemySelectedCard = enemyCard;
+            mCurrentState = CombatState::RESOLVING_COMBAT;
+        }
+        else
+        {
+            // Caso contrário, passar pelo estado ENEMY_TURN normalmente
+            mCurrentState = CombatState::ENEMY_TURN;
+        }
     }
 }
 
