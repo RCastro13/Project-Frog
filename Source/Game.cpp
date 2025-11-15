@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "Renderer/Shader.h"
+#include "GameScene/GameScene.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -57,7 +58,11 @@ bool Game::Initialize()
     }
 
     mRenderer = new Renderer(mWindow);
-    mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    if (!mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT))
+    {
+        SDL_Log("Failed to initialize renderer");
+        return false;
+    }
 
     // Init all game actors
     InitializeActors();
@@ -275,6 +280,12 @@ void Game::GenerateOutput()
     // Clear back buffer
     mRenderer->Clear();
 
+    // Render scene background (ANTES dos actors)
+    if (mCurrentScene)
+    {
+        mCurrentScene->RenderBackground();
+    }
+
     for (auto drawable : mDrawables)
     {
         drawable->Draw(mRenderer);
@@ -287,6 +298,12 @@ void Game::GenerateOutput()
                 comp->DebugDraw(mRenderer);
               }
         }
+    }
+
+    // Render scene UI (DEPOIS dos actors)
+    if (mCurrentScene)
+    {
+        mCurrentScene->Render();
     }
 
     // Swap front buffer and back buffer

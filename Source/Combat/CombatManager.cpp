@@ -67,6 +67,13 @@ void CombatManager::EnemySelectCard()
 {
     mEnemySelectedCard = mEnemy->SelectCard();
 
+    // Verificar se a seleção foi bem-sucedida
+    if (!mEnemySelectedCard)
+    {
+        SDL_Log("ERROR: Enemy failed to select a card!");
+        return;
+    }
+
     // Log da ação do inimigo
     const char* typeName = "";
     switch (mEnemySelectedCard->GetType())

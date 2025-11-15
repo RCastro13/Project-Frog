@@ -4,6 +4,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
+# Configurar Homebrew paths para macOS (Apple Silicon)
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew;${CMAKE_PREFIX_PATH}")
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/glew")
+endif()
+
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image REQUIRED)
 
@@ -81,14 +87,17 @@ add_executable(${PROJECT_NAME}
         Source/Combat/CombatManager.cpp
         Source/Actors/Enemy.h
         Source/Actors/Enemy.cpp
+        Source/Actors/FrogActor.h
+        Source/Actors/FrogActor.cpp
+        Source/Actors/BearActor.h
+        Source/Actors/BearActor.cpp
 )
 
-# Libs
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        ${GLEW_LIBRARIES}
-        SDL2::SDL2main
-        SDL2_image::SDL2_image
-        SDL2::SDL2
-        opengl32
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    GLEW::GLEW
+    OpenGL::GL
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
 )

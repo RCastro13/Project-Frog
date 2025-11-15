@@ -5,6 +5,7 @@
 #pragma once
 #include <SDL_stdinc.h>
 #include <vector>
+#include "../Math.h"
 
 // Forward declarations
 class Game;
@@ -39,6 +40,12 @@ public:
     // Chamado a cada frame enquanto a cena está ativa
     virtual void Update(float deltaTime) = 0;
 
+    // Chamado durante a renderização (ANTES dos actors - para backgrounds)
+    virtual void RenderBackground() {}
+
+    // Chamado durante a renderização (DEPOIS dos actors - para UI)
+    virtual void Render() {}
+
     // Chamado quando o jogador pressiona teclas
     virtual void ProcessInput(const Uint8* keyState) = 0;
 
@@ -54,6 +61,12 @@ public:
 protected:
     Game* mGame;
     float mStateTime;  // Tempo que a cena está ativa
+    float mFadeAlpha;  // Alpha do fade (1.0 = preto total, 0.0 = transparente)
+    float mFadeTimer;  // Timer para controlar o fade
+    bool mFadingIn;    // true = fade in, false = fade out
+
+    void UpdateFade(float deltaTime);
+    void RenderFade();
 };
 
 // ============================================
@@ -119,6 +132,8 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void RenderBackground() override;
+    void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
 
@@ -131,16 +146,35 @@ private:
     Player* mPlayer;
     Enemy* mEnemy;
 
+    // Atores visuais
+    class FrogActor* mFrogActor;
+    class BearActor* mBearActor;
+
+    // Background
+    class Texture* mBackgroundTexture;
+
     // UI - Seleção de cartas
     int mSelectedCardIndex;
     bool mKeyWasPressed;  // Para detectar single press
 
+    // Feedback visual do turno
+    bool mShowingCards;           // Se está mostrando as cartas no centro
+    float mCardDisplayTimer;      // Timer para mostrar as cartas
+    Card* mDisplayPlayerCard;     // Carta do player sendo mostrada
+    Card* mDisplayEnemyCard;      // Carta do enemy sendo mostrada
+    bool mPlayerWonLastTurn;      // Se o player venceu o último turno
+
     // Helper methods
     void CreateTestCombatants();
+    void CreateVisualActors();
     void RenderCombatUI();
+    void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
+    void RenderCards();
+    void RenderCardDisplay();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
     void LogAvailableCards();
+    Vector3 GetCardColor(AttackType type);
 
     // Estado para controlar quando mostrar cartas
     bool mCardsShown;
