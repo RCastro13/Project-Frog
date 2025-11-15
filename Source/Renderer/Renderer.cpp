@@ -106,6 +106,11 @@ void Renderer::SetClearColor(float r, float g, float b, float a)
 void Renderer::Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2 &cameraPos, VertexArray *vertices,
                     const Vector3 &color, Texture *texture, const Vector4 &textureRect, float textureFactor)
 {
+    // Safety checks
+    if (!vertices || !mBaseShader) {
+        return;
+    }
+
     mBaseShader->SetMatrixUniform("uWorldTransform", modelMatrix);
     mBaseShader->SetVectorUniform("uColor", color);
     mBaseShader->SetVectorUniform("uTexRect", textureRect);

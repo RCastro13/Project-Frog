@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "Renderer/Shader.h"
+#include "GameScene/GameScene.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -34,6 +35,7 @@ Game::Game()
         ,mIsPaused(false)
         ,mCurrentScene(nullptr)
         ,mPendingScene(nullptr)
+        ,mCurrentMapNode(nullptr)
 {
 
 }
@@ -56,7 +58,11 @@ bool Game::Initialize()
     }
 
     mRenderer = new Renderer(mWindow);
-    mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    if (!mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT))
+    {
+        SDL_Log("Failed to initialize renderer");
+        return false;
+    }
 
     // Init all game actors
     InitializeActors();
@@ -274,6 +280,12 @@ void Game::GenerateOutput()
     // Clear back buffer
     mRenderer->Clear();
 
+    // Render scene background (ANTES dos actors)
+    if (mCurrentScene)
+    {
+        mCurrentScene->RenderBackground();
+    }
+
     for (auto drawable : mDrawables)
     {
         drawable->Draw(mRenderer);
@@ -288,12 +300,39 @@ void Game::GenerateOutput()
         }
     }
 
+    // Render scene UI (DEPOIS dos actors)
+    if (mCurrentScene)
+    {
+        mCurrentScene->Render();
+    }
+
     // Swap front buffer and back buffer
     mRenderer->Present();
 }
 
+void Game::InitializeMap()
+{
+    // Este método pode ser chamado para forçar geração de um novo mapa
+    // Por padrão, o mapa é gerado quando a MapScene é criada pela primeira vez
+    ClearMap();
+}
+
+void Game::ClearMap()
+{
+    // Limpar nós do mapa existente
+    for (MapNode* node : mMapNodes) {
+        delete node;
+    }
+    mMapNodes.clear();
+    mCurrentMapNode = nullptr;
+}
+
 void Game::Shutdown()
 {
+    // Limpar mapa
+    ClearMap();
+
+
     // Limpar cenas
     if (mCurrentScene)
     {

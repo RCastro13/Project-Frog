@@ -4,8 +4,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
+# Configurar Homebrew paths para macOS (Apple Silicon)
+if(APPLE)
+    set(CMAKE_PREFIX_PATH "/opt/homebrew;${CMAKE_PREFIX_PATH}")
+    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/glew")
+endif()
 
-find_package(SDL2 2.32.2 EXACT REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image REQUIRED)
 
 set(GLEW_ROOT "C:/Program Files/GLEW")
@@ -19,6 +24,8 @@ include_directories(
         ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
 )
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
@@ -64,14 +71,33 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Map/MapNodeType.h
+        Source/Map/MapNode.h
+        Source/Map/MapNode.cpp
+        Source/Map/MapGenerator.h
+        Source/Map/MapGenerator.cpp
+        Source/Combat/Card.h
+        Source/Combat/Card.cpp
+        Source/Actors/Combatant.h
+        Source/Actors/Combatant.cpp
+        Source/Actors/Player.h
+        Source/Combat/Item.h
+        Source/Actors/Player.cpp
+        Source/Combat/CombatManager.h
+        Source/Combat/CombatManager.cpp
+        Source/Actors/Enemy.h
+        Source/Actors/Enemy.cpp
+        Source/Actors/FrogActor.h
+        Source/Actors/FrogActor.cpp
+        Source/Actors/BearActor.h
+        Source/Actors/BearActor.cpp
 )
 
-# Libs
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        ${GLEW_LIBRARIES}
-        SDL2::SDL2main
-        SDL2_image::SDL2_image
-        SDL2::SDL2
-        opengl32
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    GLEW::GLEW
+    OpenGL::GL
+    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+    $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
 )
