@@ -61,6 +61,12 @@ public:
 protected:
     Game* mGame;
     float mStateTime;  // Tempo que a cena está ativa
+    float mFadeAlpha;  // Alpha do fade (1.0 = preto total, 0.0 = transparente)
+    float mFadeTimer;  // Timer para controlar o fade
+    bool mFadingIn;    // true = fade in, false = fade out
+
+    void UpdateFade(float deltaTime);
+    void RenderFade();
 };
 
 // ============================================
@@ -156,6 +162,7 @@ private:
     void CreateVisualActors();
     void RenderCombatUI();
     void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
+    void RenderCards();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
     void LogAvailableCards();

@@ -26,11 +26,39 @@
 GameScene::GameScene(Game* game)
     : mGame(game)
     , mStateTime(0.0f)
+    , mFadeAlpha(1.0f)  // Começa com fade in (preto total)
+    , mFadeTimer(0.0f)
+    , mFadingIn(true)
 {
 }
 
 GameScene::~GameScene()
 {
+}
+
+void GameScene::UpdateFade(float deltaTime)
+{
+    const float FADE_DURATION = 0.5f; // 0.5 segundos para o fade
+
+    if (mFadingIn)
+    {
+        // Fade in: preto (1.0) -> transparente (0.0)
+        mFadeTimer += deltaTime;
+        mFadeAlpha = 1.0f - (mFadeTimer / FADE_DURATION);
+
+        if (mFadeAlpha <= 0.0f)
+        {
+            mFadeAlpha = 0.0f;
+            mFadingIn = false; // Fade in completo
+        }
+    }
+}
+
+void GameScene::RenderFade()
+{
+    // Nota: DrawRect não suporta transparência (alpha) no momento
+    // O bloqueio de inputs durante mFadeAlpha > 0 já resolve o problema
+    // Uma implementação visual completa requer suporte a alpha no renderer
 }
 
 // ============================================
@@ -66,12 +94,19 @@ void MainMenuScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
+    // Atualizar fade in
+    UpdateFade(deltaTime);
+
     // TODO (Kayque): Atualizar animações do menu
     // TODO (Kayque): Verificar seleção de botões
 }
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
 {
+    // Bloquear inputs durante o fade in
+    if (mFadeAlpha > 0.0f)
+        return;
+
     // TODO (Kayque): Implementar navegação do menu
 
     // ===== TESTE TEMPORÁRIO =====
@@ -182,12 +217,19 @@ void MapScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
+    // Atualizar fade in
+    UpdateFade(deltaTime);
+
     // Renderizar o mapa (chamado pelo renderer do Game)
     RenderMap();
 }
 
 void MapScene::ProcessInput(const Uint8* keyState)
 {
+    // Bloquear inputs durante o fade in
+    if (mFadeAlpha > 0.0f)
+        return;
+
     static bool upWasPressed = false;
     static bool downWasPressed = false;
     static bool enterWasPressed = false;
@@ -566,6 +608,9 @@ void CombatScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
+    // Atualizar fade in
+    UpdateFade(deltaTime);
+
     // TODO (Facundo): Atualizar sistema de combate
     // TODO (Facundo): Atualizar animações
     // TODO (Facundo): Verificar condições de vitória/derrota
@@ -659,11 +704,116 @@ void CombatScene::RenderCombatUI()
         Vector2 enemyHPPos = Vector2(490.0f, 160.0f);
         RenderHealthBar(enemyHPPos, mEnemy->GetHealth(), 15, true);
     }
+
+    // Renderizar cartas do player
+    if (mPlayer && mCombatManager && mCombatManager->GetCurrentState() == CombatState::WAITING_FOR_PLAYER) {
+        RenderCards();
+    }
+}
+
+void CombatScene::RenderCards()
+{
+    // Dimensões e posicionamento das cartas
+    float cardWidth = 80.0f;
+    float cardHeight = 110.0f;
+    float cardSpacing = 20.0f;
+    float baseY = 380.0f; // Parte inferior da tela (448 - margem)
+    float selectedOffset = -20.0f; // Offset para cima quando selecionada
+
+    // Calcular posição inicial X para centralizar as 4 cartas
+    float totalWidth = (cardWidth * 4) + (cardSpacing * 3);
+    float startX = (640.0f - totalWidth) / 2.0f + cardWidth / 2.0f;
+
+    for (int i = 0; i < 4; i++) {
+        Card* card = mPlayer->GetDeck()[i];
+
+        // Calcular posição da carta
+        float cardX = startX + (i * (cardWidth + cardSpacing));
+        float cardY = baseY;
+
+        // Carta selecionada fica mais acima
+        if (i == mSelectedCardIndex) {
+            cardY += selectedOffset;
+        }
+
+        Vector2 cardPos(cardX, cardY);
+
+        // Determinar cor da carta
+        Vector3 cardColor;
+        if (!card->IsAvailable()) {
+            // Carta em cooldown = cinza
+            cardColor = Vector3(0.3f, 0.3f, 0.3f);
+        } else {
+            // Cor baseada no tipo
+            switch (card->GetType()) {
+                case AttackType::Fire:
+                    cardColor = Vector3(1.0f, 0.2f, 0.2f); // Vermelho
+                    break;
+                case AttackType::Water:
+                    cardColor = Vector3(0.2f, 0.4f, 1.0f); // Azul
+                    break;
+                case AttackType::Plant:
+                    cardColor = Vector3(0.2f, 1.0f, 0.2f); // Verde
+                    break;
+                case AttackType::Neutral:
+                    cardColor = Vector3(0.1f, 0.1f, 0.1f); // Preto/cinza escuro
+                    break;
+                default:
+                    cardColor = Vector3(0.5f, 0.5f, 0.5f); // Cinza
+                    break;
+            }
+        }
+
+        // Renderizar carta
+        mGame->GetRenderer()->DrawRect(
+            cardPos,
+            Vector2(cardWidth, cardHeight),
+            0.0f,
+            cardColor,
+            Vector2::Zero,
+            RendererMode::TRIANGLES
+        );
+
+        // Renderizar borda da carta (mais grossa se selecionada)
+        float borderThickness = (i == mSelectedCardIndex) ? 3.0f : 2.0f;
+        Vector3 borderColor = (i == mSelectedCardIndex) ?
+            Vector3(1.0f, 1.0f, 0.0f) : // Amarelo se selecionada
+            Vector3(1.0f, 1.0f, 1.0f);  // Branco se não selecionada
+
+        // Top
+        mGame->GetRenderer()->DrawRect(
+            Vector2(cardX, cardY - (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Bottom
+        mGame->GetRenderer()->DrawRect(
+            Vector2(cardX, cardY + (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Left
+        mGame->GetRenderer()->DrawRect(
+            Vector2(cardX - (cardWidth + borderThickness)/2.0f, cardY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Right
+        mGame->GetRenderer()->DrawRect(
+            Vector2(cardX + (cardWidth + borderThickness)/2.0f, cardY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+    }
 }
 
 void CombatScene::ProcessInput(const Uint8* keyState)
 {
     if (!mCombatManager)
+        return;
+
+    // Bloquear inputs durante o fade in
+    if (mFadeAlpha > 0.0f)
         return;
 
     // Só processar input se estiver esperando o jogador

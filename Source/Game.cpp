@@ -67,8 +67,8 @@ bool Game::Initialize()
     // Init all game actors
     InitializeActors();
 
-    // Iniciar diretamente com a cena de combate (para testes)
-    mCurrentScene = new CombatScene(this);
+    // Iniciar com a cena do menu principal
+    mCurrentScene = new MainMenuScene(this);
     mCurrentScene->Enter();
 
     mTicksCount = SDL_GetTicks();
