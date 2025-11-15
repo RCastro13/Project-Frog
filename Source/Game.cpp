@@ -34,6 +34,7 @@ Game::Game()
         ,mIsPaused(false)
         ,mCurrentScene(nullptr)
         ,mPendingScene(nullptr)
+        ,mCurrentMapNode(nullptr)
 {
 
 }
@@ -292,8 +293,29 @@ void Game::GenerateOutput()
     mRenderer->Present();
 }
 
+void Game::InitializeMap()
+{
+    // Este método pode ser chamado para forçar geração de um novo mapa
+    // Por padrão, o mapa é gerado quando a MapScene é criada pela primeira vez
+    ClearMap();
+}
+
+void Game::ClearMap()
+{
+    // Limpar nós do mapa existente
+    for (MapNode* node : mMapNodes) {
+        delete node;
+    }
+    mMapNodes.clear();
+    mCurrentMapNode = nullptr;
+}
+
 void Game::Shutdown()
 {
+    // Limpar mapa
+    ClearMap();
+
+
     // Limpar cenas
     if (mCurrentScene)
     {

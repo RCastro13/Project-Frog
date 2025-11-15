@@ -12,7 +12,9 @@ class CombatManager;
 class Player;
 class Enemy;
 class Card;
+class MapNode;
 enum class AttackType;
+enum class MapNodeType;
 
 // Enum para identificar tipos de cena
 enum class SceneType
@@ -86,6 +88,27 @@ public:
 
     SceneType GetType() const override { return SceneType::MAP; }
     const char* GetName() const override { return "Map"; }
+
+    // Controle do progresso
+    void SetCurrentNode(class MapNode* node);
+    class MapNode* GetCurrentNode() const { return mCurrentNode; }
+
+private:
+    std::vector<class MapNode*> mMapNodes;
+    class MapNode* mCurrentNode;
+    class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
+    int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
+
+    // Helper methods
+    void RenderMap();
+    void RenderNode(class MapNode* node);
+    void RenderConnections();
+    void SelectNextAccessibleNode();
+    void SelectPreviousAccessibleNode();
+    void ConfirmSelection();
+    bool CanSelectNode(class MapNode* node);
+    std::vector<class MapNode*> GetAccessibleNodes();
+    const char* GetNodeTypeName(MapNodeType type);
 };
 
 class CombatScene : public GameScene

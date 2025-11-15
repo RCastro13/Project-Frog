@@ -33,6 +33,14 @@ public:
     void SetScene(GameScene* scene);
     GameScene* GetCurrentScene() const { return mCurrentScene; }
 
+    // Map management
+    void InitializeMap();
+    void ClearMap();
+    std::vector<class MapNode*> GetMapNodes() const { return mMapNodes; }
+    void SetMapNodes(const std::vector<class MapNode*>& nodes) { mMapNodes = nodes; }
+    class MapNode* GetCurrentMapNode() const { return mCurrentMapNode; }
+    void SetCurrentMapNode(class MapNode* node) { mCurrentMapNode = node; }
+
     // Renderer
     class Renderer* GetRenderer() { return mRenderer; }
 
@@ -103,6 +111,10 @@ private:
     // Scenes & state
     GameScene* mCurrentScene;
     GameScene* mPendingScene;  // Para trocar cena no próximo frame
+
+    // Map system
+    std::vector<class MapNode*> mMapNodes;
+    class MapNode* mCurrentMapNode;
 
     // Game-specific
     class Mario *mMario;

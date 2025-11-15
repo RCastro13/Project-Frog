@@ -4,8 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
-
-find_package(SDL2 2.32.2 EXACT REQUIRED)
+find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image REQUIRED)
 
 set(GLEW_ROOT "C:/Program Files/GLEW")
@@ -19,6 +18,8 @@ include_directories(
         ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
 )
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
@@ -64,6 +65,22 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Map/MapNodeType.h
+        Source/Map/MapNode.h
+        Source/Map/MapNode.cpp
+        Source/Map/MapGenerator.h
+        Source/Map/MapGenerator.cpp
+        Source/Combat/Card.h
+        Source/Combat/Card.cpp
+        Source/Actors/Combatant.h
+        Source/Actors/Combatant.cpp
+        Source/Actors/Player.h
+        Source/Combat/Item.h
+        Source/Actors/Player.cpp
+        Source/Combat/CombatManager.h
+        Source/Combat/CombatManager.cpp
+        Source/Actors/Enemy.h
+        Source/Actors/Enemy.cpp
 )
 
 # Libs

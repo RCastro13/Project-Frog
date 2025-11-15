@@ -8,8 +8,11 @@
 #include "../Combat/Card.h"
 #include "../Actors/Player.h"
 #include "../Actors/Enemy.h"
+#include "../Map/MapNode.h"
+#include "../Map/MapGenerator.h"
 #include <SDL.h>
 #include <SDL_log.h>
+#include <algorithm>
 
 // ============================================
 // CLASSE BASE: GameScene
@@ -117,11 +120,17 @@ void MainMenuScene::Exit()
 
 MapScene::MapScene(Game* game)
     : GameScene(game)
+    , mCurrentNode(nullptr)
+    , mSelectedNode(nullptr)
+    , mSelectedIndex(0)
 {
 }
 
 MapScene::~MapScene()
 {
+    // Não deletar os nós - eles pertencem ao Game
+    // Apenas limpar a lista de referências
+    mMapNodes.clear();
 }
 
 void MapScene::Enter()
@@ -130,65 +139,304 @@ void MapScene::Enter()
     mStateTime = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAPA [ENTER=Combate ESC=Menu]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAPA [↑↓=Navegar ENTER=Selecionar]");
 
     // Cor de fundo: Verde (tema natureza/pântano)
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
 
-    // TODO (Rubens): Carregar mapa
-    // TODO (Rubens): Gerar/carregar nós do mapa
-    // TODO (Rubens): Marcar nós disponíveis
-    // TODO (Rubens): Carregar música do mapa
+    // Obter mapa do Game (se já existe) ou gerar novo
+    if (mGame->GetMapNodes().empty()) {
+        // Gerar novo mapa
+        SDL_Log("Gerando novo mapa...");
+        mMapNodes = MapGenerator::Generate();
+        mGame->SetMapNodes(mMapNodes);
+
+        // Definir nó inicial como atual
+        if (!mMapNodes.empty()) {
+            mCurrentNode = mMapNodes[0];
+            mGame->SetCurrentMapNode(mCurrentNode);
+        }
+    } else {
+        // Usar mapa existente
+        mMapNodes = mGame->GetMapNodes();
+        mCurrentNode = mGame->GetCurrentMapNode();
+    }
+
+    // Selecionar primeiro nó acessível
+    std::vector<MapNode*> accessible = GetAccessibleNodes();
+    if (!accessible.empty()) {
+        mSelectedNode = accessible[0];
+        mSelectedIndex = 0;
+    }
+
+    SDL_Log("Mapa carregado com %d nós", (int)mMapNodes.size());
+    SDL_Log("Nó atual: %d", mCurrentNode ? mCurrentNode->GetID() : -1);
 }
 
 void MapScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
-    // TODO (Rubens): Atualizar animações do mapa
+    // Renderizar o mapa (chamado pelo renderer do Game)
+    RenderMap();
 }
 
 void MapScene::ProcessInput(const Uint8* keyState)
 {
-    // TODO (Rubens): Implementar navegação entre nós
-    // TODO (Rubens): Implementar seleção de nó com Enter
-
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione ENTER para simular seleção de combate
-    // Pressione ESC para voltar ao menu
-
+    static bool upWasPressed = false;
+    static bool downWasPressed = false;
     static bool enterWasPressed = false;
-    static bool escWasPressed = false;
 
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed)
-    {
-        SDL_Log("==> TESTE: Transição Mapa -> Combate (nó selecionado)");
-        mGame->SetScene(new CombatScene(mGame));
+    // Navegar para cima
+    if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
+        SelectPreviousAccessibleNode();
+        upWasPressed = true;
+    } else if (!keyState[SDL_SCANCODE_UP]) {
+        upWasPressed = false;
+    }
+
+    // Navegar para baixo
+    if (keyState[SDL_SCANCODE_DOWN] && !downWasPressed) {
+        SelectNextAccessibleNode();
+        downWasPressed = true;
+    } else if (!keyState[SDL_SCANCODE_DOWN]) {
+        downWasPressed = false;
+    }
+
+    // Confirmar seleção
+    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed) {
+        ConfirmSelection();
         enterWasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_RETURN])
-    {
+    } else if (!keyState[SDL_SCANCODE_RETURN]) {
         enterWasPressed = false;
-    }
-
-    if (keyState[SDL_SCANCODE_ESCAPE] && !escWasPressed)
-    {
-        SDL_Log("==> TESTE: Transição Mapa -> Menu");
-        mGame->SetScene(new MainMenuScene(mGame));
-        escWasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_ESCAPE])
-    {
-        escWasPressed = false;
     }
 }
 
 void MapScene::Exit()
 {
     SDL_Log("Exiting MapScene");
+}
 
-    // TODO (Rubens): Limpar recursos do mapa
-    // TODO (Rubens): Parar música do mapa
+void MapScene::SetCurrentNode(MapNode* node)
+{
+    if (mCurrentNode) {
+        mCurrentNode->SetCurrent(false);
+    }
+    mCurrentNode = node;
+    if (mCurrentNode) {
+        mCurrentNode->SetCurrent(true);
+    }
+}
+
+void MapScene::RenderMap()
+{
+    // Renderizar conexões primeiro (para ficarem atrás dos nós)
+    RenderConnections();
+
+    // Renderizar todos os nós
+    for (MapNode* node : mMapNodes) {
+        RenderNode(node);
+    }
+}
+
+void MapScene::RenderNode(MapNode* node)
+{
+    Vector2 pos = node->GetPosition();
+    float size = 32.0f;
+
+    // Determinar cor baseada no estado
+    Vector3 color = Vector3(0.5f, 0.5f, 0.5f); // Cinza (bloqueado)
+
+    if (node->IsCompleted()) {
+        color = Vector3(0.0f, 1.0f, 0.0f); // Verde (completo)
+    } else if (node == mCurrentNode) {
+        color = Vector3(0.0f, 0.5f, 1.0f); // Azul (atual)
+    } else if (node == mSelectedNode) {
+        color = Vector3(1.0f, 1.0f, 0.0f); // Amarelo (selecionado)
+    } else if (node->IsAccessible()) {
+        color = Vector3(1.0f, 1.0f, 1.0f); // Branco (acessível)
+    }
+
+    // Desenhar quadrado representando o nó
+    mGame->GetRenderer()->DrawRect(
+        pos,
+        Vector2(size, size),
+        0.0f,
+        color,
+        Vector2::Zero,
+        RendererMode::TRIANGLES
+    );
+
+    // Log informativo quando renderizar pela primeira vez
+    static bool firstRender = true;
+    if (firstRender && node == mCurrentNode) {
+        SDL_Log("Renderizando nó %d (%s) na posição (%.1f, %.1f)",
+                node->GetID(), GetNodeTypeName(node->GetType()),
+                pos.x, pos.y);
+        firstRender = false;
+    }
+}
+
+void MapScene::RenderConnections()
+{
+    // Desenhar linhas conectando os nós
+    for (MapNode* node : mMapNodes) {
+        Vector2 startPos = node->GetPosition();
+
+        for (MapNode* child : node->GetChildren()) {
+            Vector2 endPos = child->GetPosition();
+
+            // Cor da linha baseada no estado
+            Vector3 lineColor = Vector3(0.3f, 0.3f, 0.3f); // Cinza escuro padrão
+            if (node->IsAccessible() || child->IsAccessible()) {
+                lineColor = Vector3(0.6f, 0.6f, 0.6f); // Cinza claro
+            }
+            if (node->IsCompleted()) {
+                lineColor = Vector3(0.0f, 0.7f, 0.0f); // Verde
+            }
+
+            // Desenhar linha (simplificado - apenas um retângulo fino)
+            Vector2 diff = endPos - startPos;
+            float length = diff.Length();
+            float angle = Math::Atan2(diff.y, diff.x);
+            Vector2 midpoint = startPos + diff * 0.5f;
+
+            mGame->GetRenderer()->DrawRect(
+                midpoint,
+                Vector2(length, 2.0f),
+                angle,
+                lineColor,
+                Vector2::Zero,
+                RendererMode::TRIANGLES
+            );
+        }
+    }
+}
+
+void MapScene::SelectNextAccessibleNode()
+{
+    std::vector<MapNode*> accessible = GetAccessibleNodes();
+    if (accessible.empty()) return;
+
+    mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
+    mSelectedNode = accessible[mSelectedIndex];
+
+    SDL_Log("Nó selecionado: %d (%s)",
+            mSelectedNode->GetID(),
+            GetNodeTypeName(mSelectedNode->GetType()));
+}
+
+void MapScene::SelectPreviousAccessibleNode()
+{
+    std::vector<MapNode*> accessible = GetAccessibleNodes();
+    if (accessible.empty()) return;
+
+    mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
+    mSelectedNode = accessible[mSelectedIndex];
+
+    SDL_Log("Nó selecionado: %d (%s)",
+            mSelectedNode->GetID(),
+            GetNodeTypeName(mSelectedNode->GetType()));
+}
+
+void MapScene::ConfirmSelection()
+{
+    if (!mSelectedNode || !CanSelectNode(mSelectedNode)) {
+        SDL_Log("Não é possível selecionar este nó");
+        return;
+    }
+
+    SDL_Log("Confirmando seleção do nó %d (%s)",
+            mSelectedNode->GetID(),
+            GetNodeTypeName(mSelectedNode->GetType()));
+
+    // Marcar nó atual como completo
+    if (mCurrentNode) {
+        mCurrentNode->SetCompleted(true);
+        mCurrentNode->SetCurrent(false);
+    }
+
+    // Atualizar nó atual
+    SetCurrentNode(mSelectedNode);
+    mGame->SetCurrentMapNode(mSelectedNode);
+
+    // Tornar filhos acessíveis
+    for (MapNode* child : mSelectedNode->GetChildren()) {
+        child->SetAccessible(true);
+    }
+
+    // Transição para a cena apropriada
+    switch (mSelectedNode->GetType()) {
+        case MapNodeType::START:
+        case MapNodeType::COMBAT:
+            SDL_Log("==> Iniciando combate normal");
+            mGame->SetScene(new CombatScene(mGame));
+            break;
+
+        case MapNodeType::ELITE:
+            SDL_Log("==> Iniciando combate elite");
+            mGame->SetScene(new CombatScene(mGame)); // Por enquanto igual ao normal
+            break;
+
+        case MapNodeType::BOSS:
+            SDL_Log("==> Iniciando combate contra o BOSS!");
+            mGame->SetScene(new CombatScene(mGame));
+            break;
+
+        case MapNodeType::SHOP:
+            SDL_Log("==> Entrando na loja (não implementada ainda)");
+            // TODO: mGame->SetScene(new ShopScene(mGame));
+            // Por enquanto, volta para o mapa
+            mGame->SetScene(new MapScene(mGame));
+            break;
+
+        case MapNodeType::TREASURE:
+            SDL_Log("==> Abrindo baú de tesouro (não implementado ainda)");
+            // TODO: mGame->SetScene(new TreasureScene(mGame));
+            mGame->SetScene(new MapScene(mGame));
+            break;
+
+        case MapNodeType::REST:
+            SDL_Log("==> Descansando (não implementado ainda)");
+            // TODO: mGame->SetScene(new RestScene(mGame));
+            mGame->SetScene(new MapScene(mGame));
+            break;
+    }
+}
+
+bool MapScene::CanSelectNode(MapNode* node)
+{
+    if (!node) return false;
+
+    // Só pode selecionar nós acessíveis que não estão completos
+    return node->IsAccessible() && !node->IsCompleted();
+}
+
+std::vector<MapNode*> MapScene::GetAccessibleNodes()
+{
+    std::vector<MapNode*> accessible;
+
+    for (MapNode* node : mMapNodes) {
+        if (CanSelectNode(node)) {
+            accessible.push_back(node);
+        }
+    }
+
+    return accessible;
+}
+
+const char* MapScene::GetNodeTypeName(MapNodeType type)
+{
+    switch (type) {
+        case MapNodeType::START:    return "START";
+        case MapNodeType::COMBAT:   return "COMBAT";
+        case MapNodeType::ELITE:    return "ELITE";
+        case MapNodeType::SHOP:     return "SHOP";
+        case MapNodeType::TREASURE: return "TREASURE";
+        case MapNodeType::REST:     return "REST";
+        case MapNodeType::BOSS:     return "BOSS";
+        default:                    return "UNKNOWN";
+    }
 }
 
 // ============================================
@@ -433,7 +681,17 @@ void CombatScene::HandleCombatEnd()
         SDL_Log("Recompensa: %d moedas", mCombatManager->GetReward());
         SDL_Log("========================================\n");
         SDL_Delay(1000);
-        mGame->SetScene(new VictoryScene(mGame));
+
+        // Verificar se era o boss
+        MapNode* currentNode = mGame->GetCurrentMapNode();
+        if (currentNode && currentNode->GetType() == MapNodeType::BOSS) {
+            SDL_Log("🏆 VOCÊ DERROTOU O BOSS! JOGO COMPLETO! 🏆");
+            mGame->SetScene(new VictoryScene(mGame));
+        } else {
+            // Voltar para o mapa
+            SDL_Log("Voltando ao mapa...");
+            mGame->SetScene(new MapScene(mGame));
+        }
     }
     else
     {
