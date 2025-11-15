@@ -157,15 +157,24 @@ private:
     int mSelectedCardIndex;
     bool mKeyWasPressed;  // Para detectar single press
 
+    // Feedback visual do turno
+    bool mShowingCards;           // Se está mostrando as cartas no centro
+    float mCardDisplayTimer;      // Timer para mostrar as cartas
+    Card* mDisplayPlayerCard;     // Carta do player sendo mostrada
+    Card* mDisplayEnemyCard;      // Carta do enemy sendo mostrada
+    bool mPlayerWonLastTurn;      // Se o player venceu o último turno
+
     // Helper methods
     void CreateTestCombatants();
     void CreateVisualActors();
     void RenderCombatUI();
     void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
     void RenderCards();
+    void RenderCardDisplay();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
     void LogAvailableCards();
+    Vector3 GetCardColor(AttackType type);
 
     // Estado para controlar quando mostrar cartas
     bool mCardsShown;

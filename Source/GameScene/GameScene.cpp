@@ -501,6 +501,11 @@ CombatScene::CombatScene(Game* game)
     , mSelectedCardIndex(0)
     , mKeyWasPressed(false)
     , mCardsShown(false)
+    , mShowingCards(false)
+    , mCardDisplayTimer(0.0f)
+    , mDisplayPlayerCard(nullptr)
+    , mDisplayEnemyCard(nullptr)
+    , mPlayerWonLastTurn(false)
 {
 }
 
@@ -617,6 +622,28 @@ void CombatScene::Update(float deltaTime)
     if (!mCombatManager)
         return;
 
+    // Gerenciar exibição das cartas no centro
+    if (mShowingCards)
+    {
+        mCardDisplayTimer += deltaTime;
+
+        // Após 2.5 segundos, finalizar exibição e continuar o combate
+        if (mCardDisplayTimer >= 2.5f)
+        {
+            mShowingCards = false;
+            mCardDisplayTimer = 0.0f;
+
+            // Agora sim enviar a carta do player para o CombatManager
+            if (mDisplayPlayerCard)
+            {
+                mCombatManager->PlayerSelectCard(mDisplayPlayerCard);
+            }
+        }
+
+        // Não atualizar o combate enquanto mostra as cartas
+        return;
+    }
+
     // Guardar estado anterior para detectar mudanças
     static CombatState previousState = CombatState::WAITING_FOR_PLAYER;
     CombatState currentState = mCombatManager->GetCurrentState();
@@ -705,9 +732,146 @@ void CombatScene::RenderCombatUI()
         RenderHealthBar(enemyHPPos, mEnemy->GetHealth(), 15, true);
     }
 
-    // Renderizar cartas do player
-    if (mPlayer && mCombatManager && mCombatManager->GetCurrentState() == CombatState::WAITING_FOR_PLAYER) {
+    // Se está mostrando as cartas no centro, renderizar elas
+    if (mShowingCards) {
+        RenderCardDisplay();
+    }
+    // Senão, renderizar as cartas do player normalmente
+    else if (mPlayer && mCombatManager && mCombatManager->GetCurrentState() == CombatState::WAITING_FOR_PLAYER) {
         RenderCards();
+    }
+}
+
+Vector3 CombatScene::GetCardColor(AttackType type)
+{
+    switch (type) {
+        case AttackType::Fire:
+            return Vector3(1.0f, 0.2f, 0.2f); // Vermelho
+        case AttackType::Water:
+            return Vector3(0.2f, 0.4f, 1.0f); // Azul
+        case AttackType::Plant:
+            return Vector3(0.2f, 1.0f, 0.2f); // Verde
+        case AttackType::Neutral:
+            return Vector3(0.1f, 0.1f, 0.1f); // Preto/cinza escuro
+        default:
+            return Vector3(0.5f, 0.5f, 0.5f); // Cinza
+    }
+}
+
+void CombatScene::RenderCardDisplay()
+{
+    // Renderizar as duas cartas grandes no centro da tela
+    float cardWidth = 120.0f;
+    float cardHeight = 160.0f;
+    float spacing = 40.0f;
+    float centerY = 224.0f; // Centro vertical da tela
+
+    // Posições das cartas
+    float playerCardX = 320.0f - spacing - cardWidth / 2.0f;  // Esquerda do centro
+    float enemyCardX = 320.0f + spacing + cardWidth / 2.0f;   // Direita do centro
+
+    // Renderizar carta do Player (esquerda)
+    if (mDisplayPlayerCard) {
+        Vector2 playerCardPos(playerCardX, centerY);
+        Vector3 playerColor = GetCardColor(mDisplayPlayerCard->GetType());
+
+        // Brilho extra se venceu
+        if (mPlayerWonLastTurn) {
+            playerColor = playerColor * 1.3f; // Mais brilhante
+        }
+
+        // Carta
+        mGame->GetRenderer()->DrawRect(
+            playerCardPos,
+            Vector2(cardWidth, cardHeight),
+            0.0f,
+            playerColor,
+            Vector2::Zero,
+            RendererMode::TRIANGLES
+        );
+
+        // Borda (dourada se venceu, branca se não)
+        float borderThickness = 4.0f;
+        Vector3 borderColor = mPlayerWonLastTurn ?
+            Vector3(1.0f, 0.84f, 0.0f) :  // Dourado
+            Vector3(1.0f, 1.0f, 1.0f);     // Branco
+
+        // Top
+        mGame->GetRenderer()->DrawRect(
+            Vector2(playerCardX, centerY - (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Bottom
+        mGame->GetRenderer()->DrawRect(
+            Vector2(playerCardX, centerY + (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Left
+        mGame->GetRenderer()->DrawRect(
+            Vector2(playerCardX - (cardWidth + borderThickness)/2.0f, centerY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Right
+        mGame->GetRenderer()->DrawRect(
+            Vector2(playerCardX + (cardWidth + borderThickness)/2.0f, centerY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+    }
+
+    // Renderizar carta do Enemy (direita)
+    if (mDisplayEnemyCard) {
+        Vector2 enemyCardPos(enemyCardX, centerY);
+        Vector3 enemyColor = GetCardColor(mDisplayEnemyCard->GetType());
+
+        // Brilho extra se venceu
+        if (!mPlayerWonLastTurn) {
+            enemyColor = enemyColor * 1.3f; // Mais brilhante
+        }
+
+        // Carta
+        mGame->GetRenderer()->DrawRect(
+            enemyCardPos,
+            Vector2(cardWidth, cardHeight),
+            0.0f,
+            enemyColor,
+            Vector2::Zero,
+            RendererMode::TRIANGLES
+        );
+
+        // Borda (dourada se venceu, branca se não)
+        float borderThickness = 4.0f;
+        Vector3 borderColor = !mPlayerWonLastTurn ?
+            Vector3(1.0f, 0.84f, 0.0f) :  // Dourado
+            Vector3(1.0f, 1.0f, 1.0f);     // Branco
+
+        // Top
+        mGame->GetRenderer()->DrawRect(
+            Vector2(enemyCardX, centerY - (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Bottom
+        mGame->GetRenderer()->DrawRect(
+            Vector2(enemyCardX, centerY + (cardHeight + borderThickness)/2.0f),
+            Vector2(cardWidth + borderThickness * 2, borderThickness),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Left
+        mGame->GetRenderer()->DrawRect(
+            Vector2(enemyCardX - (cardWidth + borderThickness)/2.0f, centerY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
+        // Right
+        mGame->GetRenderer()->DrawRect(
+            Vector2(enemyCardX + (cardWidth + borderThickness)/2.0f, centerY),
+            Vector2(borderThickness, cardHeight + borderThickness * 2),
+            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        );
     }
 }
 
@@ -744,24 +908,8 @@ void CombatScene::RenderCards()
             // Carta em cooldown = cinza
             cardColor = Vector3(0.3f, 0.3f, 0.3f);
         } else {
-            // Cor baseada no tipo
-            switch (card->GetType()) {
-                case AttackType::Fire:
-                    cardColor = Vector3(1.0f, 0.2f, 0.2f); // Vermelho
-                    break;
-                case AttackType::Water:
-                    cardColor = Vector3(0.2f, 0.4f, 1.0f); // Azul
-                    break;
-                case AttackType::Plant:
-                    cardColor = Vector3(0.2f, 1.0f, 0.2f); // Verde
-                    break;
-                case AttackType::Neutral:
-                    cardColor = Vector3(0.1f, 0.1f, 0.1f); // Preto/cinza escuro
-                    break;
-                default:
-                    cardColor = Vector3(0.5f, 0.5f, 0.5f); // Cinza
-                    break;
-            }
+            // Usar função helper para obter cor
+            cardColor = GetCardColor(card->GetType());
         }
 
         // Renderizar carta
@@ -816,6 +964,10 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     if (mFadeAlpha > 0.0f)
         return;
 
+    // Bloquear inputs enquanto mostra as cartas no centro
+    if (mShowingCards)
+        return;
+
     // Só processar input se estiver esperando o jogador
     if (mCombatManager->GetCurrentState() != CombatState::WAITING_FOR_PLAYER)
         return;
@@ -846,7 +998,37 @@ void CombatScene::ProcessInput(const Uint8* keyState)
                     selectedCard->GetName().c_str(),
                     GetTypeName(selectedCard->GetType()),
                     selectedCard->GetDamage());
-            mCombatManager->PlayerSelectCard(selectedCard);
+
+            // Ao invés de chamar PlayerSelectCard imediatamente,
+            // ativar o modo de exibição de cartas
+            mDisplayPlayerCard = selectedCard;
+            mDisplayEnemyCard = mEnemy->SelectCard(); // Enemy seleciona sua carta
+            mShowingCards = true;
+            mCardDisplayTimer = 0.0f;
+
+            // Determinar quem venceu usando a mesma lógica de Card::Fight
+            if (mDisplayEnemyCard) {
+                // Primeiro verificar vantagem de tipo
+                bool playerHasAdvantage = mDisplayPlayerCard->HasTypeAdvantageOver(mDisplayEnemyCard);
+                bool enemyHasAdvantage = mDisplayEnemyCard->HasTypeAdvantageOver(mDisplayPlayerCard);
+
+                if (playerHasAdvantage) {
+                    mPlayerWonLastTurn = true;
+                } else if (enemyHasAdvantage) {
+                    mPlayerWonLastTurn = false;
+                } else {
+                    // Sem vantagem de tipo, comparar dano
+                    mPlayerWonLastTurn = (mDisplayPlayerCard->GetDamage() >= mDisplayEnemyCard->GetDamage());
+                }
+            } else {
+                mPlayerWonLastTurn = true;
+            }
+
+            SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
+                    mDisplayEnemyCard ? mDisplayEnemyCard->GetName().c_str() : "None",
+                    mDisplayEnemyCard ? GetTypeName(mDisplayEnemyCard->GetType()) : "None",
+                    mDisplayEnemyCard ? mDisplayEnemyCard->GetDamage() : 0);
+
             mKeyWasPressed = true;
         }
         else
