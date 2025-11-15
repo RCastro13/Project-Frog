@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------
 // From Game Programming in C++ by Sanjay Madhav
 // Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-// 
+//
 // Released under the BSD License
 // See LICENSE in root directory for full details.
 // ----------------------------------------------------------------
@@ -32,7 +32,8 @@ Game::Game()
         ,mMario(nullptr)
         ,mLevelData(nullptr)
         ,mIsPaused(false)
-        //,mGameState(nullptr)
+        ,mCurrentScene(nullptr)
+        ,mPendingScene(nullptr)
 {
 
 }
@@ -58,8 +59,11 @@ bool Game::Initialize()
     mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     // Init all game actors
-    // mGameState  = GameScene::MainGame; // TODO
     InitializeActors();
+
+    // Iniciar com a cena do menu principal
+    mCurrentScene = new MainMenuScene(this);
+    mCurrentScene->Enter();
 
     mTicksCount = SDL_GetTicks();
 
@@ -72,6 +76,8 @@ void Game::InitializeActors()
 
 int **Game::LoadLevel(const std::string& fileName, int width, int height)
 {
+    // TODO: Implementar carregamento de nível
+    return nullptr;
 }
 
 void Game::BuildLevel(int** levelData, int width, int height)
@@ -120,6 +126,13 @@ void Game::ProcessInput()
     const Uint8* state = SDL_GetKeyboardState(nullptr);
 
     if (!mIsPaused) {
+        // Process input da cena atual
+        if (mCurrentScene)
+        {
+            mCurrentScene->ProcessInput(state);
+        }
+
+        // Process input dos atores (mantido para compatibilidade)
         for (auto actor : mActors)
         {
             actor->ProcessInput(state);
@@ -129,6 +142,25 @@ void Game::ProcessInput()
 
 void Game::UpdateGame(float deltaTime)
 {
+    // Troca de cena pendente
+    if (mPendingScene)
+    {
+        if (mCurrentScene)
+        {
+            mCurrentScene->Exit();
+            delete mCurrentScene;
+        }
+        mCurrentScene = mPendingScene;
+        mCurrentScene->Enter();
+        mPendingScene = nullptr;
+    }
+
+    // Update da cena atual
+    if (mCurrentScene && !mIsPaused)
+    {
+        mCurrentScene->Update(deltaTime);
+    }
+
     // Update all actors and pending actors
     if (!mIsPaused) {
         UpdateActors(deltaTime);
@@ -138,17 +170,13 @@ void Game::UpdateGame(float deltaTime)
     UpdateCamera();
 }
 
-/*
-void Game::Update(GameScene *gameState) {
-    // TODO
+void Game::SetScene(GameScene* scene)
+{
+    // Não trocar imediatamente para evitar problemas
+    // A troca será feita no início do próximo frame
+    mPendingScene = scene;
+    SDL_Log("Scene change requested to: %s", scene->GetName());
 }
-
-void Game::SetScene(GameScene *gameState) {
-    mGameState->Exit(); // Unload current Data
-    mGameState = gameState;
-    mGameState->Enter(); // Load new data
-}
-*/
 
 void Game::UpdateActors(float deltaTime)
 {
@@ -266,6 +294,20 @@ void Game::GenerateOutput()
 
 void Game::Shutdown()
 {
+    // Limpar cenas
+    if (mCurrentScene)
+    {
+        mCurrentScene->Exit();
+        delete mCurrentScene;
+        mCurrentScene = nullptr;
+    }
+    if (mPendingScene)
+    {
+        delete mPendingScene;
+        mPendingScene = nullptr;
+    }
+
+    // Limpar atores
     while (!mActors.empty()) {
         delete mActors.back();
     }

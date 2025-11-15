@@ -37,6 +37,9 @@ public:
     void Clear();
     void Present();
 
+    // Define a cor de fundo (RGB entre 0.0 e 1.0)
+    void SetClearColor(float r, float g, float b, float a = 1.0f);
+
     // Getters
     class Texture* GetTexture(const std::string& fileName);
 	class Shader* GetBaseShader() const { return mBaseShader; }
