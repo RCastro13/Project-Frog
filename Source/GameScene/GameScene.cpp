@@ -228,14 +228,6 @@ void CombatScene::Enter()
     // Criar combatentes e iniciar combate
     CreateTestCombatants();
 
-    // TODO (Facundo): Carregar background de combate
-    // TODO (Facundo): Criar player e inimigo
-    // TODO (Facundo): Criar cartas do player
-    // TODO (Facundo): Iniciar sistema de turnos
-    // TODO (Facundo): Carregar música de combate
-    // Criar combatentes e iniciar combate
-    CreateTestCombatants();
-
     // Criar atores visuais
     CreateVisualActors();
 

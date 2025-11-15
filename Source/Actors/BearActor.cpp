@@ -11,8 +11,8 @@ BearActor::BearActor(Game* game)
     // Criar AnimatorComponent com as sprites do urso
     // Sprites são 24x24, vamos escalar para 96x96 (4x)
     mAnimator = new AnimatorComponent(this,
-        "Assets/Enemies/Bear/Bear.png",
-        "Assets/Enemies/Bear/Bear.json",
+        "../Assets/Enemies/Bear/Bear.png",
+        "../Assets/Enemies/Bear/Bear.json",
         96, 96, 100);
 
     // Definir animações (usando frames disponíveis no JSON)

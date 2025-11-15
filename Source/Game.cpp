@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include "Renderer/Shader.h"
+#include "GameScene/GameScene.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -65,8 +66,8 @@ bool Game::Initialize()
     // Init all game actors
     InitializeActors();
 
-    // Iniciar com a cena do menu principal
-    mCurrentScene = new MainMenuScene(this);
+    // Iniciar diretamente com a cena de combate (para testes)
+    mCurrentScene = new CombatScene(this);
     mCurrentScene->Enter();
 
     mTicksCount = SDL_GetTicks();

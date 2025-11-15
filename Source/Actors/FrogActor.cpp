@@ -11,8 +11,8 @@ FrogActor::FrogActor(Game* game)
     // Criar AnimatorComponent com as sprites do sapo
     // Sprites são 24x24, vamos escalar para 96x96 (4x)
     mAnimator = new AnimatorComponent(this,
-        "Assets/Frog/Frog.png",
-        "Assets/Frog/Frog.json",
+        "../Assets/Frog/Frog.png",
+        "../Assets/Frog/Frog.json",
         96, 96, 100);
 
     // Definir animações (usando frames disponíveis no JSON)
