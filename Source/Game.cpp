@@ -56,7 +56,11 @@ bool Game::Initialize()
     }
 
     mRenderer = new Renderer(mWindow);
-    mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    if (!mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT))
+    {
+        SDL_Log("Failed to initialize renderer");
+        return false;
+    }
 
     // Init all game actors
     InitializeActors();

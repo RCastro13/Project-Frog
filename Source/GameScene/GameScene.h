@@ -108,12 +108,17 @@ private:
     Player* mPlayer;
     Enemy* mEnemy;
 
+    // Atores visuais
+    class FrogActor* mFrogActor;
+    class BearActor* mBearActor;
+
     // UI - Seleção de cartas
     int mSelectedCardIndex;
     bool mKeyWasPressed;  // Para detectar single press
 
     // Helper methods
     void CreateTestCombatants();
+    void CreateVisualActors();
     void RenderCombatUI();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);

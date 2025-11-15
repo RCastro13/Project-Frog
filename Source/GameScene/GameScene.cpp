@@ -8,6 +8,8 @@
 #include "../Combat/Card.h"
 #include "../Actors/Player.h"
 #include "../Actors/Enemy.h"
+#include "../Actors/FrogActor.h"
+#include "../Actors/BearActor.h"
 #include <SDL.h>
 #include <SDL_log.h>
 
@@ -200,6 +202,8 @@ CombatScene::CombatScene(Game* game)
     , mCombatManager(nullptr)
     , mPlayer(nullptr)
     , mEnemy(nullptr)
+    , mFrogActor(nullptr)
+    , mBearActor(nullptr)
     , mSelectedCardIndex(0)
     , mKeyWasPressed(false)
     , mCardsShown(false)
@@ -223,6 +227,17 @@ void CombatScene::Enter()
 
     // Criar combatentes e iniciar combate
     CreateTestCombatants();
+
+    // TODO (Facundo): Carregar background de combate
+    // TODO (Facundo): Criar player e inimigo
+    // TODO (Facundo): Criar cartas do player
+    // TODO (Facundo): Iniciar sistema de turnos
+    // TODO (Facundo): Carregar música de combate
+    // Criar combatentes e iniciar combate
+    CreateTestCombatants();
+
+    // Criar atores visuais
+    CreateVisualActors();
 
     SDL_Log("\n========================================");
     SDL_Log("       COMBATE INICIADO");
@@ -267,16 +282,47 @@ void CombatScene::CreateTestCombatants()
     mSelectedCardIndex = 0;
 }
 
+void CombatScene::CreateVisualActors()
+{
+    // Criar sapo (player) à esquerda
+    mFrogActor = new FrogActor(mGame);
+    mFrogActor->SetPosition(Vector2(150.0f, 224.0f)); // Esquerda, centro vertical
+    mFrogActor->SetScale(Vector2(1.0f, 1.0f));
+
+    SDL_Log("FrogActor criado na posição (%.1f, %.1f)",
+            mFrogActor->GetPosition().x, mFrogActor->GetPosition().y);
+
+    // Criar urso (inimigo) à direita
+    mBearActor = new BearActor(mGame);
+    mBearActor->SetPosition(Vector2(490.0f, 224.0f)); // Direita, centro vertical
+    mBearActor->SetScale(Vector2(-1.0f, 1.0f)); // Inverter horizontalmente (olhar para a esquerda)
+
+    SDL_Log("BearActor criado na posição (%.1f, %.1f)",
+            mBearActor->GetPosition().x, mBearActor->GetPosition().y);
+}
+
 void CombatScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
 
+    // TODO (Facundo): Atualizar sistema de combate
+    // TODO (Facundo): Atualizar animações
+    // TODO (Facundo): Verificar condições de vitória/derrota
     if (!mCombatManager)
         return;
 
     // Guardar estado anterior para detectar mudanças
     static CombatState previousState = CombatState::WAITING_FOR_PLAYER;
     CombatState currentState = mCombatManager->GetCurrentState();
+
+    // Detectar quando começa a resolver combate (tocar animações de ataque)
+    if (previousState != CombatState::RESOLVING_COMBAT &&
+        currentState == CombatState::RESOLVING_COMBAT)
+    {
+        // Ambos atacam ao mesmo tempo
+        if (mFrogActor) mFrogActor->PlayAttack();
+        if (mBearActor) mBearActor->PlayAttack();
+    }
 
     // Atualizar o gerenciador de combate
     mCombatManager->Update();
@@ -292,6 +338,10 @@ void CombatScene::Update(float deltaTime)
 
         // Reset flag para mostrar cartas novamente
         mCardsShown = false;
+
+        // Voltar para idle após o turno
+        if (mFrogActor) mFrogActor->PlayIdle();
+        if (mBearActor) mBearActor->PlayIdle();
     }
 
     // Mostrar cartas disponíveis quando estiver esperando o player
@@ -449,6 +499,22 @@ void CombatScene::HandleCombatEnd()
 void CombatScene::Exit()
 {
     SDL_Log("Exiting CombatScene");
+
+    // TODO (Facundo): Limpar recursos do combate
+    // TODO (Facundo): Deletar inimigo
+    // TODO (Facundo): Parar música de combate
+    // Limpar atores visuais
+    if (mFrogActor)
+    {
+        mFrogActor->SetState(ActorState::Destroy);
+        mFrogActor = nullptr;
+    }
+
+    if (mBearActor)
+    {
+        mBearActor->SetState(ActorState::Destroy);
+        mBearActor = nullptr;
+    }
 
     // Limpar recursos
     if (mCombatManager)
