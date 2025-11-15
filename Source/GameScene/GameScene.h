@@ -40,7 +40,10 @@ public:
     // Chamado a cada frame enquanto a cena está ativa
     virtual void Update(float deltaTime) = 0;
 
-    // Chamado durante a renderização
+    // Chamado durante a renderização (ANTES dos actors - para backgrounds)
+    virtual void RenderBackground() {}
+
+    // Chamado durante a renderização (DEPOIS dos actors - para UI)
     virtual void Render() {}
 
     // Chamado quando o jogador pressiona teclas
@@ -123,6 +126,7 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void RenderBackground() override;
     void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
@@ -139,6 +143,9 @@ private:
     // Atores visuais
     class FrogActor* mFrogActor;
     class BearActor* mBearActor;
+
+    // Background
+    class Texture* mBackgroundTexture;
 
     // UI - Seleção de cartas
     int mSelectedCardIndex;

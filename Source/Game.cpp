@@ -280,6 +280,12 @@ void Game::GenerateOutput()
     // Clear back buffer
     mRenderer->Clear();
 
+    // Render scene background (ANTES dos actors)
+    if (mCurrentScene)
+    {
+        mCurrentScene->RenderBackground();
+    }
+
     for (auto drawable : mDrawables)
     {
         drawable->Draw(mRenderer);
@@ -294,7 +300,7 @@ void Game::GenerateOutput()
         }
     }
 
-    // Render scene UI
+    // Render scene UI (DEPOIS dos actors)
     if (mCurrentScene)
     {
         mCurrentScene->Render();

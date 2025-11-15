@@ -12,6 +12,9 @@
 #include "../Actors/BearActor.h"
 #include "../Map/MapNode.h"
 #include "../Map/MapGenerator.h"
+#include "../Random.h"
+#include "../Renderer/Texture.h"
+#include "../Renderer/Renderer.h"
 #include <SDL.h>
 #include <SDL_log.h>
 #include <algorithm>
@@ -452,6 +455,7 @@ CombatScene::CombatScene(Game* game)
     , mEnemy(nullptr)
     , mFrogActor(nullptr)
     , mBearActor(nullptr)
+    , mBackgroundTexture(nullptr)
     , mSelectedCardIndex(0)
     , mKeyWasPressed(false)
     , mCardsShown(false)
@@ -470,8 +474,25 @@ void CombatScene::Enter()
     // Atualizar título da janela
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [Setas=Selecionar Enter=Confirmar]");
 
-    // Cor de fundo: Vermelho escuro (tema batalha)
-    mGame->GetRenderer()->SetClearColor(0.5f, 0.2f, 0.2f, 1.0f);
+    // Selecionar background aleatório
+    const char* backgroundFiles[] = {
+        "../Assets/Background/Combat/Background_camada_0_01.png",
+        "../Assets/Background/Combat/Background_camada_0_05.png",
+        "../Assets/Background/Combat/Background_camada_0_06.png",
+        "../Assets/Background/Combat/Background_camada_0_07.png"
+    };
+
+    int randomIndex = Random::GetIntRange(0, 3);
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
+
+    if (mBackgroundTexture) {
+        SDL_Log("Background de combate carregado: %s", backgroundFiles[randomIndex]);
+    } else {
+        SDL_Log("ERRO: Falha ao carregar background de combate");
+    }
+
+    // Cor de fundo: Preto (será coberto pelo background)
+    mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     // Criar combatentes e iniciar combate
     CreateTestCombatants();
@@ -597,6 +618,23 @@ void CombatScene::Update(float deltaTime)
     if (mCombatManager->IsCombatEnded())
     {
         HandleCombatEnd();
+    }
+}
+
+void CombatScene::RenderBackground()
+{
+    // Renderizar background primeiro (se carregado)
+    if (mBackgroundTexture) {
+        // Renderizar background na tela inteira (640x448)
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f), // Centro da tela
+            Vector2(640.0f, 448.0f), // Tamanho da tela
+            0.0f,                     // Sem rotação
+            Vector3(1.0f, 1.0f, 1.0f), // Cor branca (sem tint)
+            mBackgroundTexture,
+            Vector4::UnitRect,        // Textura completa
+            Vector2::Zero             // Sem offset de câmera
+        );
     }
 }
 
@@ -855,6 +893,9 @@ void CombatScene::Exit()
         mBearActor->SetState(ActorState::Destroy);
         mBearActor = nullptr;
     }
+
+    // Limpar background (o Renderer gerencia a memória da textura)
+    mBackgroundTexture = nullptr;
 
     // Limpar recursos
     if (mCombatManager)
