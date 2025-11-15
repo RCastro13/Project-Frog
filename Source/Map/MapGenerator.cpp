@@ -140,17 +140,17 @@ void MapGenerator::CalculateNodePositions(std::vector<MapNode*>& nodes, int scre
         maxLayer = Math::Max(maxLayer, node->GetLayer());
     }
 
-    // Calcular posições
-    float marginX = 60.0f;
-    float marginY = 60.0f;
-    float usableWidth = screenWidth - 2 * marginX;
+    // Calcular posições com mais espaçamento
+    float marginX = 100.0f;  // Aumentado de 60 para 100
+    float marginY = 80.0f;   // Aumentado de 60 para 80
+    float usableWidth = (screenWidth * 1.5f) - 2 * marginX;  // Mapa mais largo
     float usableHeight = screenHeight - 2 * marginY;
 
     for (auto& [layer, layerNodes] : nodesByLayer) {
-        // X baseado na camada (esquerda -> direita)
-        float x = marginX + (usableWidth / maxLayer) * layer;
+        // X baseado na camada (esquerda -> direita) com mais espaçamento
+        float x = marginX + (usableWidth / Math::Max(1, maxLayer)) * layer;
 
-        // Y distribuído uniformemente entre os nós da camada
+        // Y distribuído uniformemente entre os nós da camada com mais espaçamento
         float spacing = usableHeight / ((float)layerNodes.size() + 1);
 
         for (size_t i = 0; i < layerNodes.size(); i++) {

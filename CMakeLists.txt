@@ -4,13 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
-# Configurar Homebrew paths para macOS (Apple Silicon)
-if(APPLE)
-    set(CMAKE_PREFIX_PATH "/opt/homebrew;${CMAKE_PREFIX_PATH}")
-    list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/glew")
-endif()
 
-find_package(SDL2 CONFIG REQUIRED)
+find_package(SDL2 2.32.2 EXACT REQUIRED)
 find_package(SDL2_image REQUIRED)
 
 set(GLEW_ROOT "C:/Program Files/GLEW")
@@ -24,8 +19,6 @@ include_directories(
         ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
 )
-find_package(GLEW REQUIRED)
-find_package(OpenGL REQUIRED)
 
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
@@ -93,11 +86,12 @@ add_executable(${PROJECT_NAME}
         Source/Actors/BearActor.cpp
 )
 
-# Link libraries
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    GLEW::GLEW
-    OpenGL::GL
-    $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
-    $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-    $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
+# Libs
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        ${GLEW_LIBRARIES}
+        SDL2::SDL2main
+        SDL2_image::SDL2_image
+        SDL2::SDL2
+        opengl32
 )

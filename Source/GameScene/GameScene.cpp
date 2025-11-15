@@ -163,14 +163,17 @@ MapScene::MapScene(Game* game)
     , mCurrentNode(nullptr)
     , mSelectedNode(nullptr)
     , mSelectedIndex(0)
+    , mCameraPosition(Vector2::Zero)
 {
 }
 
 MapScene::~MapScene()
 {
     // Não deletar os nós - eles pertencem ao Game
-    // Apenas limpar a lista de referências
+    // Apenas limpar a lista de referências e ícones
     mMapNodes.clear();
+    mNodeIcons.clear();
+    mAvailableIcons.clear();
 }
 
 void MapScene::Enter()
@@ -209,6 +212,18 @@ void MapScene::Enter()
         mSelectedIndex = 0;
     }
 
+    // Carregar ícones disponíveis e atribuir aos nós (só se ainda não foram atribuídos)
+    LoadAvailableIcons();
+    if (mNodeIcons.empty() || mNodeIcons.size() != mMapNodes.size()) {
+        AssignIconsToNodes();
+    }
+
+    // Inicializar posição da câmera para centralizar no nó inicial
+    if (mCurrentNode) {
+        Vector2 startPos = mCurrentNode->GetPosition();
+        mCameraPosition = Vector2(startPos.x - 320.0f, 0.0f); // Centralizar horizontalmente (640/2)
+    }
+
     SDL_Log("Mapa carregado com %d nós", (int)mMapNodes.size());
     SDL_Log("Nó atual: %d", mCurrentNode ? mCurrentNode->GetID() : -1);
 }
@@ -219,9 +234,17 @@ void MapScene::Update(float deltaTime)
 
     // Atualizar fade in
     UpdateFade(deltaTime);
-
-    // Renderizar o mapa (chamado pelo renderer do Game)
-    RenderMap();
+    
+    // Atualizar scrolling com deltaTime correto
+    const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+    static const float scrollSpeed = 300.0f; // pixels por segundo
+    
+    if (keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) {
+        mCameraPosition.x -= scrollSpeed * deltaTime;
+    }
+    if (keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) {
+        mCameraPosition.x += scrollSpeed * deltaTime;
+    }
 }
 
 void MapScene::ProcessInput(const Uint8* keyState)
@@ -233,6 +256,8 @@ void MapScene::ProcessInput(const Uint8* keyState)
     static bool upWasPressed = false;
     static bool downWasPressed = false;
     static bool enterWasPressed = false;
+
+    // Scrolling é feito no Update() com deltaTime correto
 
     // Navegar para cima
     if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
@@ -275,6 +300,12 @@ void MapScene::SetCurrentNode(MapNode* node)
     }
 }
 
+void MapScene::RenderBackground()
+{
+    // Renderizar o mapa completo
+    RenderMap();
+}
+
 void MapScene::RenderMap()
 {
     // Renderizar conexões primeiro (para ficarem atrás dos nós)
@@ -289,30 +320,79 @@ void MapScene::RenderMap()
 void MapScene::RenderNode(MapNode* node)
 {
     Vector2 pos = node->GetPosition();
-    float size = 32.0f;
+    float size = 48.0f;  // Tamanho maior para os ícones
 
-    // Determinar cor baseada no estado
-    Vector3 color = Vector3(0.5f, 0.5f, 0.5f); // Cinza (bloqueado)
-
-    if (node->IsCompleted()) {
-        color = Vector3(0.0f, 1.0f, 0.0f); // Verde (completo)
-    } else if (node == mCurrentNode) {
-        color = Vector3(0.0f, 0.5f, 1.0f); // Azul (atual)
-    } else if (node == mSelectedNode) {
-        color = Vector3(1.0f, 1.0f, 0.0f); // Amarelo (selecionado)
-    } else if (node->IsAccessible()) {
-        color = Vector3(1.0f, 1.0f, 1.0f); // Branco (acessível)
+    // Determinar qual pasta de ícones usar baseado no estado
+    std::string iconFolder = "White";
+    if (node == mCurrentNode) {
+        iconFolder = "Green";  // Nó atual = VERDE
+    } else if (node->IsCompleted()) {
+        iconFolder = "Red";    // Nós completados = VERMELHO
+    } else {
+        iconFolder = "White";  // Outros = BRANCO
     }
 
-    // Desenhar quadrado representando o nó
-    mGame->GetRenderer()->DrawRect(
-        pos,
-        Vector2(size, size),
-        0.0f,
-        color,
-        Vector2::Zero,
-        RendererMode::TRIANGLES
-    );
+    // Obter o caminho do ícone baseado no tipo e pasta de cor
+    std::string iconName = GetIconPathForNodeType(node->GetType());
+    // Substituir "White" pela pasta correta
+    size_t posWhite = iconName.find("/White/");
+    if (posWhite != std::string::npos) {
+        iconName.replace(posWhite, 7, "/" + iconFolder + "/");
+    }
+
+    // Carregar a textura do ícone com a cor correta
+    Texture* iconTexture = mGame->GetRenderer()->GetTexture(iconName);
+    
+    // Se não encontrou na pasta de cor, tentar White como fallback
+    if (!iconTexture) {
+        std::string fallbackPath = GetIconPathForNodeType(node->GetType());
+        iconTexture = mGame->GetRenderer()->GetTexture(fallbackPath);
+    }
+
+    // Determinar cor para tint (usar branco para manter cores originais dos ícones)
+    Vector3 color = Vector3(1.0f, 1.0f, 1.0f);
+
+    // Desenhar highlight para nó selecionado (borda pulsante)
+    if (node == mSelectedNode && node != mCurrentNode) {
+        // Efeito pulsante baseado no tempo
+        float pulse = 0.5f + 0.3f * Math::Sin(mStateTime * 4.0f); // Pulsa entre 0.5 e 0.8
+        float highlightSize = size + 12.0f * pulse;
+        
+        // Desenhar borda amarela ao redor do nó selecionado
+        mGame->GetRenderer()->DrawRect(
+            pos,
+            Vector2(highlightSize, highlightSize),
+            0.0f,
+            Vector3(1.0f, 1.0f, 0.0f), // Amarelo para highlight
+            mCameraPosition,
+            RendererMode::TRIANGLES
+        );
+    }
+
+    if (iconTexture) {
+        // Desenhar ícone (usando posição da câmera para scrolling)
+        mGame->GetRenderer()->DrawTexture(
+            pos,
+            Vector2(size, size),
+            0.0f,
+            color,
+            iconTexture,
+            Vector4::UnitRect,
+            mCameraPosition,
+            false,
+            1.0f
+        );
+    } else {
+        // Fallback: desenhar quadrado se não houver ícone
+        mGame->GetRenderer()->DrawRect(
+            pos,
+            Vector2(size, size),
+            0.0f,
+            color,
+            mCameraPosition,
+            RendererMode::TRIANGLES
+        );
+    }
 
     // Log informativo quando renderizar pela primeira vez
     static bool firstRender = true;
@@ -353,7 +433,7 @@ void MapScene::RenderConnections()
                 Vector2(length, 2.0f),
                 angle,
                 lineColor,
-                Vector2::Zero,
+                mCameraPosition,
                 RendererMode::TRIANGLES
             );
         }
@@ -470,6 +550,57 @@ std::vector<MapNode*> MapScene::GetAccessibleNodes()
     }
 
     return accessible;
+}
+
+void MapScene::LoadAvailableIcons()
+{
+    // Não precisa mais carregar lista aleatória - cada tipo terá seu ícone específico
+    // Esta função agora apenas inicializa o sistema de ícones
+    SDL_Log("Sistema de ícones por tipo inicializado");
+}
+
+std::string MapScene::GetIconPathForNodeType(MapNodeType type)
+{
+    // Mapear cada tipo de nó para um ícone específico
+    switch (type) {
+        case MapNodeType::START:
+            return "../Assets/Icons/White/icon_flag.png";
+        case MapNodeType::COMBAT:
+            return "../Assets/Icons/White/icon_sword.png";
+        case MapNodeType::ELITE:
+            return "../Assets/Icons/White/icon_skull.png";
+        case MapNodeType::SHOP:
+            return "../Assets/Icons/White/icon_coin.png";
+        case MapNodeType::TREASURE:
+            return "../Assets/Icons/White/icon_chest.png";
+        case MapNodeType::REST:
+            return "../Assets/Icons/White/icon_heart.png";
+        case MapNodeType::BOSS:
+            return "../Assets/Icons/White/icon_trophy.png";
+        default:
+            return "../Assets/Icons/White/icon_circle.png";
+    }
+}
+
+void MapScene::AssignIconsToNodes()
+{
+    // Limpar ícones anteriores se houver
+    mNodeIcons.clear();
+
+    // Atribuir ícone específico baseado no tipo de cada nó
+    for (MapNode* node : mMapNodes) {
+        std::string iconPath = GetIconPathForNodeType(node->GetType());
+
+        // Carregar a textura através do renderer
+        Texture* iconTexture = mGame->GetRenderer()->GetTexture(iconPath);
+        if (iconTexture) {
+            mNodeIcons[node] = iconTexture;
+        } else {
+            SDL_Log("AVISO: Falha ao carregar ícone: %s", iconPath.c_str());
+        }
+    }
+
+    SDL_Log("Atribuídos ícones a %d nós", (int)mNodeIcons.size());
 }
 
 const char* MapScene::GetNodeTypeName(MapNodeType type)

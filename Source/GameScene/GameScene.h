@@ -5,6 +5,8 @@
 #pragma once
 #include <SDL_stdinc.h>
 #include <vector>
+#include <map>
+#include <string>
 #include "../Math.h"
 
 // Forward declarations
@@ -96,6 +98,7 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void RenderBackground() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
 
@@ -111,6 +114,13 @@ private:
     class MapNode* mCurrentNode;
     class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
     int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
+    
+    // Camera/Scrolling
+    Vector2 mCameraPosition;      // Posição da câmera para scrolling
+    
+    // Icon management
+    std::vector<std::string> mAvailableIcons;  // Lista de caminhos de ícones disponíveis
+    std::map<class MapNode*, class Texture*> mNodeIcons;  // Mapeia cada nó para sua textura de ícone
 
     // Helper methods
     void RenderMap();
@@ -122,6 +132,9 @@ private:
     bool CanSelectNode(class MapNode* node);
     std::vector<class MapNode*> GetAccessibleNodes();
     const char* GetNodeTypeName(MapNodeType type);
+    void LoadAvailableIcons();
+    void AssignIconsToNodes();
+    std::string GetIconPathForNodeType(MapNodeType type);
 };
 
 class CombatScene : public GameScene
