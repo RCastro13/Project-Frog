@@ -9,7 +9,7 @@ struct MapConfig {
     int minNodesPerLayer = 3;    // Mínimo de nós por camada
     int maxNodesPerLayer = 4;    // Máximo de nós por camada
     int minPathsPerNode = 1;     // Mínimo de caminhos saindo de cada nó
-    int maxPathsPerNode = 2;     // Máximo de caminhos saindo de cada nó
+    int maxPathsPerNode = 1;     // Máximo de caminhos saindo de cada nó (reduzido para menos densidade)
 
     // Probabilidades de cada tipo (soma deve ser ~1.0)
     float combatChance = 0.50f;
