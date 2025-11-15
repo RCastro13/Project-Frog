@@ -71,6 +71,11 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Map/MapNodeType.h
+        Source/Map/MapNode.h
+        Source/Map/MapNode.cpp
+        Source/Map/MapGenerator.h
+        Source/Map/MapGenerator.cpp
         Source/Combat/Card.h
         Source/Combat/Card.cpp
         Source/Actors/Combatant.h
