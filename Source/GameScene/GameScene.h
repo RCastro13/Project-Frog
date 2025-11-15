@@ -5,6 +5,7 @@
 #pragma once
 #include <SDL_stdinc.h>
 #include <vector>
+#include "../Math.h"
 
 // Forward declarations
 class Game;
@@ -38,6 +39,9 @@ public:
 
     // Chamado a cada frame enquanto a cena está ativa
     virtual void Update(float deltaTime) = 0;
+
+    // Chamado durante a renderização
+    virtual void Render() {}
 
     // Chamado quando o jogador pressiona teclas
     virtual void ProcessInput(const Uint8* keyState) = 0;
@@ -119,6 +123,7 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
 
@@ -143,6 +148,7 @@ private:
     void CreateTestCombatants();
     void CreateVisualActors();
     void RenderCombatUI();
+    void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
     void LogAvailableCards();

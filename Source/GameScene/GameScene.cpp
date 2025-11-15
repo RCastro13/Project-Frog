@@ -600,10 +600,27 @@ void CombatScene::Update(float deltaTime)
     }
 }
 
+void CombatScene::Render()
+{
+    // Renderizar UI do combate (barras de HP, etc)
+    RenderCombatUI();
+}
+
 void CombatScene::RenderCombatUI()
 {
     // TODO (Rubens): Adicionar renderização visual com sprites/texto na tela
     // Por enquanto, mantemos apenas os logs essenciais
+
+    // Renderizar barras de HP
+    if (mPlayer && mEnemy) {
+        // Barra do Player (em cima do FrogActor)
+        Vector2 playerHPPos = Vector2(150.0f, 160.0f);
+        RenderHealthBar(playerHPPos, mPlayer->GetHealth(), 20, false);
+
+        // Barra do Enemy (em cima do BearActor)
+        Vector2 enemyHPPos = Vector2(490.0f, 160.0f);
+        RenderHealthBar(enemyHPPos, mEnemy->GetHealth(), 15, true);
+    }
 }
 
 void CombatScene::ProcessInput(const Uint8* keyState)
@@ -711,6 +728,79 @@ const char* CombatScene::GetTypeName(AttackType type)
         case AttackType::Neutral: return "⚪ Neutral";
         default:                  return "Unknown";
     }
+}
+
+void CombatScene::RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy)
+{
+    // Dimensões da barra (maior para ser mais visível)
+    float barWidth = 120.0f;
+    float barHeight = 12.0f;
+
+    // Calcular porcentagem de HP
+    float hpPercent = (float)currentHP / (float)maxHP;
+    float currentBarWidth = barWidth * hpPercent;
+
+    // Cor da barra baseada na porcentagem
+    Vector3 hpColor;
+    if (hpPercent > 0.6f) {
+        hpColor = Vector3(0.2f, 1.0f, 0.2f); // Verde brilhante
+    } else if (hpPercent > 0.3f) {
+        hpColor = Vector3(1.0f, 1.0f, 0.0f); // Amarelo
+    } else {
+        hpColor = Vector3(1.0f, 0.2f, 0.2f); // Vermelho brilhante
+    }
+
+    // Fundo da barra (cinza escuro/preto)
+    mGame->GetRenderer()->DrawRect(
+        position,
+        Vector2(barWidth, barHeight),
+        0.0f,
+        Vector3(0.15f, 0.15f, 0.15f),
+        Vector2::Zero,
+        RendererMode::TRIANGLES
+    );
+
+    // Barra de HP preenchida (ajustar posição X para alinhar à esquerda)
+    if (currentHP > 0) {
+        float xOffset = -(barWidth - currentBarWidth) / 2.0f;
+        mGame->GetRenderer()->DrawRect(
+            Vector2(position.x + xOffset, position.y),
+            Vector2(currentBarWidth, barHeight),
+            0.0f,
+            hpColor,
+            Vector2::Zero,
+            RendererMode::TRIANGLES
+        );
+    }
+
+    // Borda branca (mais grossa)
+    float borderThickness = 2.0f;
+    Vector3 borderColor = Vector3(1.0f, 1.0f, 1.0f);
+
+    // Top
+    mGame->GetRenderer()->DrawRect(
+        Vector2(position.x, position.y - (barHeight + borderThickness)/2.0f),
+        Vector2(barWidth + borderThickness * 2, borderThickness),
+        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+    );
+    // Bottom
+    mGame->GetRenderer()->DrawRect(
+        Vector2(position.x, position.y + (barHeight + borderThickness)/2.0f),
+        Vector2(barWidth + borderThickness * 2, borderThickness),
+        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+    );
+    // Left
+    mGame->GetRenderer()->DrawRect(
+        Vector2(position.x - (barWidth + borderThickness)/2.0f, position.y),
+        Vector2(borderThickness, barHeight + borderThickness * 2),
+        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+    );
+    // Right
+    mGame->GetRenderer()->DrawRect(
+        Vector2(position.x + (barWidth + borderThickness)/2.0f, position.y),
+        Vector2(borderThickness, barHeight + borderThickness * 2),
+        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+    );
 }
 
 void CombatScene::HandleCombatEnd()

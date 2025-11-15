@@ -294,6 +294,12 @@ void Game::GenerateOutput()
         }
     }
 
+    // Render scene UI
+    if (mCurrentScene)
+    {
+        mCurrentScene->Render();
+    }
+
     // Swap front buffer and back buffer
     mRenderer->Present();
 }
