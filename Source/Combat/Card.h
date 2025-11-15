@@ -33,7 +33,6 @@ public:
     // Setters
     void SetOwner(Combatant* newOwner) { mOwner = newOwner; }
 
-private:
 
     bool HasTypeAdvantageOver(const Card* otherCard) const;
     
