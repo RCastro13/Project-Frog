@@ -633,10 +633,10 @@ void CombatScene::Update(float deltaTime)
             mShowingCards = false;
             mCardDisplayTimer = 0.0f;
 
-            // Agora sim enviar a carta do player para o CombatManager
+            // Agora sim enviar ambas as cartas para o CombatManager
             if (mDisplayPlayerCard)
             {
-                mCombatManager->PlayerSelectCard(mDisplayPlayerCard);
+                mCombatManager->PlayerSelectCard(mDisplayPlayerCard, mDisplayEnemyCard);
             }
         }
 

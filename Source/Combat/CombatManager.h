@@ -34,7 +34,7 @@ public:
     int GetCurrentTurn() const { return mCurrentTurn; }
 
     // Métodos de controle de turno
-    void PlayerSelectCard(Card* selectedCard);
+    void PlayerSelectCard(Card* selectedCard, Card* enemyCard = nullptr);
     void EnemySelectCard(); // A IA selecionará a carta
 
 private:
