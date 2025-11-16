@@ -88,9 +88,14 @@ void MapGenerator::ConnectLayers(std::vector<std::vector<MapNode*>>& layers, con
         auto& currentLayer = layers[i];
         auto& nextLayer = layers[i + 1];
 
-        // Cada nó da camada atual conecta a 1-2 nós da próxima
+        // Cada nó da camada atual conecta a 1-2 nós da próxima (reduzido para menos densidade)
         for (MapNode* node : currentLayer) {
-            int numConnections = Random::GetIntRange(config.minPathsPerNode, config.maxPathsPerNode);
+            // Reduzir probabilidade de múltiplas conexões para tornar o mapa menos denso
+            int numConnections = config.minPathsPerNode;
+            if (config.maxPathsPerNode > config.minPathsPerNode && Random::GetFloat() < 0.3f) {
+                // Apenas 30% de chance de ter mais de uma conexão
+                numConnections = config.maxPathsPerNode;
+            }
             numConnections = Math::Min(numConnections, (int)nextLayer.size());
 
             // Escolher aleatoriamente quais nós conectar
@@ -141,10 +146,10 @@ void MapGenerator::CalculateNodePositions(std::vector<MapNode*>& nodes, int scre
     }
 
     // Calcular posições com mais espaçamento
-    float marginX = 100.0f;  // Aumentado de 60 para 100
-    float marginY = 80.0f;   // Aumentado de 60 para 80
-    float usableWidth = (screenWidth * 1.5f) - 2 * marginX;  // Mapa mais largo
-    float usableHeight = screenHeight - 2 * marginY;
+    float marginX = 50.0f;   // Margem esquerda menor para nó inicial mais à esquerda
+    float marginY = 40.0f;   // Margem vertical reduzida para usar mais espaço vertical
+    float usableWidth = (screenWidth * 2.0f) - 2 * marginX;  // Mapa mais largo
+    float usableHeight = screenHeight - 2 * marginY;  // Mais altura utilizável
 
     for (auto& [layer, layerNodes] : nodesByLayer) {
         // X baseado na camada (esquerda -> direita) com mais espaçamento

@@ -269,6 +269,20 @@ void MapScene::Enter()
         mCurrentNode = mGame->GetCurrentMapNode();
     }
 
+    // Tornar apenas os filhos do nó inicial acessíveis (se houver nó atual)
+    if (mCurrentNode) {
+        // Marcar todos os nós como inacessíveis primeiro
+        for (MapNode* node : mMapNodes) {
+            if (node != mCurrentNode) {
+                node->SetAccessible(false);
+            }
+        }
+        // Tornar apenas os filhos do nó inicial acessíveis
+        for (MapNode* child : mCurrentNode->GetChildren()) {
+            child->SetAccessible(true);
+        }
+    }
+    
     // Selecionar primeiro nó acessível
     std::vector<MapNode*> accessible = GetAccessibleNodes();
     if (!accessible.empty()) {
@@ -282,10 +296,10 @@ void MapScene::Enter()
         AssignIconsToNodes();
     }
 
-    // Inicializar posição da câmera para centralizar no nó inicial
+    // Inicializar posição da câmera para colocar o nó inicial mais à esquerda
     if (mCurrentNode) {
         Vector2 startPos = mCurrentNode->GetPosition();
-        mCameraPosition = Vector2(startPos.x - 320.0f, 0.0f); // Centralizar horizontalmente (640/2)
+        mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f); // Nó inicial mais à esquerda (100px da borda)
     }
 
     SDL_Log("Mapa carregado com %d nós", (int)mMapNodes.size());
@@ -537,9 +551,12 @@ void MapScene::ConfirmSelection()
         return;
     }
 
+    // Guardar o nó selecionado antes de fazer mudanças
+    MapNode* nodeToMoveTo = mSelectedNode;
+    
     SDL_Log("Confirmando seleção do nó %d (%s)",
-            mSelectedNode->GetID(),
-            GetNodeTypeName(mSelectedNode->GetType()));
+            nodeToMoveTo->GetID(),
+            GetNodeTypeName(nodeToMoveTo->GetType()));
 
     // Marcar nó atual como completo
     if (mCurrentNode) {
@@ -548,16 +565,33 @@ void MapScene::ConfirmSelection()
     }
 
     // Atualizar nó atual
-    SetCurrentNode(mSelectedNode);
-    mGame->SetCurrentMapNode(mSelectedNode);
+    SetCurrentNode(nodeToMoveTo);
+    mGame->SetCurrentMapNode(nodeToMoveTo);
 
-    // Tornar filhos acessíveis
-    for (MapNode* child : mSelectedNode->GetChildren()) {
-        child->SetAccessible(true);
+    // Prevenir retrocesso: marcar todos os nós como inacessíveis primeiro
+    for (MapNode* node : mMapNodes) {
+        if (node != nodeToMoveTo) {
+            node->SetAccessible(false);
+        }
     }
 
-    // Transição para a cena apropriada
-    switch (mSelectedNode->GetType()) {
+    // Tornar apenas os filhos do novo nó atual acessíveis
+    for (MapNode* child : nodeToMoveTo->GetChildren()) {
+        child->SetAccessible(true);
+    }
+    
+    // Atualizar seleção para o primeiro nó acessível (se houver)
+    std::vector<MapNode*> accessible = GetAccessibleNodes();
+    if (!accessible.empty()) {
+        mSelectedNode = accessible[0];
+        mSelectedIndex = 0;
+    } else {
+        mSelectedNode = nullptr;
+        mSelectedIndex = 0;
+    }
+
+    // Transição para a cena apropriada (usar o nó que foi selecionado, não o novo selecionado)
+    switch (nodeToMoveTo->GetType()) {
         case MapNodeType::START:
         case MapNodeType::COMBAT:
             SDL_Log("==> Iniciando combate normal");
