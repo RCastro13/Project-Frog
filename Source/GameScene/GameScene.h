@@ -120,8 +120,13 @@ private:
     class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
     int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
 
+    // Background
+    class Texture* mBackgroundTexture;
+
     // Camera/Scrolling
     Vector2 mCameraPosition;      // Posição da câmera para scrolling
+    float mMinCameraX;            // Limite mínimo de scroll
+    float mMaxCameraX;            // Limite máximo de scroll
 
     // Icon management
     std::vector<std::string> mAvailableIcons;  // Lista de caminhos de ícones disponíveis

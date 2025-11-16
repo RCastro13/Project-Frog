@@ -229,7 +229,10 @@ MapScene::MapScene(Game* game)
     , mCurrentNode(nullptr)
     , mSelectedNode(nullptr)
     , mSelectedIndex(0)
+    , mBackgroundTexture(nullptr)
     , mCameraPosition(Vector2::Zero)
+    , mMinCameraX(-200.0f)
+    , mMaxCameraX( Game::WINDOW_WIDTH + 200.0f)
 {
 }
 
@@ -250,7 +253,14 @@ void MapScene::Enter()
     // Atualizar título da janela
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAPA [↑↓=Navegar ENTER=Selecionar]");
 
-    // Cor de fundo: Verde (tema natureza/pântano)
+    // Carregar background do mapa
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
+    if (mBackgroundTexture) {
+        SDL_Log("Background do mapa carregado");
+    } else {
+        SDL_Log("AVISO: Falha ao carregar background do mapa");
+    }
+
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
 
     // Obter mapa do Game (se já existe) ou gerar novo
@@ -325,6 +335,14 @@ void MapScene::Update(float deltaTime)
     if (keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) {
         mCameraPosition.x += scrollSpeed * deltaTime;
     }
+
+    // Limitar câmera aos bounds do mapa
+    if (mCameraPosition.x < mMinCameraX) {
+        mCameraPosition.x = mMinCameraX;
+    }
+    if (mCameraPosition.x > mMaxCameraX) {
+        mCameraPosition.x = mMaxCameraX;
+    }
 }
 
 void MapScene::ProcessInput(const Uint8* keyState)
@@ -367,6 +385,9 @@ void MapScene::ProcessInput(const Uint8* keyState)
 void MapScene::Exit()
 {
     SDL_Log("Exiting MapScene");
+
+    // Limpar referência ao background (Renderer gerencia a memória)
+    mBackgroundTexture = nullptr;
 }
 
 void MapScene::SetCurrentNode(MapNode* node)
@@ -382,7 +403,30 @@ void MapScene::SetCurrentNode(MapNode* node)
 
 void MapScene::RenderBackground()
 {
-    // Renderizar o mapa completo
+    // Renderizar background scrollável
+    if (mBackgroundTexture) {
+        // Largura do mapa: 1280 + margens (200px de cada lado = 400px)
+        float backgroundWidth = 1280.0f + 400.0f;
+        float backgroundHeight = 448.0f;
+
+        // Centro do background no mundo
+        float centerX = backgroundWidth / 2.0f - 200.0f;
+        float centerY = backgroundHeight / 2.0f;
+
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(centerX, centerY),       // Centro do background no mundo
+            Vector2(backgroundWidth, backgroundHeight),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            mCameraPosition,                 // Offset da câmera para scrolling
+            false,
+            1.0f
+        );
+    }
+
+    // Renderizar o mapa completo por cima do background
     RenderMap();
 }
 
