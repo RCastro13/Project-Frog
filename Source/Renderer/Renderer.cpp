@@ -104,7 +104,7 @@ void Renderer::SetClearColor(float r, float g, float b, float a)
 }
 
 void Renderer::Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2 &cameraPos, VertexArray *vertices,
-                    const Vector3 &color, Texture *texture, const Vector4 &textureRect, float textureFactor)
+                    const Vector3 &color, Texture *texture, const Vector4 &textureRect, float textureFactor, float alpha)
 {
     // Safety checks
     if (!vertices || !mBaseShader) {
@@ -115,6 +115,7 @@ void Renderer::Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2
     mBaseShader->SetVectorUniform("uColor", color);
     mBaseShader->SetVectorUniform("uTexRect", textureRect);
     mBaseShader->SetVectorUniform("uCameraPos", cameraPos);
+    mBaseShader->SetFloatUniform("uAlpha", alpha);
 
     if(vertices)
     {
@@ -148,6 +149,16 @@ void Renderer::DrawRect(const Vector2 &position, const Vector2 &size, float rota
                     Matrix4::CreateTranslation(Vector3(position.x, position.y, 0.0f));
 
     Draw(mode, model, cameraPos, mSpriteVerts, color);
+}
+
+void Renderer::DrawRectAlpha(const Vector2 &position, const Vector2 &size, float rotation, const Vector3 &color,
+                              float alpha, const Vector2 &cameraPos, RendererMode mode)
+{
+    Matrix4 model = Matrix4::CreateScale(Vector3(size.x, size.y, 1.0f)) *
+                    Matrix4::CreateRotationZ(rotation) *
+                    Matrix4::CreateTranslation(Vector3(position.x, position.y, 0.0f));
+
+    Draw(mode, model, cameraPos, mSpriteVerts, color, nullptr, Vector4::UnitRect, 0.0f, alpha);
 }
 
 void Renderer::DrawTexture(const Vector2 &position, const Vector2 &size, float rotation, const Vector3 &color,

@@ -35,6 +35,10 @@ public:
     void SetScene(GameScene* scene);
     GameScene* GetCurrentScene() const { return mCurrentScene; }
 
+    // Fade system
+    void StartFade(bool fadeOut, float duration = 0.8f);
+    bool IsFading() const { return mIsFading; }
+
     // Map management
     void InitializeMap();
     void ClearMap();
@@ -83,6 +87,8 @@ private:
     void UpdateGame(float deltaTime);
     void UpdateCamera();
     void GenerateOutput();
+    void UpdateFade(float deltaTime);
+    void RenderFade();
 
     // Level loading
     int **LoadLevel(const std::string& fileName, int width, int height);
@@ -91,6 +97,9 @@ private:
     // All the actors in the game
     std::vector<class Actor*> mActors;
     std::vector<class Actor*> mPendingActors;
+
+    // Flag para indicar que estamos em transição de cena
+    bool mIsChangingScene;
 
     // Camera
     Vector2 mCameraPos;
@@ -121,6 +130,13 @@ private:
     // Scenes & state
     GameScene* mCurrentScene;
     GameScene* mPendingScene;  // Para trocar cena no próximo frame
+
+    // Fade system
+    bool mIsFading;
+    bool mFadeOut;
+    float mFadeDuration;
+    float mFadeTimer;
+    float mFadeAlpha;
 
     // Map system
     std::vector<class MapNode*> mMapNodes;

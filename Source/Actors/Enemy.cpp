@@ -2,16 +2,24 @@
 #include <algorithm>
 #include <climits>
 
-// Função auxiliar: decide o tamanho da memória (N) a partir da dificuldade
+namespace EnemyConstants
+{
+    constexpr double DIFFICULTY_THRESHOLD_LOW = 0.33;
+    constexpr double DIFFICULTY_THRESHOLD_MID = 0.66;
+    constexpr double DIFFICULTY_THRESHOLD_HIGH = 0.90;
+
+    constexpr double EPSILON_MIN = 0.02;
+    constexpr double EPSILON_MAX = 0.62;
+    constexpr double EPSILON_FACTOR = 0.6;
+
+    constexpr int TYPE_BIAS_MULTIPLIER = 10;
+}
+
 static int MemorySizeFromDifficulty(double difficulty) {
-    // Mapeamento simples:
-    // difficulty <= 0.33 -> N = 1
-    // 0.33 < difficulty <= 0.66 -> N = 2
-    // 0.66 < difficulty <= 0.90 -> N = 3
-    // difficulty > 0.90 -> N = 4
-    if (difficulty <= 0.33) return 1;
-    if (difficulty <= 0.66) return 2;
-    if (difficulty <= 0.90) return 3;
+    using namespace EnemyConstants;
+    if (difficulty <= DIFFICULTY_THRESHOLD_LOW) return 1;
+    if (difficulty <= DIFFICULTY_THRESHOLD_MID) return 2;
+    if (difficulty <= DIFFICULTY_THRESHOLD_HIGH) return 3;
     return 4;
 }
 
@@ -19,15 +27,13 @@ Enemy::Enemy(Game* game, std::string name, int health, int maxHealth,
              std::vector<Card*> deck, double difficulty)
     : Combatant(game, name, health, maxHealth, deck)
 {
+    using namespace EnemyConstants;
     mDifficulty = Math::Clamp(difficulty, 0.0, 1.0);
     mMemorySize = MemorySizeFromDifficulty(mDifficulty);
 
-    // Mapear difficulty -> epsilon (probabilidade de erro)
-    // difficulty=0 -> epsilon ~0.6 (muito azar)
-    // difficulty=1 -> epsilon ~0.02 (quase nenhum erro)
-    mEpsilon = Math::Clamp(0.6 * (1.0 - mDifficulty) + 0.02, 0.02, 0.62);
+    mEpsilon = Math::Clamp(EPSILON_FACTOR * (1.0 - mDifficulty) + EPSILON_MIN,
+                          EPSILON_MIN, EPSILON_MAX);
 
-    // Limpar memória inicial
     mRecentOpponentCards.clear();
 }
 
@@ -53,10 +59,9 @@ Card* Enemy::SelectCard() {
         return available[idx];
     }
 
-    // 3) Calcular TYPE_BIAS dinamicamente com base no dano máximo do deck (evita constantes mágicas)
     int maxDamage = 1;
     for (Card* c : deck) if (c) maxDamage = std::max(maxDamage, c->GetDamage());
-    int typeBias = Math::Max(1, maxDamage * 10); // bias proporcional ao dano máximo
+    int typeBias = Math::Max(1, maxDamage * EnemyConstants::TYPE_BIAS_MULTIPLIER);
 
     // 4) Avaliar cada carta levando em conta as últimas N cartas do oponente
     int bestIndex = 0;
@@ -91,8 +96,7 @@ Card* Enemy::SelectCard() {
     return available[bestIndex];
 }
 
-// Aprende (guarda) a carta do oponente na memória de tamanho N
-void Enemy::LearnFromAtack(Card* card) {
+void Enemy::LearnFromAttack(Card* card) {
     if (!card) return;
 
     // Adicionar ao final
@@ -104,21 +108,20 @@ void Enemy::LearnFromAtack(Card* card) {
     }
 }
 
-// Comportamento ao morrer
 void Enemy::Death() {
     Combatant::Death();
-    // (futuro: dropar itens, efeitos visuais, etc.)
 }
 
-// Altera a dificuldade (reconfigura epsilon e tamanho da memória)
 void Enemy::SetDifficulty(double d) {
+    using namespace EnemyConstants;
     mDifficulty = Math::Clamp(d, 0.0, 1.0);
-    mEpsilon = Math::Clamp(0.6 * (1.0 - mDifficulty) + 0.02, 0.02, 0.62);
+    mEpsilon = Math::Clamp(EPSILON_FACTOR * (1.0 - mDifficulty) + EPSILON_MIN,
+                          EPSILON_MIN, EPSILON_MAX);
 
     int newSize = MemorySizeFromDifficulty(mDifficulty);
     if (newSize != mMemorySize) {
         mMemorySize = newSize;
-        // Se a memória atual for maior que o novo tamanho, recortar
-        while ((int)mRecentOpponentCards.size() > mMemorySize) mRecentOpponentCards.pop_front();
+        while ((int)mRecentOpponentCards.size() > mMemorySize)
+            mRecentOpponentCards.pop_front();
     }
 }

@@ -26,7 +26,8 @@ enum class SceneType
     MAP,
     COMBAT,
     GAME_OVER,
-    VICTORY
+    VICTORY,
+    BLACK_SCREEN
 };
 
 // Classe base abstrata para todas as cenas do jogo
@@ -83,6 +84,7 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void RenderBackground() override;
     void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
@@ -91,8 +93,18 @@ public:
     const char* GetName() const override { return "MainMenu"; }
 
 private:
-    class Texture* mTitleTexture;
-    class Texture* mCommandsTexture;
+    void UpdateMenuTextures();  // Atualizar texturas com cores apropriadas
+
+    class Texture* mBackgroundTexture;
+
+    // Sistema de menu com opções
+    int mSelectedOption;      // 0 = Jogar, 1 = Sair, 2 = Debugar
+    bool mKeyWasPressed;      // Controle de input
+
+    // Texturas das opções do menu
+    class Texture* mOptionStartTexture;
+    class Texture* mOptionDebugTexture;
+    class Texture* mOptionExitTexture;
 };
 
 class MapScene : public GameScene
@@ -120,8 +132,13 @@ private:
     class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
     int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
 
+    // Background
+    class Texture* mBackgroundTexture;
+
     // Camera/Scrolling
     Vector2 mCameraPosition;      // Posição da câmera para scrolling
+    float mMinCameraX;            // Limite mínimo de scroll
+    float mMaxCameraX;            // Limite máximo de scroll
 
     // Icon management
     std::vector<std::string> mAvailableIcons;  // Lista de caminhos de ícones disponíveis
@@ -164,12 +181,21 @@ private:
     Player* mPlayer;
     Enemy* mEnemy;
 
+    // Renderização
+    class CombatRenderer* mCombatRenderer;
+
     // Atores visuais
     class FrogActor* mFrogActor;
-    class BearActor* mBearActor;
+    class AnimatedCharacterActor* mEnemyActor;
 
     // Background
     class Texture* mBackgroundTexture;
+
+    // Texturas das cartas
+    std::map<AttackType, class Texture*> mCardTexturesActive;
+    std::map<AttackType, class Texture*> mCardTexturesCooldown;
+    class Texture* mTimeIconTexture;  // Ícone de cooldown
+    class Texture* mWinnerFrameTexture;  // Moldura de vencedor
 
     // UI - Seleção de cartas
     int mSelectedCardIndex;
@@ -181,18 +207,36 @@ private:
     Card* mDisplayPlayerCard;     // Carta do player sendo mostrada
     Card* mDisplayEnemyCard;      // Carta do enemy sendo mostrada
     bool mPlayerWonLastTurn;      // Se o player venceu o último turno
+    bool mWasTie;                 // Se o último turno foi empate
+
+    // Magic projectile system
+    class MagicProjectileActor* mProjectile;  // Projétil mágico atual
+    bool mShowingProjectile;                  // Se está mostrando o projétil
+    float mProjectileTimer;                   // Timer do projétil
+
+    // Combat end
+    bool mCombatEndHandled;                   // Se o fim do combate já foi processado
 
     // Helper methods
     void CreateTestCombatants();
     void CreateVisualActors();
+    void LoadCardTextures();
     void RenderCombatUI();
-    void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
     void RenderCards();
     void RenderCardDisplay();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
-    void LogAvailableCards();
     Vector3 GetCardColor(AttackType type);
+    class Texture* GetCardTexture(AttackType type, bool isAvailable);
+
+    // Projectile system helpers
+    void LaunchProjectile();
+    void TriggerDefenderAnimation();
+
+    // Update helpers
+    void AtualizarExibicaoCartas(float deltaTime);
+    void AtualizarProjetil(float deltaTime);
+    void AtualizarEstadoCombate();
 
     // Estado para controlar quando mostrar cartas
     bool mCardsShown;
@@ -207,10 +251,18 @@ public:
     void Enter() override;
     void Update(float deltaTime) override;
     void ProcessInput(const Uint8* keyState) override;
+    void RenderBackground() override;
+    void Render() override;
     void Exit() override;
 
     SceneType GetType() const override { return SceneType::GAME_OVER; }
     const char* GetName() const override { return "GameOver"; }
+
+private:
+    class Texture* mBackgroundTexture;
+    class Texture* mMenuTexture;
+    float mPulseTimer;
+    bool mKeyWasPressed;
 };
 
 class VictoryScene : public GameScene
@@ -222,8 +274,32 @@ public:
     void Enter() override;
     void Update(float deltaTime) override;
     void ProcessInput(const Uint8* keyState) override;
+    void RenderBackground() override;
+    void Render() override;
     void Exit() override;
 
     SceneType GetType() const override { return SceneType::VICTORY; }
     const char* GetName() const override { return "Victory"; }
+
+private:
+    class Texture* mBackgroundTexture;
+    class Texture* mPlayAgainTexture;
+    float mPulseTimer;
+    bool mKeyWasPressed;
+};
+
+class BlackScreenScene : public GameScene
+{
+public:
+    BlackScreenScene(Game* game);
+    ~BlackScreenScene();
+
+    void Enter() override;
+    void Update(float deltaTime) override;
+    void RenderBackground() override;
+    void ProcessInput(const Uint8* keyState) override;
+    void Exit() override;
+
+    SceneType GetType() const override { return SceneType::BLACK_SCREEN; }
+    const char* GetName() const override { return "BlackScreen"; }
 };

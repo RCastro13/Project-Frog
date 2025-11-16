@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <vector>
 #include <unordered_map>
 #include <SDL.h>
 #include "../Math.h"
@@ -25,6 +24,9 @@ public:
     void DrawRect(const Vector2 &position, const Vector2 &size,  float rotation,
                   const Vector3 &color, const Vector2 &cameraPos, RendererMode mode);
 
+    void DrawRectAlpha(const Vector2 &position, const Vector2 &size,  float rotation,
+                       const Vector3 &color, float alpha, const Vector2 &cameraPos, RendererMode mode);
+
     void DrawTexture(const Vector2 &position, const Vector2 &size,  float rotation,
                      const Vector3 &color, Texture *texture,
                      const Vector4 &textureRect = Vector4::UnitRect,
@@ -46,7 +48,7 @@ public:
 
 private:
     void Draw(RendererMode mode, const Matrix4 &modelMatrix, const Vector2 &cameraPos, VertexArray *vertices,
-              const Vector3 &color,  Texture *texture = nullptr, const Vector4 &textureRect = Vector4::UnitRect, float textureFactor = 1.0f);
+              const Vector3 &color,  Texture *texture = nullptr, const Vector4 &textureRect = Vector4::UnitRect, float textureFactor = 1.0f, float alpha = 1.0f);
 
 	bool LoadShaders();
     void CreateSpriteVerts();

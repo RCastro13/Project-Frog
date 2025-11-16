@@ -3,13 +3,20 @@
 //
 
 #include "GameScene.h"
+#include "AnimationTestScene.h"
+#include "DebugMenuScene.h"
 #include "../Game.h"
 #include "../Combat/CombatManager.h"
+#include "../Combat/CombatRenderer.h"
+#include "../Combat/CombatConstants.h"
 #include "../Combat/Card.h"
 #include "../Actors/Player.h"
 #include "../Actors/Enemy.h"
 #include "../Actors/FrogActor.h"
-#include "../Actors/BearActor.h"
+#include "../Actors/EnemyFactory.h"
+#include "../Actors/EnemyType.h"
+#include "../Actors/AnimatedCharacterActor.h"
+#include "../Actors/MagicProjectileActor.h"
 #include "../Map/MapNode.h"
 #include "../Map/MapGenerator.h"
 #include "../Random.h"
@@ -18,7 +25,6 @@
 #include "../Renderer/Font.h"
 #include <SDL.h>
 #include <SDL_log.h>
-#include <algorithm>
 #include <cstdio>
 
 // ============================================
@@ -69,131 +75,197 @@ void GameScene::RenderFade()
 
 MainMenuScene::MainMenuScene(Game* game)
     : GameScene(game)
-    , mTitleTexture(nullptr)
-    , mCommandsTexture(nullptr)
+    , mBackgroundTexture(nullptr)
+    , mSelectedOption(0)
+    , mKeyWasPressed(false)
+    , mOptionStartTexture(nullptr)
+    , mOptionDebugTexture(nullptr)
+    , mOptionExitTexture(nullptr)
 {
 }
 
 MainMenuScene::~MainMenuScene()
 {
-    if (mTitleTexture) {
-        delete mTitleTexture;
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
     }
-    if (mCommandsTexture) {
-        delete mCommandsTexture;
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+    }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
     }
 }
 
 void MainMenuScene::Enter()
 {
-    SDL_Log("Entering MainMenuScene");
     mStateTime = 0.0f;
 
-    // Atualizar título da janela para indicar cena ativa
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAIN MENU [1=Mapa 2=Combate ESC=Sair]");
+    // Atualizar título da janela
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
-    // Cor de fundo: Azul escuro (como o Mario original)
-    mGame->GetRenderer()->SetClearColor(0.0f, 0.3f, 0.6f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/menu.png");
 
-    // Criar texturas de texto
-    if (mGame->GetFont()) {
-        // Título do jogo
-        mTitleTexture = mGame->GetFont()->RenderText(
-            "PROJECT FROG",
-            Vector3(1.0f, 1.0f, 0.0f),  // Amarelo
-            48,
-            500  // Limitar largura
-        );
+    // Criar texturas das opções do menu com cores apropriadas
+    UpdateMenuTextures();
+}
 
-        // Comandos (com quebras de linha e wrap length reduzido)
-        mCommandsTexture = mGame->GetFont()->RenderText(
-            "[1] Mapa\n[2] Combate\n[ESC] Sair",
-            Vector3(1.0f, 1.0f, 1.0f),  // Branco
-            20,
-            300  // Limitar largura para 300px
-        );
+void MainMenuScene::UpdateMenuTextures()
+{
+    // Cor amarelo dourado para opção selecionada
+    Vector3 goldColor(1.0f, 0.84f, 0.0f);
+    Vector3 whiteColor(1.0f, 1.0f, 1.0f);
+
+    if (!mGame->GetFont()) return;
+
+    // Limpar texturas antigas
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
+        mOptionStartTexture = nullptr;
     }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
+        mOptionExitTexture = nullptr;
+    }
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+        mOptionDebugTexture = nullptr;
+    }
+
+    // Criar textura "Jogar" com cor apropriada
+    Vector3 startColor = (mSelectedOption == 0) ? goldColor : whiteColor;
+    mOptionStartTexture = mGame->GetFont()->RenderText(
+        "Jogar",
+        startColor,
+        22,
+        400
+    );
+
+    // Criar textura "Sair" com cor apropriada
+    Vector3 exitColor = (mSelectedOption == 1) ? goldColor : whiteColor;
+    mOptionExitTexture = mGame->GetFont()->RenderText(
+        "Sair",
+        exitColor,
+        22,
+        400
+    );
+
+    // Criar textura "Debugar" com cor apropriada
+    Vector3 debugColor = (mSelectedOption == 2) ? goldColor : whiteColor;
+    mOptionDebugTexture = mGame->GetFont()->RenderText(
+        "Debugar",
+        debugColor,
+        22,
+        400
+    );
 }
 
 void MainMenuScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
-
-    // Atualizar fade in
     UpdateFade(deltaTime);
-
-    // TODO (Kayque): Atualizar animações do menu
-    // TODO (Kayque): Verificar seleção de botões
 }
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante o fade in
+    // Bloquear inputs durante o fade
     if (mFadeAlpha > 0.0f)
         return;
 
-    // TODO (Kayque): Implementar navegação do menu
-
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione 1 para ir ao Mapa
-    // Pressione 2 para ir ao Combate
-    // Pressione ESC para sair
-
-    static bool key1WasPressed = false;
-    static bool key2WasPressed = false;
-
-    if (keyState[SDL_SCANCODE_1] && !key1WasPressed)
+    // Navegar para baixo (Seta baixo ou S)
+    if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
     {
-        SDL_Log("==> TESTE: Transição Menu -> Mapa");
-        mGame->SetScene(new MapScene(mGame));
-        key1WasPressed = true;
+        mSelectedOption = (mSelectedOption + 1) % 3;
+        UpdateMenuTextures();
+        mKeyWasPressed = true;
     }
-    else if (!keyState[SDL_SCANCODE_1])
+    // Navegar para cima (Seta cima ou W)
+    else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {
-        key1WasPressed = false;
+        mSelectedOption = (mSelectedOption - 1 + 3) % 3;
+        UpdateMenuTextures();
+        mKeyWasPressed = true;
     }
+    // Confirmar seleção (Enter ou Space)
+    else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    {
+        if (mSelectedOption == 0) {
+            // Jogar -> Vai para o Mapa
+            mGame->SetScene(new MapScene(mGame));
+        } else if (mSelectedOption == 1) {
+            // Sair -> Vai para tela preta que fechará o jogo
+            mGame->SetScene(new BlackScreenScene(mGame));
+        } else {
+            // Debugar -> Vai para menu de debug
+            mGame->SetScene(new class DebugMenuScene(mGame));
+        }
+        mKeyWasPressed = true;
+    }
+    else if (!keyState[SDL_SCANCODE_DOWN] && !keyState[SDL_SCANCODE_S] &&
+             !keyState[SDL_SCANCODE_UP] && !keyState[SDL_SCANCODE_W] &&
+             !keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
+    {
+        mKeyWasPressed = false;
+    }
+}
 
-    if (keyState[SDL_SCANCODE_2] && !key2WasPressed)
-    {
-        SDL_Log("==> TESTE: Transição Menu -> Combate");
-        mGame->SetScene(new CombatScene(mGame));
-        key2WasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_2])
-    {
-        key2WasPressed = false;
-    }
-
-    if (keyState[SDL_SCANCODE_ESCAPE])
-    {
-        SDL_Log("==> TESTE: Saindo do jogo");
-        mGame->Quit();
+void MainMenuScene::RenderBackground()
+{
+    // Renderizar background
+    if (mBackgroundTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
     }
 }
 
 void MainMenuScene::Render()
 {
-    // Renderizar título
-    if (mTitleTexture) {
+    // Posição vertical base para as opções
+    float startY = 180.0f;
+    float optionSpacing = 80.0f;
+
+    // Opção 1: "Jogar"
+    if (mOptionStartTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, 120.0f),  // Centro superior
-            Vector2(mTitleTexture->GetWidth(), mTitleTexture->GetHeight()),
+            Vector2(320.0f, startY),
+            Vector2(mOptionStartTexture->GetWidth(), mOptionStartTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mTitleTexture,
+            mOptionStartTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
     }
 
-    // Renderizar comandos
-    if (mCommandsTexture) {
+    // Opção 3: "Sair"
+    if (mOptionExitTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, 260.0f),  // Centro da tela (ajustado para ficar melhor posicionado)
-            Vector2(mCommandsTexture->GetWidth(), mCommandsTexture->GetHeight()),
+            Vector2(320.0f, startY + optionSpacing),
+            Vector2(mOptionExitTexture->GetWidth(), mOptionExitTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mCommandsTexture,
+            mOptionExitTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Opção 3: "Debugar"
+    if (mOptionDebugTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, startY + optionSpacing * 2),
+            Vector2(mOptionDebugTexture->GetWidth(), mOptionDebugTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mOptionDebugTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
@@ -205,17 +277,22 @@ void MainMenuScene::Render()
 
 void MainMenuScene::Exit()
 {
-    SDL_Log("Exiting MainMenuScene");
-
     // Limpar texturas
-    if (mTitleTexture) {
-        delete mTitleTexture;
-        mTitleTexture = nullptr;
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
+        mOptionStartTexture = nullptr;
     }
-    if (mCommandsTexture) {
-        delete mCommandsTexture;
-        mCommandsTexture = nullptr;
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+        mOptionDebugTexture = nullptr;
     }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
+        mOptionExitTexture = nullptr;
+    }
+
+    // Limpar referência do background (não delete, é gerenciado pelo Renderer)
+    mBackgroundTexture = nullptr;
 }
 
 // ============================================
@@ -227,7 +304,10 @@ MapScene::MapScene(Game* game)
     , mCurrentNode(nullptr)
     , mSelectedNode(nullptr)
     , mSelectedIndex(0)
+    , mBackgroundTexture(nullptr)
     , mCameraPosition(Vector2::Zero)
+    , mMinCameraX(-200.0f)
+    , mMaxCameraX( Game::WINDOW_WIDTH + 200.0f)
 {
 }
 
@@ -242,19 +322,19 @@ MapScene::~MapScene()
 
 void MapScene::Enter()
 {
-    SDL_Log("Entering MapScene");
     mStateTime = 0.0f;
 
     // Atualizar título da janela
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAPA [↑↓=Navegar ENTER=Selecionar]");
 
-    // Cor de fundo: Verde (tema natureza/pântano)
+    // Carregar background do mapa
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
+
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
 
     // Obter mapa do Game (se já existe) ou gerar novo
     if (mGame->GetMapNodes().empty()) {
         // Gerar novo mapa
-        SDL_Log("Gerando novo mapa...");
         mMapNodes = MapGenerator::Generate();
         mGame->SetMapNodes(mMapNodes);
 
@@ -282,7 +362,7 @@ void MapScene::Enter()
             child->SetAccessible(true);
         }
     }
-    
+
     // Selecionar primeiro nó acessível
     std::vector<MapNode*> accessible = GetAccessibleNodes();
     if (!accessible.empty()) {
@@ -299,11 +379,8 @@ void MapScene::Enter()
     // Inicializar posição da câmera para colocar o nó inicial mais à esquerda
     if (mCurrentNode) {
         Vector2 startPos = mCurrentNode->GetPosition();
-        mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f); // Nó inicial mais à esquerda (100px da borda)
+        mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f);
     }
-
-    SDL_Log("Mapa carregado com %d nós", (int)mMapNodes.size());
-    SDL_Log("Nó atual: %d", mCurrentNode ? mCurrentNode->GetID() : -1);
 }
 
 void MapScene::Update(float deltaTime)
@@ -322,6 +399,14 @@ void MapScene::Update(float deltaTime)
     }
     if (keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) {
         mCameraPosition.x += scrollSpeed * deltaTime;
+    }
+
+    // Limitar câmera aos bounds do mapa
+    if (mCameraPosition.x < mMinCameraX) {
+        mCameraPosition.x = mMinCameraX;
+    }
+    if (mCameraPosition.x > mMaxCameraX) {
+        mCameraPosition.x = mMaxCameraX;
     }
 }
 
@@ -364,7 +449,8 @@ void MapScene::ProcessInput(const Uint8* keyState)
 
 void MapScene::Exit()
 {
-    SDL_Log("Exiting MapScene");
+    // Limpar referência ao background (Renderer gerencia a memória)
+    mBackgroundTexture = nullptr;
 }
 
 void MapScene::SetCurrentNode(MapNode* node)
@@ -380,7 +466,30 @@ void MapScene::SetCurrentNode(MapNode* node)
 
 void MapScene::RenderBackground()
 {
-    // Renderizar o mapa completo
+    // Renderizar background scrollável
+    if (mBackgroundTexture) {
+        // Largura do mapa: 1280 + margens (200px de cada lado = 400px)
+        float backgroundWidth = 1280.0f + 400.0f;
+        float backgroundHeight = 448.0f;
+
+        // Centro do background no mundo
+        float centerX = backgroundWidth / 2.0f - 200.0f;
+        float centerY = backgroundHeight / 2.0f;
+
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(centerX, centerY),       // Centro do background no mundo
+            Vector2(backgroundWidth, backgroundHeight),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            mCameraPosition,                 // Offset da câmera para scrolling
+            false,
+            1.0f
+        );
+    }
+
+    // Renderizar o mapa completo por cima do background
     RenderMap();
 }
 
@@ -471,15 +580,6 @@ void MapScene::RenderNode(MapNode* node)
             RendererMode::TRIANGLES
         );
     }
-
-    // Log informativo quando renderizar pela primeira vez
-    static bool firstRender = true;
-    if (firstRender && node == mCurrentNode) {
-        SDL_Log("Renderizando nó %d (%s) na posição (%.1f, %.1f)",
-                node->GetID(), GetNodeTypeName(node->GetType()),
-                pos.x, pos.y);
-        firstRender = false;
-    }
 }
 
 void MapScene::RenderConnections()
@@ -525,10 +625,6 @@ void MapScene::SelectNextAccessibleNode()
 
     mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
-
-    SDL_Log("Nó selecionado: %d (%s)",
-            mSelectedNode->GetID(),
-            GetNodeTypeName(mSelectedNode->GetType()));
 }
 
 void MapScene::SelectPreviousAccessibleNode()
@@ -538,25 +634,16 @@ void MapScene::SelectPreviousAccessibleNode()
 
     mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
-
-    SDL_Log("Nó selecionado: %d (%s)",
-            mSelectedNode->GetID(),
-            GetNodeTypeName(mSelectedNode->GetType()));
 }
 
 void MapScene::ConfirmSelection()
 {
     if (!mSelectedNode || !CanSelectNode(mSelectedNode)) {
-        SDL_Log("Não é possível selecionar este nó");
         return;
     }
 
     // Guardar o nó selecionado antes de fazer mudanças
     MapNode* nodeToMoveTo = mSelectedNode;
-    
-    SDL_Log("Confirmando seleção do nó %d (%s)",
-            nodeToMoveTo->GetID(),
-            GetNodeTypeName(nodeToMoveTo->GetType()));
 
     // Marcar nó atual como completo
     if (mCurrentNode) {
@@ -579,7 +666,7 @@ void MapScene::ConfirmSelection()
     for (MapNode* child : nodeToMoveTo->GetChildren()) {
         child->SetAccessible(true);
     }
-    
+
     // Atualizar seleção para o primeiro nó acessível (se houver)
     std::vector<MapNode*> accessible = GetAccessibleNodes();
     if (!accessible.empty()) {
@@ -594,17 +681,14 @@ void MapScene::ConfirmSelection()
     switch (nodeToMoveTo->GetType()) {
         case MapNodeType::START:
         case MapNodeType::COMBAT:
-            SDL_Log("==> Iniciando combate normal");
             mGame->SetScene(new CombatScene(mGame));
             break;
 
         case MapNodeType::ELITE:
-            SDL_Log("==> Iniciando combate elite");
             mGame->SetScene(new CombatScene(mGame)); // Por enquanto igual ao normal
             break;
 
         case MapNodeType::BOSS:
-            SDL_Log("==> Iniciando combate contra o BOSS!");
             mGame->SetScene(new CombatScene(mGame));
             break;
 
@@ -652,9 +736,6 @@ std::vector<MapNode*> MapScene::GetAccessibleNodes()
 
 void MapScene::LoadAvailableIcons()
 {
-    // Não precisa mais carregar lista aleatória - cada tipo terá seu ícone específico
-    // Esta função agora apenas inicializa o sistema de ícones
-    SDL_Log("Sistema de ícones por tipo inicializado");
 }
 
 std::string MapScene::GetIconPathForNodeType(MapNodeType type)
@@ -698,7 +779,6 @@ void MapScene::AssignIconsToNodes()
         }
     }
 
-    SDL_Log("Atribuídos ícones a %d nós", (int)mNodeIcons.size());
 }
 
 const char* MapScene::GetNodeTypeName(MapNodeType type)
@@ -724,8 +804,9 @@ CombatScene::CombatScene(Game* game)
     , mCombatManager(nullptr)
     , mPlayer(nullptr)
     , mEnemy(nullptr)
+    , mCombatRenderer(nullptr)
     , mFrogActor(nullptr)
-    , mBearActor(nullptr)
+    , mEnemyActor(nullptr)
     , mBackgroundTexture(nullptr)
     , mSelectedCardIndex(0)
     , mKeyWasPressed(false)
@@ -735,12 +816,16 @@ CombatScene::CombatScene(Game* game)
     , mDisplayPlayerCard(nullptr)
     , mDisplayEnemyCard(nullptr)
     , mPlayerWonLastTurn(false)
+    , mWasTie(false)
+    , mProjectile(nullptr)
+    , mShowingProjectile(false)
+    , mProjectileTimer(0.0f)
+    , mCombatEndHandled(false)
 {
 }
 
 CombatScene::~CombatScene()
 {
-    // Cleanup será feito no Exit()
 }
 
 void CombatScene::Enter()
@@ -752,23 +837,18 @@ void CombatScene::Enter()
 
     // Selecionar background aleatório
     const char* backgroundFiles[] = {
-        "../Assets/Background/Combat/Background_camada_0_01.png",
-        "../Assets/Background/Combat/Background_camada_0_05.png",
-        "../Assets/Background/Combat/Background_camada_0_06.png",
-        "../Assets/Background/Combat/Background_camada_0_07.png"
+        "../Assets/Background/Combat/pedras.png",
+        "../Assets/Background/Combat/floresta.png",
+        "../Assets/Background/Combat/pantano.jpeg",
     };
 
-    int randomIndex = Random::GetIntRange(0, 3);
+    int randomIndex = Random::GetIntRange(0, 0);
     mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
 
-    if (mBackgroundTexture) {
-        SDL_Log("Background de combate carregado: %s", backgroundFiles[randomIndex]);
-    } else {
-        SDL_Log("ERRO: Falha ao carregar background de combate");
-    }
-
-    // Cor de fundo: Preto (será coberto pelo background)
     mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Criar sistema de renderização
+    mCombatRenderer = new CombatRenderer(mGame);
 
     // Criar combatentes e iniciar combate
     CreateTestCombatants();
@@ -776,12 +856,14 @@ void CombatScene::Enter()
     // Criar atores visuais
     CreateVisualActors();
 
-    SDL_Log("\n========================================");
-    SDL_Log("       COMBATE INICIADO");
-    SDL_Log("========================================");
-    SDL_Log("Player: %s (HP: %d)", "Frog Hero", mPlayer->GetHealth());
-    SDL_Log("Enemy:  %s (HP: %d)", "Slime", mEnemy->GetHealth());
-    SDL_Log("========================================\n");
+    // Carregar texturas das cartas
+    LoadCardTextures();
+
+    // Carregar ícone de cooldown
+    mTimeIconTexture = mGame->GetRenderer()->GetTexture("../Assets/Icons/White/icon_time.png");
+
+    // Carregar moldura de vencedor
+    mWinnerFrameTexture = mGame->GetRenderer()->GetTexture("../Assets/Cards/winner-frame.png");
 }
 
 void CombatScene::CreateTestCombatants()
@@ -800,9 +882,14 @@ void CombatScene::CreateTestCombatants()
     enemyDeck.push_back(new Card("Enemy Plant", AttackType::Plant, 4, 2, nullptr));
     enemyDeck.push_back(new Card("Enemy Neutral", AttackType::Neutral, 3, 0, nullptr));
 
-    // Criar Player e Enemy
+    // Criar Player
     mPlayer = new Player(mGame, "Frog Hero", 20, 20, playerDeck);
-    mEnemy = new Enemy(mGame, "Slime", 15, 15, enemyDeck);
+
+    // Criar Enemy com stats baseados no tipo aleatório
+    EnemyType enemyType = EnemyFactory::GetRandomEnemyType();
+    EnemyFactory::EnemyStats stats = EnemyFactory::GetStatsForType(enemyType);
+    mEnemy = new Enemy(mGame, "Enemy", stats.health, stats.maxHealth, enemyDeck);
+    mEnemy->SetDifficulty(stats.difficulty);
 
     // Configurar owners das cartas
     for (Card* card : mPlayer->GetDeck()) {
@@ -823,99 +910,143 @@ void CombatScene::CreateVisualActors()
 {
     // Criar sapo (player) à esquerda
     mFrogActor = new FrogActor(mGame);
-    mFrogActor->SetPosition(Vector2(150.0f, 224.0f)); // Esquerda, centro vertical
+    mFrogActor->SetPosition(Vector2(150.0f, 224.0f));
     mFrogActor->SetScale(Vector2(1.0f, 1.0f));
 
-    SDL_Log("FrogActor criado na posição (%.1f, %.1f)",
-            mFrogActor->GetPosition().x, mFrogActor->GetPosition().y);
-
-    // Criar urso (inimigo) à direita
-    mBearActor = new BearActor(mGame);
-    mBearActor->SetPosition(Vector2(490.0f, 224.0f)); // Direita, centro vertical
-    mBearActor->SetScale(Vector2(-1.0f, 1.0f)); // Inverter horizontalmente (olhar para a esquerda)
-
-    SDL_Log("BearActor criado na posição (%.1f, %.1f)",
-            mBearActor->GetPosition().x, mBearActor->GetPosition().y);
+    // Criar inimigo aleatório à direita
+    mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    mEnemyActor->SetPosition(Vector2(490.0f, 224.0f));
 }
 
-void CombatScene::Update(float deltaTime)
+void CombatScene::LoadCardTextures()
 {
-    mStateTime += deltaTime;
+    // Carregar texturas active (quando carta está disponível)
+    mCardTexturesActive[AttackType::Fire] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/fire-active.png");
+    mCardTexturesActive[AttackType::Water] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/water-active.png");
+    mCardTexturesActive[AttackType::Plant] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/plant-active.png");
+    mCardTexturesActive[AttackType::Neutral] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/neutral-active.png");
 
-    // Atualizar fade in
-    UpdateFade(deltaTime);
+    // Carregar texturas cooldown (quando carta está em cooldown)
+    mCardTexturesCooldown[AttackType::Fire] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/fire-cooldown.png");
+    mCardTexturesCooldown[AttackType::Water] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/water-cooldown.png");
+    mCardTexturesCooldown[AttackType::Plant] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/plant-cooldown.png");
+    mCardTexturesCooldown[AttackType::Neutral] =
+        mGame->GetRenderer()->GetTexture("../Assets/Cards/neutral-cooldown.png");
 
-    // TODO (Facundo): Atualizar sistema de combate
-    // TODO (Facundo): Atualizar animações
-    // TODO (Facundo): Verificar condições de vitória/derrota
-    if (!mCombatManager)
-        return;
+}
 
-    // Gerenciar exibição das cartas no centro
-    if (mShowingCards)
+Texture* CombatScene::GetCardTexture(AttackType type, bool isAvailable)
+{
+    if (isAvailable) {
+        auto it = mCardTexturesActive.find(type);
+        if (it != mCardTexturesActive.end()) {
+            return it->second;
+        }
+    } else {
+        auto it = mCardTexturesCooldown.find(type);
+        if (it != mCardTexturesCooldown.end()) {
+            return it->second;
+        }
+    }
+    return nullptr;
+}
+
+void CombatScene::AtualizarExibicaoCartas(float deltaTime)
+{
+    mCardDisplayTimer += deltaTime;
+
+    if (mCardDisplayTimer >= CombatConstants::Timers::CARD_DISPLAY_DURATION)
     {
-        mCardDisplayTimer += deltaTime;
+        mShowingCards = false;
+        mCardDisplayTimer = 0.0f;
 
-        // Após 2.5 segundos, finalizar exibição e continuar o combate
-        if (mCardDisplayTimer >= 2.5f)
+        // Só lança projétil se não foi empate
+        if (!mWasTie)
         {
-            mShowingCards = false;
-            mCardDisplayTimer = 0.0f;
-
-            // Agora sim enviar ambas as cartas para o CombatManager
+            LaunchProjectile();
+            mShowingProjectile = true;
+            mProjectileTimer = 0.0f;
+        }
+        else
+        {
+            // Em caso de empate, registra o uso das cartas sem causar dano
             if (mDisplayPlayerCard)
             {
                 mCombatManager->PlayerSelectCard(mDisplayPlayerCard, mDisplayEnemyCard);
             }
         }
-
-        // Não atualizar o combate enquanto mostra as cartas
-        return;
     }
+}
 
-    // Guardar estado anterior para detectar mudanças
+void CombatScene::AtualizarProjetil(float deltaTime)
+{
+    mProjectileTimer += deltaTime;
+
+    if (mProjectile && mProjectile->IsComplete())
+    {
+        mShowingProjectile = false;
+
+        TriggerDefenderAnimation();
+
+        if (mDisplayPlayerCard)
+        {
+            mCombatManager->PlayerSelectCard(mDisplayPlayerCard, mDisplayEnemyCard);
+        }
+
+        mProjectile->SetState(ActorState::Destroy);
+        mProjectile = nullptr;
+    }
+}
+
+void CombatScene::AtualizarEstadoCombate()
+{
     static CombatState previousState = CombatState::WAITING_FOR_PLAYER;
     CombatState currentState = mCombatManager->GetCurrentState();
 
-    // Detectar quando começa a resolver combate (tocar animações de ataque)
-    if (previousState != CombatState::RESOLVING_COMBAT &&
-        currentState == CombatState::RESOLVING_COMBAT)
-    {
-        // Ambos atacam ao mesmo tempo
-        if (mFrogActor) mFrogActor->PlayAttack();
-        if (mBearActor) mBearActor->PlayAttack();
-    }
-
-    // Atualizar o gerenciador de combate
     mCombatManager->Update();
 
-    // Logar após completar um turno (quando volta a esperar o player)
     if (previousState != CombatState::WAITING_FOR_PLAYER &&
         currentState == CombatState::WAITING_FOR_PLAYER)
     {
-        SDL_Log("----------------------------------------");
-        SDL_Log("Player HP: %d | Enemy HP: %d",
-                mPlayer->GetHealth(), mEnemy->GetHealth());
-        SDL_Log("----------------------------------------\n");
-
-        // Reset flag para mostrar cartas novamente
         mCardsShown = false;
-
-        // Voltar para idle após o turno
-        if (mFrogActor) mFrogActor->PlayIdle();
-        if (mBearActor) mBearActor->PlayIdle();
     }
 
-    // Mostrar cartas disponíveis quando estiver esperando o player
     if (currentState == CombatState::WAITING_FOR_PLAYER && !mCardsShown)
     {
-        LogAvailableCards();
         mCardsShown = true;
     }
 
     previousState = currentState;
+}
 
-    // Verificar fim do combate
+void CombatScene::Update(float deltaTime)
+{
+    mStateTime += deltaTime;
+    UpdateFade(deltaTime);
+
+    if (!mCombatManager) return;
+
+    if (mShowingCards)
+    {
+        AtualizarExibicaoCartas(deltaTime);
+        return;
+    }
+
+    if (mShowingProjectile)
+    {
+        AtualizarProjetil(deltaTime);
+        return;
+    }
+
+    AtualizarEstadoCombate();
+
     if (mCombatManager->IsCombatEnded())
     {
         HandleCombatEnd();
@@ -947,18 +1078,13 @@ void CombatScene::Render()
 
 void CombatScene::RenderCombatUI()
 {
-    // TODO (Rubens): Adicionar renderização visual com sprites/texto na tela
-    // Por enquanto, mantemos apenas os logs essenciais
-
     // Renderizar barras de HP
-    if (mPlayer && mEnemy) {
-        // Barra do Player (em cima do FrogActor)
-        Vector2 playerHPPos = Vector2(150.0f, 160.0f);
-        RenderHealthBar(playerHPPos, mPlayer->GetHealth(), 20, false);
+    if (mPlayer && mEnemy && mCombatRenderer) {
+        Vector2 playerHPPos = Vector2(CombatConstants::Positions::FROG_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+        mCombatRenderer->RenderizarBarraHP(playerHPPos, mPlayer->GetHealth(), mPlayer->GetMaxHealth(), false);
 
-        // Barra do Enemy (em cima do BearActor)
-        Vector2 enemyHPPos = Vector2(490.0f, 160.0f);
-        RenderHealthBar(enemyHPPos, mEnemy->GetHealth(), 15, true);
+        Vector2 enemyHPPos = Vector2(CombatConstants::Positions::BEAR_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+        mCombatRenderer->RenderizarBarraHP(enemyHPPos, mEnemy->GetHealth(), mEnemy->GetMaxHealth(), true);
     }
 
     // Se está mostrando as cartas no centro, renderizar elas
@@ -989,266 +1115,121 @@ Vector3 CombatScene::GetCardColor(AttackType type)
 
 void CombatScene::RenderCardDisplay()
 {
-    // Renderizar as duas cartas grandes no centro da tela
-    float cardWidth = 120.0f;
-    float cardHeight = 160.0f;
-    float spacing = 40.0f;
-    float centerY = 224.0f; // Centro vertical da tela
+    if (!mCombatRenderer) return;
 
     // Posições das cartas
-    float playerCardX = 320.0f - spacing - cardWidth / 2.0f;  // Esquerda do centro
-    float enemyCardX = 320.0f + spacing + cardWidth / 2.0f;   // Direita do centro
+    float playerCardX = CombatConstants::Positions::SCREEN_CENTER_X -
+                        CombatConstants::Cards::DISPLAY_SPACING -
+                        CombatConstants::Cards::LARGE_WIDTH / 2.0f;
+    float enemyCardX = CombatConstants::Positions::SCREEN_CENTER_X +
+                       CombatConstants::Cards::DISPLAY_SPACING +
+                       CombatConstants::Cards::LARGE_WIDTH / 2.0f;
+    float centerY = CombatConstants::Positions::SCREEN_CENTER_Y;
 
     // Renderizar carta do Player (esquerda)
     if (mDisplayPlayerCard) {
         Vector2 playerCardPos(playerCardX, centerY);
-        Vector3 playerColor = GetCardColor(mDisplayPlayerCard->GetType());
+        Texture* cardTexture = GetCardTexture(mDisplayPlayerCard->GetType(), true);
+        float brilho = mPlayerWonLastTurn ? 1.3f : 1.0f;
 
-        // Brilho extra se venceu
-        if (mPlayerWonLastTurn) {
-            playerColor = playerColor * 1.3f; // Mais brilhante
-        }
-
-        // Carta
-        mGame->GetRenderer()->DrawRect(
+        mCombatRenderer->RenderizarTexturaSimples(
             playerCardPos,
-            Vector2(cardWidth, cardHeight),
-            0.0f,
-            playerColor,
-            Vector2::Zero,
-            RendererMode::TRIANGLES
+            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
+            cardTexture,
+            brilho
         );
 
-        // Borda (dourada se venceu, branca se não)
-        float borderThickness = 4.0f;
-        Vector3 borderColor = mPlayerWonLastTurn ?
-            Vector3(1.0f, 0.84f, 0.0f) :  // Dourado
-            Vector3(1.0f, 1.0f, 1.0f);     // Branco
-
-        // Top
-        mGame->GetRenderer()->DrawRect(
-            Vector2(playerCardX, centerY - (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+        mCombatRenderer->RenderizarTextoPoder(
+            Vector2(playerCardX, centerY + CombatConstants::Cards::LARGE_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE),
+            mDisplayPlayerCard->GetDamage(),
+            Vector3(1.0f, 1.0f, 1.0f),
+            CombatConstants::FontSizes::POWER_LARGE
         );
-        // Bottom
-        mGame->GetRenderer()->DrawRect(
-            Vector2(playerCardX, centerY + (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Left
-        mGame->GetRenderer()->DrawRect(
-            Vector2(playerCardX - (cardWidth + borderThickness)/2.0f, centerY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Right
-        mGame->GetRenderer()->DrawRect(
-            Vector2(playerCardX + (cardWidth + borderThickness)/2.0f, centerY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-
-        // Renderizar valor de poder
-        if (mGame->GetFont()) {
-            char powerText[16];
-            snprintf(powerText, sizeof(powerText), "%d", mDisplayPlayerCard->GetDamage());
-            Texture* powerTexture = mGame->GetFont()->RenderText(
-                powerText,
-                Vector3(1.0f, 1.0f, 1.0f),  // Branco
-                42
-            );
-            if (powerTexture) {
-                mGame->GetRenderer()->DrawTexture(
-                    Vector2(playerCardX, centerY),
-                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
-                    0.0f,
-                    Vector3(1.0f, 1.0f, 1.0f),
-                    powerTexture,
-                    Vector4::UnitRect,
-                    Vector2::Zero
-                );
-                delete powerTexture;
-            }
-        }
     }
 
     // Renderizar carta do Enemy (direita)
     if (mDisplayEnemyCard) {
         Vector2 enemyCardPos(enemyCardX, centerY);
-        Vector3 enemyColor = GetCardColor(mDisplayEnemyCard->GetType());
+        Texture* cardTexture = GetCardTexture(mDisplayEnemyCard->GetType(), true);
+        float brilho = !mPlayerWonLastTurn ? 1.3f : 1.0f;
 
-        // Brilho extra se venceu
-        if (!mPlayerWonLastTurn) {
-            enemyColor = enemyColor * 1.3f; // Mais brilhante
-        }
-
-        // Carta
-        mGame->GetRenderer()->DrawRect(
+        mCombatRenderer->RenderizarTexturaSimples(
             enemyCardPos,
-            Vector2(cardWidth, cardHeight),
-            0.0f,
-            enemyColor,
-            Vector2::Zero,
-            RendererMode::TRIANGLES
+            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
+            cardTexture,
+            brilho
         );
 
-        // Borda (dourada se venceu, branca se não)
-        float borderThickness = 4.0f;
-        Vector3 borderColor = !mPlayerWonLastTurn ?
-            Vector3(1.0f, 0.84f, 0.0f) :  // Dourado
-            Vector3(1.0f, 1.0f, 1.0f);     // Branco
+        mCombatRenderer->RenderizarTextoPoder(
+            Vector2(enemyCardX, centerY + CombatConstants::Cards::LARGE_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE),
+            mDisplayEnemyCard->GetDamage(),
+            Vector3(1.0f, 1.0f, 1.0f),
+            CombatConstants::FontSizes::POWER_LARGE
+        );
+    }
 
-        // Top
-        mGame->GetRenderer()->DrawRect(
-            Vector2(enemyCardX, centerY - (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
+    // Renderizar moldura de vencedor
+    if (mWinnerFrameTexture) {
+        float winnerX = mPlayerWonLastTurn ? playerCardX : enemyCardX;
+        mCombatRenderer->RenderizarMolduraVencedor(
+            Vector2(winnerX, centerY),
+            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
+            mWinnerFrameTexture
         );
-        // Bottom
-        mGame->GetRenderer()->DrawRect(
-            Vector2(enemyCardX, centerY + (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Left
-        mGame->GetRenderer()->DrawRect(
-            Vector2(enemyCardX - (cardWidth + borderThickness)/2.0f, centerY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Right
-        mGame->GetRenderer()->DrawRect(
-            Vector2(enemyCardX + (cardWidth + borderThickness)/2.0f, centerY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-
-        // Renderizar valor de poder
-        if (mGame->GetFont()) {
-            char powerText[16];
-            snprintf(powerText, sizeof(powerText), "%d", mDisplayEnemyCard->GetDamage());
-            Texture* powerTexture = mGame->GetFont()->RenderText(
-                powerText,
-                Vector3(1.0f, 1.0f, 1.0f),  // Branco
-                42
-            );
-            if (powerTexture) {
-                mGame->GetRenderer()->DrawTexture(
-                    Vector2(enemyCardX, centerY),
-                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
-                    0.0f,
-                    Vector3(1.0f, 1.0f, 1.0f),
-                    powerTexture,
-                    Vector4::UnitRect,
-                    Vector2::Zero
-                );
-                delete powerTexture;
-            }
-        }
     }
 }
 
 void CombatScene::RenderCards()
 {
-    // Dimensões e posicionamento das cartas
-    float cardWidth = 80.0f;
-    float cardHeight = 110.0f;
-    float cardSpacing = 20.0f;
-    float baseY = 380.0f; // Parte inferior da tela (448 - margem)
-    float selectedOffset = -20.0f; // Offset para cima quando selecionada
+    if (!mCombatRenderer || !mPlayer) return;
 
     // Calcular posição inicial X para centralizar as 4 cartas
-    float totalWidth = (cardWidth * 4) + (cardSpacing * 3);
-    float startX = (640.0f - totalWidth) / 2.0f + cardWidth / 2.0f;
+    float totalWidth = (CombatConstants::Cards::SMALL_WIDTH * 4) + (CombatConstants::Cards::SPACING * 3);
+    float startX = (CombatConstants::Dimensions::SCREEN_WIDTH - totalWidth) / 2.0f + CombatConstants::Cards::SMALL_WIDTH / 2.0f;
 
     for (int i = 0; i < 4; i++) {
         Card* card = mPlayer->GetDeck()[i];
 
         // Calcular posição da carta
-        float cardX = startX + (i * (cardWidth + cardSpacing));
-        float cardY = baseY;
+        float cardX = startX + (i * (CombatConstants::Cards::SMALL_WIDTH + CombatConstants::Cards::SPACING));
+        float cardY = CombatConstants::Positions::CARDS_BASE_Y;
 
         // Carta selecionada fica mais acima
         if (i == mSelectedCardIndex) {
-            cardY += selectedOffset;
+            cardY += CombatConstants::Cards::SELECTED_OFFSET;
         }
 
         Vector2 cardPos(cardX, cardY);
 
-        // Determinar cor da carta
-        Vector3 cardColor;
-        if (!card->IsAvailable()) {
-            // Carta em cooldown = cinza
-            cardColor = Vector3(0.3f, 0.3f, 0.3f);
-        } else {
-            // Usar função helper para obter cor
-            cardColor = GetCardColor(card->GetType());
-        }
+        // Obter textura da carta baseada em tipo e disponibilidade
+        Texture* cardTexture = GetCardTexture(card->GetType(), card->IsAvailable());
 
         // Renderizar carta
-        mGame->GetRenderer()->DrawRect(
+        mCombatRenderer->RenderizarTexturaSimples(
             cardPos,
-            Vector2(cardWidth, cardHeight),
-            0.0f,
-            cardColor,
-            Vector2::Zero,
-            RendererMode::TRIANGLES
+            Vector2(CombatConstants::Cards::SMALL_WIDTH, CombatConstants::Cards::SMALL_HEIGHT),
+            cardTexture
         );
 
-        // Renderizar borda da carta (mais grossa se selecionada)
-        float borderThickness = (i == mSelectedCardIndex) ? 3.0f : 2.0f;
-        Vector3 borderColor = (i == mSelectedCardIndex) ?
-            Vector3(1.0f, 1.0f, 0.0f) : // Amarelo se selecionada
-            Vector3(1.0f, 1.0f, 1.0f);  // Branco se não selecionada
+        // Renderizar número de poder ou ícone
+        if (card->IsAvailable()) {
+            bool isSelecionada = (i == mSelectedCardIndex);
+            Vector3 corTexto = isSelecionada ?
+                Vector3(1.0f, 0.84f, 0.0f) :  // Amarelo dourado
+                Vector3(1.0f, 1.0f, 1.0f);    // Branco
 
-        // Top
-        mGame->GetRenderer()->DrawRect(
-            Vector2(cardX, cardY - (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Bottom
-        mGame->GetRenderer()->DrawRect(
-            Vector2(cardX, cardY + (cardHeight + borderThickness)/2.0f),
-            Vector2(cardWidth + borderThickness * 2, borderThickness),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Left
-        mGame->GetRenderer()->DrawRect(
-            Vector2(cardX - (cardWidth + borderThickness)/2.0f, cardY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-        // Right
-        mGame->GetRenderer()->DrawRect(
-            Vector2(cardX + (cardWidth + borderThickness)/2.0f, cardY),
-            Vector2(borderThickness, cardHeight + borderThickness * 2),
-            0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-        );
-
-        // Renderizar valor de poder (centralizado na carta)
-        if (mGame->GetFont() && card->IsAvailable()) {
-            char powerText[16];
-            snprintf(powerText, sizeof(powerText), "%d", card->GetDamage());
-            Texture* powerTexture = mGame->GetFont()->RenderText(
-                powerText,
-                Vector3(1.0f, 1.0f, 1.0f),  // Branco
-                28
+            mCombatRenderer->RenderizarTextoPoder(
+                Vector2(cardX, cardY + CombatConstants::Cards::SMALL_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM),
+                card->GetDamage(),
+                corTexto,
+                CombatConstants::FontSizes::POWER_SMALL
             );
-            if (powerTexture) {
-                mGame->GetRenderer()->DrawTexture(
-                    Vector2(cardX, cardY),
-                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
-                    0.0f,
-                    Vector3(1.0f, 1.0f, 1.0f),
-                    powerTexture,
-                    Vector4::UnitRect,
-                    Vector2::Zero
-                );
-                delete powerTexture;
-            }
+        } else {
+            mCombatRenderer->RenderizarIconeCooldown(
+                cardPos,
+                CombatConstants::Cards::SMALL_HEIGHT,
+                mTimeIconTexture
+            );
         }
     }
 }
@@ -1266,6 +1247,15 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     if (mShowingCards)
         return;
 
+    // Bloquear inputs durante a animação do projétil
+    if (mShowingProjectile)
+        return;
+
+    // Bloquear inputs enquanto os personagens estão em animação
+    if ((mFrogActor && mFrogActor->IsInAnimation()) ||
+        (mEnemyActor && mEnemyActor->IsInAnimation()))
+        return;
+
     // Só processar input se estiver esperando o jogador
     if (mCombatManager->GetCurrentState() != CombatState::WAITING_FOR_PLAYER)
         return;
@@ -1274,13 +1264,11 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     if ((keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) && !mKeyWasPressed)
     {
         mSelectedCardIndex = (mSelectedCardIndex + 1) % 4;
-        LogAvailableCards(); // Atualizar display
         mKeyWasPressed = true;
     }
     else if ((keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) && !mKeyWasPressed)
     {
         mSelectedCardIndex = (mSelectedCardIndex - 1 + 4) % 4;
-        LogAvailableCards(); // Atualizar display
         mKeyWasPressed = true;
     }
     // Confirmar seleção (Enter ou Space)
@@ -1291,12 +1279,6 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         // Verificar se a carta está disponível (não em cooldown)
         if (selectedCard->IsAvailable())
         {
-            SDL_Log("TURNO %d", mCombatManager->GetCurrentTurn());
-            SDL_Log("Player usou: %s (Tipo: %s, Dano: %d)",
-                    selectedCard->GetName().c_str(),
-                    GetTypeName(selectedCard->GetType()),
-                    selectedCard->GetDamage());
-
             // Ao invés de chamar PlayerSelectCard imediatamente,
             // ativar o modo de exibição de cartas
             mDisplayPlayerCard = selectedCard;
@@ -1312,20 +1294,28 @@ void CombatScene::ProcessInput(const Uint8* keyState)
 
                 if (playerHasAdvantage) {
                     mPlayerWonLastTurn = true;
+                    mWasTie = false;
                 } else if (enemyHasAdvantage) {
                     mPlayerWonLastTurn = false;
+                    mWasTie = false;
                 } else {
                     // Sem vantagem de tipo, comparar dano
-                    mPlayerWonLastTurn = (mDisplayPlayerCard->GetDamage() >= mDisplayEnemyCard->GetDamage());
+                    int playerDamage = mDisplayPlayerCard->GetDamage();
+                    int enemyDamage = mDisplayEnemyCard->GetDamage();
+
+                    if (playerDamage == enemyDamage) {
+                        // Empate: danos iguais e sem vantagem de tipo
+                        mWasTie = true;
+                        mPlayerWonLastTurn = false;
+                    } else {
+                        mWasTie = false;
+                        mPlayerWonLastTurn = (playerDamage > enemyDamage);
+                    }
                 }
             } else {
                 mPlayerWonLastTurn = true;
+                mWasTie = false;
             }
-
-            SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
-                    mDisplayEnemyCard ? mDisplayEnemyCard->GetName().c_str() : "None",
-                    mDisplayEnemyCard ? GetTypeName(mDisplayEnemyCard->GetType()) : "None",
-                    mDisplayEnemyCard ? mDisplayEnemyCard->GetDamage() : 0);
 
             mKeyWasPressed = true;
         }
@@ -1344,11 +1334,10 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         mKeyWasPressed = false;
     }
 
-    // ESC para voltar ao menu (apenas para teste)
+    // ESC para voltar ao menu
     static bool escWasPressed = false;
     if (keyState[SDL_SCANCODE_ESCAPE] && !escWasPressed)
     {
-        SDL_Log("\n[Voltando ao menu principal]\n");
         mGame->SetScene(new MainMenuScene(mGame));
         escWasPressed = true;
     }
@@ -1356,34 +1345,6 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     {
         escWasPressed = false;
     }
-}
-
-void CombatScene::LogAvailableCards()
-{
-    SDL_Log("Suas cartas: (A=Anterior D=Próximo)");
-
-    for (int i = 0; i < 4; i++)
-    {
-        Card* card = mPlayer->GetDeck()[i];
-        const char* selector = (i == mSelectedCardIndex) ? "👉 " : "   ";
-
-        if (card->IsAvailable())
-        {
-            SDL_Log("%s[%d] %s (Tipo: %s, Dano: %d)",
-                    selector, i + 1,
-                    card->GetName().c_str(),
-                    GetTypeName(card->GetType()),
-                    card->GetDamage());
-        }
-        else
-        {
-            SDL_Log("%s[%d] %s ⏳ COOLDOWN (%d turnos)",
-                    selector, i + 1,
-                    card->GetName().c_str(),
-                    card->GetCurrentCooldown());
-        }
-    }
-    SDL_Log("");
 }
 
 const char* CombatScene::GetTypeName(AttackType type)
@@ -1398,81 +1359,14 @@ const char* CombatScene::GetTypeName(AttackType type)
     }
 }
 
-void CombatScene::RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy)
-{
-    // Dimensões da barra (maior para ser mais visível)
-    float barWidth = 120.0f;
-    float barHeight = 12.0f;
-
-    // Calcular porcentagem de HP
-    float hpPercent = (float)currentHP / (float)maxHP;
-    float currentBarWidth = barWidth * hpPercent;
-
-    // Cor da barra baseada na porcentagem
-    Vector3 hpColor;
-    if (hpPercent > 0.6f) {
-        hpColor = Vector3(0.2f, 1.0f, 0.2f); // Verde brilhante
-    } else if (hpPercent > 0.3f) {
-        hpColor = Vector3(1.0f, 1.0f, 0.0f); // Amarelo
-    } else {
-        hpColor = Vector3(1.0f, 0.2f, 0.2f); // Vermelho brilhante
-    }
-
-    // Fundo da barra (cinza escuro/preto)
-    mGame->GetRenderer()->DrawRect(
-        position,
-        Vector2(barWidth, barHeight),
-        0.0f,
-        Vector3(0.15f, 0.15f, 0.15f),
-        Vector2::Zero,
-        RendererMode::TRIANGLES
-    );
-
-    // Barra de HP preenchida (ajustar posição X para alinhar à esquerda)
-    if (currentHP > 0) {
-        float xOffset = -(barWidth - currentBarWidth) / 2.0f;
-        mGame->GetRenderer()->DrawRect(
-            Vector2(position.x + xOffset, position.y),
-            Vector2(currentBarWidth, barHeight),
-            0.0f,
-            hpColor,
-            Vector2::Zero,
-            RendererMode::TRIANGLES
-        );
-    }
-
-    // Borda branca (mais grossa)
-    float borderThickness = 2.0f;
-    Vector3 borderColor = Vector3(1.0f, 1.0f, 1.0f);
-
-    // Top
-    mGame->GetRenderer()->DrawRect(
-        Vector2(position.x, position.y - (barHeight + borderThickness)/2.0f),
-        Vector2(barWidth + borderThickness * 2, borderThickness),
-        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-    );
-    // Bottom
-    mGame->GetRenderer()->DrawRect(
-        Vector2(position.x, position.y + (barHeight + borderThickness)/2.0f),
-        Vector2(barWidth + borderThickness * 2, borderThickness),
-        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-    );
-    // Left
-    mGame->GetRenderer()->DrawRect(
-        Vector2(position.x - (barWidth + borderThickness)/2.0f, position.y),
-        Vector2(borderThickness, barHeight + borderThickness * 2),
-        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-    );
-    // Right
-    mGame->GetRenderer()->DrawRect(
-        Vector2(position.x + (barWidth + borderThickness)/2.0f, position.y),
-        Vector2(borderThickness, barHeight + borderThickness * 2),
-        0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
-    );
-}
-
 void CombatScene::HandleCombatEnd()
 {
+    // Garantir que só processa o fim do combate uma vez
+    if (mCombatEndHandled)
+        return;
+
+    mCombatEndHandled = true;
+
     SDL_Log("\n========================================");
     if (mCombatManager->IsPlayerVictorious())
     {
@@ -1504,13 +1398,79 @@ void CombatScene::HandleCombatEnd()
     }
 }
 
+void CombatScene::LaunchProjectile()
+{
+    AttackType type = mPlayerWonLastTurn ?
+        mDisplayPlayerCard->GetType() :
+        mDisplayEnemyCard->GetType();
+
+    Vector2 startPos = mPlayerWonLastTurn ?
+        Vector2(160.0f, 224.0f) :  // Frog position
+        Vector2(480.0f, 224.0f);   // Bear position
+
+    Vector2 endPos = mPlayerWonLastTurn ?
+        Vector2(480.0f, 224.0f) :  // Bear position
+        Vector2(160.0f, 224.0f);   // Frog position
+
+    // Rotacionar 180 graus quando o ataque vai da direita para esquerda (enemy atacando)
+    bool rotate180 = !mPlayerWonLastTurn;
+
+    // Tocar animação de ataque do atacante quando dispara o projétil
+    if (mPlayerWonLastTurn)
+    {
+        if (mFrogActor) mFrogActor->PlayAttack();
+    }
+    else
+    {
+        if (mEnemyActor) mEnemyActor->PlayAttack();
+    }
+
+    mProjectile = new MagicProjectileActor(mGame, type, startPos, endPos, 1.0f, rotate180);
+}
+
+void CombatScene::TriggerDefenderAnimation()
+{
+    if (mPlayerWonLastTurn)
+    {
+        // Player venceu: Enemy é atingido
+        int enemyHP = mEnemy->GetHealth();
+        int damage = mDisplayPlayerCard ? mDisplayPlayerCard->GetDamage() : 0;
+
+        if (enemyHP - damage <= 0)
+        {
+            if (mEnemyActor) mEnemyActor->PlayDeath();
+        }
+        else
+        {
+            if (mEnemyActor) mEnemyActor->PlayHurt();
+        }
+    }
+    else
+    {
+        // Enemy venceu: Player é atingido
+        int playerHP = mPlayer->GetHealth();
+        int damage = mDisplayEnemyCard ? mDisplayEnemyCard->GetDamage() : 0;
+
+        if (playerHP - damage <= 0)
+        {
+            if (mFrogActor) mFrogActor->PlayDeath();
+        }
+        else
+        {
+            if (mFrogActor) mFrogActor->PlayHurt();
+        }
+    }
+}
+
 void CombatScene::Exit()
 {
-    SDL_Log("Exiting CombatScene");
+    // Limpar sistema de renderização
+    if (mCombatRenderer)
+    {
+        delete mCombatRenderer;
+        mCombatRenderer = nullptr;
+    }
 
-    // TODO (Facundo): Limpar recursos do combate
-    // TODO (Facundo): Deletar inimigo
-    // TODO (Facundo): Parar música de combate
     // Limpar atores visuais
     if (mFrogActor)
     {
@@ -1518,10 +1478,17 @@ void CombatScene::Exit()
         mFrogActor = nullptr;
     }
 
-    if (mBearActor)
+    if (mEnemyActor)
     {
-        mBearActor->SetState(ActorState::Destroy);
-        mBearActor = nullptr;
+        mEnemyActor->SetState(ActorState::Destroy);
+        mEnemyActor = nullptr;
+    }
+
+    // Limpar projétil se existir
+    if (mProjectile)
+    {
+        mProjectile->SetState(ActorState::Destroy);
+        mProjectile = nullptr;
     }
 
     // Limpar background (o Renderer gerencia a memória da textura)
@@ -1566,6 +1533,10 @@ void CombatScene::Exit()
 
 GameOverScene::GameOverScene(Game* game)
     : GameScene(game)
+    , mBackgroundTexture(nullptr)
+    , mMenuTexture(nullptr)
+    , mPulseTimer(0.0f)
+    , mKeyWasPressed(false)
 {
 }
 
@@ -1575,55 +1546,114 @@ GameOverScene::~GameOverScene()
 
 void GameOverScene::Enter()
 {
-    SDL_Log("Entering GameOverScene");
     mStateTime = 0.0f;
+    mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - GAME OVER [ENTER=Menu]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - GAME OVER");
 
-    // Cor de fundo: Roxo escuro (derrota)
-    mGame->GetRenderer()->SetClearColor(0.3f, 0.2f, 0.4f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/gameover.png");
+    if (!mBackgroundTexture)
+    {
+        SDL_Log("Erro ao carregar background de Game Over!");
+    }
 
-    // TODO: Carregar background de game over
-    // TODO: Exibir mensagem de derrota
-    // TODO: Criar botão "Voltar ao Menu"
-    // TODO: Carregar música de game over
+    // Criar textura do texto "MENU"
+    mMenuTexture = mGame->GetFont()->RenderText(
+        "Menu",
+        Vector3(1.0f, 0.84f, 0.0f), // Gold Yellow
+        24,
+        400
+    );
 }
 
 void GameOverScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
+    mPulseTimer += deltaTime;
 
-    // TODO: Atualizar animações (fade in, etc)
+    // Atualizar fade in
+    UpdateFade(deltaTime);
 }
 
 void GameOverScene::ProcessInput(const Uint8* keyState)
 {
-    // TODO: Implementar volta ao menu
+    // Bloquear inputs durante o fade
+    if (mFadeAlpha > 0.0f)
+        return;
 
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione ENTER para voltar ao menu
-
-    static bool enterWasPressed = false;
-
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed)
+    // Pressionar ENTER ou SPACE para voltar ao menu
+    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> TESTE: Game Over -> Menu");
+        SDL_Log("==> Game Over -> Menu Principal");
         mGame->SetScene(new MainMenuScene(mGame));
-        enterWasPressed = true;
+        mKeyWasPressed = true;
     }
-    else if (!keyState[SDL_SCANCODE_RETURN])
+    else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
     {
-        enterWasPressed = false;
+        mKeyWasPressed = false;
     }
+}
+
+void GameOverScene::RenderBackground()
+{
+    if (mBackgroundTexture)
+    {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+}
+
+void GameOverScene::Render()
+{
+    RenderBackground();
+
+    // Renderizar botão "MENU" com efeito de pulsação
+    if (mMenuTexture)
+    {
+        // Calcular escala de pulsação usando seno (oscila entre 0.9 e 1.1)
+        float pulseSpeed = 1.5f; // Velocidade da pulsação (2 ciclos por segundo)
+        float pulseAmount = 0.1f; // Amplitude da pulsação
+        float scale = 0.8f + Math::Sin(mPulseTimer * pulseSpeed) * pulseAmount;
+
+        // Posição na parte inferior da caixa bege
+        Vector2 position(320.0f, 365.0f);
+        Vector2 size(mMenuTexture->GetWidth() * scale, mMenuTexture->GetHeight() * scale);
+
+        mGame->GetRenderer()->DrawTexture(
+            position,
+            size,
+            0.0f,
+            Vector3(1.0f, 0.84f, 0.0f),
+            mMenuTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Renderizar fade
+    RenderFade();
 }
 
 void GameOverScene::Exit()
 {
-    SDL_Log("Exiting GameOverScene");
+    // Limpar texturas
+    if (mMenuTexture)
+    {
+        mMenuTexture->Unload();
+        delete mMenuTexture;
+        mMenuTexture = nullptr;
+    }
 
-    // TODO: Limpar recursos
-    // TODO: Parar música
+    mBackgroundTexture = nullptr;
 }
 
 // ============================================
@@ -1632,6 +1662,10 @@ void GameOverScene::Exit()
 
 VictoryScene::VictoryScene(Game* game)
     : GameScene(game)
+    , mBackgroundTexture(nullptr)
+    , mPlayAgainTexture(nullptr)
+    , mPulseTimer(0.0f)
+    , mKeyWasPressed(false)
 {
 }
 
@@ -1641,54 +1675,156 @@ VictoryScene::~VictoryScene()
 
 void VictoryScene::Enter()
 {
-    SDL_Log("Entering VictoryScene");
     mStateTime = 0.0f;
+    mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - VITORIA! [ENTER=Menu]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - VITÓRIA!");
 
-    // Cor de fundo: Dourado/Amarelo (vitória)
-    mGame->GetRenderer()->SetClearColor(0.8f, 0.7f, 0.2f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/youwin.png");
+    if (!mBackgroundTexture)
+    {
+        SDL_Log("Erro ao carregar background de Vitória!");
+    }
 
-    // TODO: Carregar background de vitória
-    // TODO: Exibir mensagem de vitória
-    // TODO: Mostrar estatísticas da run
-    // TODO: Criar botão "Voltar ao Menu"
-    // TODO: Carregar música de vitória
+    mPlayAgainTexture = mGame->GetFont()->RenderText(
+        "Menu",
+        Vector3(1.0f, 0.84f, 0.0f), // Gold Yellow
+        20,
+        400
+    );
 }
 
 void VictoryScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
+    mPulseTimer += deltaTime;
 
-    // TODO: Atualizar animações
+    // Atualizar fade in
+    UpdateFade(deltaTime);
 }
 
 void VictoryScene::ProcessInput(const Uint8* keyState)
 {
-    // TODO: Implementar volta ao menu
+    // Bloquear inputs durante o fade
+    if (mFadeAlpha > 0.0f)
+        return;
 
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione ENTER para voltar ao menu
-
-    static bool enterWasPressed = false;
-
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed)
+    // Pressionar ENTER ou SPACE para jogar novamente
+    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> TESTE: Vitória -> Menu");
-        mGame->SetScene(new MainMenuScene(mGame));
-        enterWasPressed = true;
+        SDL_Log("==> Vitória -> Jogar Novamente (Novo Mapa)");
+        mGame->ClearMap();  // Limpar mapa atual
+        mGame->SetScene(new MapScene(mGame));  // Criar novo mapa
+        mKeyWasPressed = true;
     }
-    else if (!keyState[SDL_SCANCODE_RETURN])
+    else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
     {
-        enterWasPressed = false;
+        mKeyWasPressed = false;
     }
+}
+
+void VictoryScene::RenderBackground()
+{
+    if (mBackgroundTexture)
+    {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+}
+
+void VictoryScene::Render()
+{
+    RenderBackground();
+
+    // Renderizar botão "Jogar Novamente" com efeito de pulsação
+    if (mPlayAgainTexture)
+    {
+        // Calcular escala de pulsação usando seno (oscila entre 0.7 e 0.9)
+        float pulseSpeed = 1.5f; // Velocidade da pulsação
+        float pulseAmount = 0.1f; // Amplitude da pulsação
+        float scale = 0.8f + Math::Sin(mPulseTimer * pulseSpeed) * pulseAmount;
+
+        // Posição na parte inferior da caixa bege
+        Vector2 position(320.0f, 365.0f);
+        Vector2 size(mPlayAgainTexture->GetWidth() * scale, mPlayAgainTexture->GetHeight() * scale);
+
+        mGame->GetRenderer()->DrawTexture(
+            position,
+            size,
+            0.0f,
+            Vector3(1.0f, 0.84f, 0.0f),
+            mPlayAgainTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Renderizar fade
+    RenderFade();
 }
 
 void VictoryScene::Exit()
 {
-    SDL_Log("Exiting VictoryScene");
+    // Limpar texturas
+    if (mPlayAgainTexture)
+    {
+        mPlayAgainTexture->Unload();
+        delete mPlayAgainTexture;
+        mPlayAgainTexture = nullptr;
+    }
 
-    // TODO: Limpar recursos
-    // TODO: Parar música
+    mBackgroundTexture = nullptr;
+}
+
+// ============================================
+// BLACK SCREEN SCENE
+// ============================================
+
+BlackScreenScene::BlackScreenScene(Game* game)
+    : GameScene(game)
+{
+}
+
+BlackScreenScene::~BlackScreenScene()
+{
+}
+
+void BlackScreenScene::Enter()
+{
+    mStateTime = 0.0f;
+}
+
+void BlackScreenScene::Update(float deltaTime)
+{
+    mStateTime += deltaTime;
+
+    // Após 0.5s na tela preta, fechar o jogo
+    if (mStateTime >= 0.5f)
+    {
+        mGame->Quit();
+    }
+}
+
+void BlackScreenScene::RenderBackground()
+{
+    // Renderizar fundo preto (já é o default, mas garantir)
+    mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+void BlackScreenScene::ProcessInput(const Uint8* keyState)
+{
+    // Não processar input nesta cena
+}
+
+void BlackScreenScene::Exit()
+{
 }

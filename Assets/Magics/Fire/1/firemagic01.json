@@ -1,7 +1,7 @@
 {
   "frames": [
     {
-      "filename": "magic000.png",
+      "filename": "firemagic01-0.png",
       "frame": {
         "x": 0,
         "y": 0,
@@ -26,7 +26,7 @@
       }
     },
     {
-      "filename": "magic001.png",
+      "filename": "firemagic01-1.png",
       "frame": {
         "x": 0,
         "y": 16,
@@ -51,7 +51,7 @@
       }
     },
     {
-      "filename": "magic002.png",
+      "filename": "firemagic01-2.png",
       "frame": {
         "x": 16,
         "y": 0,
@@ -76,7 +76,7 @@
       }
     },
     {
-      "filename": "magic003.png",
+      "filename": "firemagic01-3.png",
       "frame": {
         "x": 0,
         "y": 32,
@@ -101,7 +101,7 @@
       }
     },
     {
-      "filename": "magic004.png",
+      "filename": "firemagic01-4.png",
       "frame": {
         "x": 16,
         "y": 16,

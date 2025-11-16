@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------
 // From Game Programming in C++ by Sanjay Madhav
 // Copyright (C) 2017 Sanjay Madhav. All rights reserved.
-// 
+//
 // Released under the BSD License
 // See LICENSE in root directory for full details.
 // ----------------------------------------------------------------
@@ -23,7 +23,10 @@ Actor::Actor(Game* game)
 
 Actor::~Actor()
 {
-    mGame->RemoveActor(this);
+    if (mGame)
+    {
+        mGame->RemoveActor(this);
+    }
 
     for(auto component : mComponents)
     {

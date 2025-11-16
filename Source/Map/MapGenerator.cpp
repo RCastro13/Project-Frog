@@ -10,7 +10,6 @@ std::vector<MapNode*> MapGenerator::Generate(const MapConfig& config) {
     int numLayers = Random::GetIntRange(config.minLayers, config.maxLayers);
     int nodeID = 0;
 
-    SDL_Log("Gerando mapa com %d camadas", numLayers);
 
     // Layer 0: Nó inicial (sempre 1)
     layers.push_back({});
@@ -50,7 +49,6 @@ std::vector<MapNode*> MapGenerator::Generate(const MapConfig& config) {
     startNode->SetAccessible(true);
     startNode->SetCurrent(true);
 
-    SDL_Log("Mapa gerado com %d nós totais", (int)allNodes.size());
 
     return allNodes;
 }
