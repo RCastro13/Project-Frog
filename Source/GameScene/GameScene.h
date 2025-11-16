@@ -28,7 +28,10 @@ enum class SceneType
     COMBAT,
     GAME_OVER,
     VICTORY,
-    BLACK_SCREEN
+    BLACK_SCREEN,
+    REWARD,
+    SHOP,
+    REST
 };
 
 // Classe base abstrata para todas as cenas do jogo

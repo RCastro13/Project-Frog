@@ -5,6 +5,9 @@
 #include "GameScene.h"
 #include "AnimationTestScene.h"
 #include "DebugMenuScene.h"
+#include "RewardScene.h"
+#include "ShopScene.h"
+#include "RestScene.h"
 #include "../Game.h"
 #include "../Combat/CombatManager.h"
 #include "../Combat/CombatRenderer.h"
@@ -730,22 +733,18 @@ void MapScene::ConfirmSelection()
             break;
 
         case MapNodeType::SHOP:
-            SDL_Log("==> Entrando na loja (não implementada ainda)");
-            // TODO: mGame->SetScene(new ShopScene(mGame));
-            // Por enquanto, volta para o mapa
-            mGame->SetScene(new MapScene(mGame));
+            SDL_Log("==> Entrando na loja");
+            mGame->SetScene(new ShopScene(mGame));
             break;
 
         case MapNodeType::TREASURE:
-            SDL_Log("==> Abrindo baú de tesouro (não implementado ainda)");
-            // TODO: mGame->SetScene(new TreasureScene(mGame));
-            mGame->SetScene(new MapScene(mGame));
+            SDL_Log("==> Abrindo baú de tesouro");
+            mGame->SetScene(new RewardScene(mGame, RewardMode::TREASURE_CHEST));
             break;
 
         case MapNodeType::REST:
-            SDL_Log("==> Descansando (não implementado ainda)");
-            // TODO: mGame->SetScene(new RestScene(mGame));
-            mGame->SetScene(new MapScene(mGame));
+            SDL_Log("==> Local de descanso");
+            mGame->SetScene(new RestScene(mGame));
             break;
     }
 }
@@ -1419,9 +1418,9 @@ void CombatScene::HandleCombatEnd()
             SDL_Log("🏆 VOCÊ DERROTOU O BOSS! JOGO COMPLETO! 🏆");
             mGame->SetScene(new VictoryScene(mGame));
         } else {
-            // Voltar para o mapa
-            SDL_Log("Voltando ao mapa...");
-            mGame->SetScene(new MapScene(mGame));
+            // Ir para tela de recompensa após vitória
+            SDL_Log("Vitória! Indo para tela de recompensa...");
+            mGame->SetScene(new RewardScene(mGame, RewardMode::COMBAT_VICTORY));
         }
     }
     else

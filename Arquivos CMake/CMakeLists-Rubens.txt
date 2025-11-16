@@ -7,6 +7,8 @@ project(${PROJECT_NAME})
 
 find_package(SDL2 2.32.2 EXACT REQUIRED)
 find_package(SDL2_image REQUIRED)
+find_package(SDL2_mixer REQUIRED)
+find_package(SDL2_ttf REQUIRED)
 
 set(GLEW_ROOT "C:/Program Files/GLEW")
 set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
@@ -19,7 +21,6 @@ include_directories(
         ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
 )
-
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
         Source/Renderer/Shader.h
@@ -48,6 +49,8 @@ add_executable(${PROJECT_NAME}
         Source/Renderer/VertexArray.cpp
         Source/Renderer/Texture.cpp
         Source/Renderer/Texture.h
+        Source/Renderer/TextureUtils.cpp
+        Source/Renderer/TextureUtils.h
         Source/Components/Drawing/AnimatorComponent.cpp
         Source/Components/Drawing/AnimatorComponent.h
         Source/Components/Drawing/RectComponent.cpp
@@ -57,13 +60,67 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIButton.h
         Source/Interface/UIImage.h
         Source/Interface/HUD/HUD.h
+        Source/Renderer/Font.h
+        Source/Renderer/Font.cpp
         Source/Audio/AudioSystem.h
+        Source/Audio/AudioSystem.cpp
         Source/GameScene/GameScene.h
+        Source/GameScene/AnimationTestScene.h
+        Source/GameScene/AnimationTestScene.cpp
+        Source/GameScene/DebugMenuScene.h
+        Source/GameScene/DebugMenuScene.cpp
+        Source/GameScene/RewardScene.h
+        Source/GameScene/RewardScene.cpp
+        Source/GameScene/ShopScene.h
+        Source/GameScene/ShopScene.cpp
+        Source/GameScene/RestScene.h
+        Source/GameScene/RestScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Map/MapNodeType.h
+        Source/Map/MapNode.h
+        Source/Map/MapNode.cpp
+        Source/Map/MapGenerator.h
+        Source/Map/MapGenerator.cpp
+        Source/Combat/Card.h
+        Source/Combat/Card.cpp
+        Source/Combat/CombatConstants.h
+        Source/Combat/CombatRenderer.h
+        Source/Combat/CombatRenderer.cpp
+        Source/Actors/Combatant.h
+        Source/Actors/Combatant.cpp
+        Source/Actors/Player.h
+        Source/Combat/Item.h
+        Source/Actors/Player.cpp
+        Source/Combat/CombatManager.h
+        Source/Combat/CombatManager.cpp
+        Source/Actors/Enemy.h
+        Source/Actors/Enemy.cpp
+        Source/Actors/ActorConstants.h
+        Source/Actors/AnimatedCharacterActor.h
+        Source/Actors/AnimatedCharacterActor.cpp
+        Source/Actors/FrogActor.h
+        Source/Actors/FrogActor.cpp
+        Source/Actors/BearActor.h
+        Source/Actors/BearActor.cpp
+        Source/Actors/EnemyType.h
+        Source/Actors/EnemyFactory.h
+        Source/Actors/EnemyFactory.cpp
+        Source/Actors/BeatleActor.h
+        Source/Actors/BeatleActor.cpp
+        Source/Actors/SnakeActor.h
+        Source/Actors/SnakeActor.cpp
+        Source/Actors/WolfActor.h
+        Source/Actors/WolfActor.cpp
+        Source/Actors/MagicProjectileActor.h
+        Source/Actors/MagicProjectileActor.cpp
+        Source/Actors/NPCActor.h
+        Source/Actors/NPCActor.cpp
+        Source/Actors/RabbitNPC.h
+        Source/Actors/RabbitNPC.cpp
 )
 
 # Libs
@@ -72,6 +129,8 @@ target_link_libraries(${PROJECT_NAME}
         ${GLEW_LIBRARIES}
         SDL2::SDL2main
         SDL2_image::SDL2_image
+        SDL2_mixer::SDL2_mixer
+        SDL2_ttf::SDL2_ttf
         SDL2::SDL2
         opengl32
 )
