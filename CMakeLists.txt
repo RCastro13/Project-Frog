@@ -96,6 +96,9 @@ add_executable(${PROJECT_NAME}
         Source/Combat/CombatManager.cpp
         Source/Actors/Enemy.h
         Source/Actors/Enemy.cpp
+        Source/Actors/ActorConstants.h
+        Source/Actors/AnimatedCharacterActor.h
+        Source/Actors/AnimatedCharacterActor.cpp
         Source/Actors/FrogActor.h
         Source/Actors/FrogActor.cpp
         Source/Actors/BearActor.h

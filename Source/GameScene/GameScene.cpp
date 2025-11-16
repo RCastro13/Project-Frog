@@ -99,7 +99,6 @@ MainMenuScene::~MainMenuScene()
 
 void MainMenuScene::Enter()
 {
-    SDL_Log("Entering MainMenuScene");
     mStateTime = 0.0f;
 
     // Atualizar título da janela
@@ -211,19 +210,15 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     {
         if (mSelectedOption == 0) {
             // Iniciar Jogo -> Vai para o Mapa (com fade out automático)
-            SDL_Log("==> Menu: Iniciando jogo");
             mGame->SetScene(new MapScene(mGame));
         } else if (mSelectedOption == 1) {
             // Game Over (teste) -> Vai direto para tela de Game Over
-            SDL_Log("==> Menu: Indo para Game Over (teste)");
             mGame->SetScene(new GameOverScene(mGame));
         } else if (mSelectedOption == 2) {
             // Vitória (teste) -> Vai direto para tela de Vitória
-            SDL_Log("==> Menu: Indo para Vitória (teste)");
             mGame->SetScene(new VictoryScene(mGame));
         } else {
             // Sair -> Vai para tela preta que fechará o jogo
-            SDL_Log("==> Menu: Indo para tela preta");
             mGame->SetScene(new BlackScreenScene(mGame));
         }
         mKeyWasPressed = true;
@@ -316,7 +311,6 @@ void MainMenuScene::Render()
 
 void MainMenuScene::Exit()
 {
-    SDL_Log("Exiting MainMenuScene");
 
     // Limpar texturas
     if (mOptionStartTexture) {
@@ -367,7 +361,6 @@ MapScene::~MapScene()
 
 void MapScene::Enter()
 {
-    SDL_Log("Entering MapScene");
     mStateTime = 0.0f;
 
     // Atualizar título da janela
@@ -376,7 +369,6 @@ void MapScene::Enter()
     // Carregar background do mapa
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
     if (mBackgroundTexture) {
-        SDL_Log("Background do mapa carregado");
     } else {
         SDL_Log("AVISO: Falha ao carregar background do mapa");
     }
@@ -386,7 +378,6 @@ void MapScene::Enter()
     // Obter mapa do Game (se já existe) ou gerar novo
     if (mGame->GetMapNodes().empty()) {
         // Gerar novo mapa
-        SDL_Log("Gerando novo mapa...");
         mMapNodes = MapGenerator::Generate();
         mGame->SetMapNodes(mMapNodes);
 
@@ -504,7 +495,6 @@ void MapScene::ProcessInput(const Uint8* keyState)
 
 void MapScene::Exit()
 {
-    SDL_Log("Exiting MapScene");
 
     // Limpar referência ao background (Renderer gerencia a memória)
     mBackgroundTexture = nullptr;
@@ -760,17 +750,14 @@ void MapScene::ConfirmSelection()
     switch (nodeToMoveTo->GetType()) {
         case MapNodeType::START:
         case MapNodeType::COMBAT:
-            SDL_Log("==> Iniciando combate normal");
             mGame->SetScene(new CombatScene(mGame));
             break;
 
         case MapNodeType::ELITE:
-            SDL_Log("==> Iniciando combate elite");
             mGame->SetScene(new CombatScene(mGame)); // Por enquanto igual ao normal
             break;
 
         case MapNodeType::BOSS:
-            SDL_Log("==> Iniciando combate contra o BOSS!");
             mGame->SetScene(new CombatScene(mGame));
             break;
 
@@ -820,7 +807,6 @@ void MapScene::LoadAvailableIcons()
 {
     // Não precisa mais carregar lista aleatória - cada tipo terá seu ícone específico
     // Esta função agora apenas inicializa o sistema de ícones
-    SDL_Log("Sistema de ícones por tipo inicializado");
 }
 
 std::string MapScene::GetIconPathForNodeType(MapNodeType type)
@@ -864,7 +850,6 @@ void MapScene::AssignIconsToNodes()
         }
     }
 
-    SDL_Log("Atribuídos ícones a %d nós", (int)mNodeIcons.size());
 }
 
 const char* MapScene::GetNodeTypeName(MapNodeType type)
@@ -954,13 +939,11 @@ void CombatScene::Enter()
     // Carregar ícone de cooldown
     mTimeIconTexture = mGame->GetRenderer()->GetTexture("../Assets/Icons/White/icon_time.png");
     if (mTimeIconTexture) {
-        SDL_Log("Ícone de cooldown carregado");
     }
 
     // Carregar moldura de vencedor
     mWinnerFrameTexture = mGame->GetRenderer()->GetTexture("../Assets/Card/winner-frame.png");
     if (mWinnerFrameTexture) {
-        SDL_Log("Moldura de vencedor carregada");
     }
 }
 
@@ -1040,7 +1023,6 @@ void CombatScene::LoadCardTextures()
     mCardTexturesCooldown[AttackType::Neutral] =
         mGame->GetRenderer()->GetTexture("../Assets/Cards/neutral-cooldown.png");
 
-    SDL_Log("Texturas de cartas carregadas");
 }
 
 Texture* CombatScene::GetCardTexture(AttackType type, bool isAvailable)
@@ -1592,7 +1574,6 @@ void CombatScene::TriggerDefenderAnimation()
 
 void CombatScene::Exit()
 {
-    SDL_Log("Exiting CombatScene");
 
     // Limpar sistema de renderização
     if (mCombatRenderer)
@@ -1676,7 +1657,6 @@ GameOverScene::~GameOverScene()
 
 void GameOverScene::Enter()
 {
-    SDL_Log("Entering GameOverScene");
     mStateTime = 0.0f;
     mPulseTimer = 0.0f;
 
@@ -1776,7 +1756,6 @@ void GameOverScene::Render()
 
 void GameOverScene::Exit()
 {
-    SDL_Log("Exiting GameOverScene");
 
     // Limpar texturas
     if (mMenuTexture)
@@ -1808,7 +1787,6 @@ VictoryScene::~VictoryScene()
 
 void VictoryScene::Enter()
 {
-    SDL_Log("Entering VictoryScene");
     mStateTime = 0.0f;
     mPulseTimer = 0.0f;
 
@@ -1908,7 +1886,6 @@ void VictoryScene::Render()
 
 void VictoryScene::Exit()
 {
-    SDL_Log("Exiting VictoryScene");
 
     // Limpar texturas
     if (mPlayAgainTexture)
@@ -1936,7 +1913,6 @@ BlackScreenScene::~BlackScreenScene()
 
 void BlackScreenScene::Enter()
 {
-    SDL_Log("Entering BlackScreenScene");
     mStateTime = 0.0f;
 }
 
@@ -1964,5 +1940,4 @@ void BlackScreenScene::ProcessInput(const Uint8* keyState)
 
 void BlackScreenScene::Exit()
 {
-    SDL_Log("Exiting BlackScreenScene");
 }

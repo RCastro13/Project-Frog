@@ -14,8 +14,8 @@ class Combatant : Actor
     void RestoreHealth();
     void Heal(int heal);
 
-    void QuitCard(Card *card);
-    void GiveCard(Card *card);
+    void RemoveCard(Card* card);
+    void GiveCard(Card* card);
 
     int GetHealth() const { return mHealth; }
 

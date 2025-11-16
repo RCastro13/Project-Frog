@@ -1,4 +1,5 @@
 #include "MagicProjectileActor.h"
+#include "ActorConstants.h"
 #include "../Game.h"
 #include "../Components/Drawing/AnimatorComponent.h"
 #include "../Random.h"
@@ -17,10 +18,9 @@ MagicProjectileActor::MagicProjectileActor(Game* game, AttackType type, Vector2 
     SetPosition(startPos);
     LoadMagicAnimation(type);
 
-    // Aplicar flip horizontal se necessário (projétil do inimigo)
     if (mRotate180)
     {
-        SetScale(Vector2(-1.0f, 1.0f)); // Flip horizontal
+        SetScale(Vector2(-1.0f, 1.0f));
     }
 }
 
@@ -35,15 +35,10 @@ void MagicProjectileActor::OnUpdate(float deltaTime)
 
     mTimer += deltaTime;
 
-    // Lerp position from start to end
-    float t = mTimer / mTravelTime;
-    if (t > 1.0f)
-        t = 1.0f;
-
+    float t = Math::Min(mTimer / mTravelTime, 1.0f);
     Vector2 currentPos = mStartPos + (mEndPos - mStartPos) * t;
     SetPosition(currentPos);
 
-    // Check if travel is complete
     if (mTimer >= mTravelTime)
     {
         mIsComplete = true;
@@ -52,19 +47,21 @@ void MagicProjectileActor::OnUpdate(float deltaTime)
 
 void MagicProjectileActor::LoadMagicAnimation(AttackType type)
 {
+    using namespace ActorConstants;
+
     struct MagicInfo {
         const char* pasta;
         const char* prefixo;
     };
 
     static const MagicInfo magicMap[] = {
-        {"Fire", "firemagic0"},     // AttackType::Fire
-        {"Water", "watermagic0"},   // AttackType::Water
-        {"Grass", "grassmagic0"},   // AttackType::Plant
-        {"Neutral", "neutralmagic0"} // AttackType::Neutral
+        {"Fire", "firemagic0"},
+        {"Water", "watermagic0"},
+        {"Grass", "grassmagic0"},
+        {"Neutral", "neutralmagic0"}
     };
 
-    int variant = Random::GetIntRange(1, 3);
+    int variant = Random::GetIntRange(Magic::MIN_VARIANT, Magic::MAX_VARIANT);
     const MagicInfo& info = magicMap[static_cast<int>(type)];
 
     std::string variantStr = std::to_string(variant);
@@ -74,12 +71,12 @@ void MagicProjectileActor::LoadMagicAnimation(AttackType type)
     mAnimator = new AnimatorComponent(this,
         (fullPath + ".png").c_str(),
         (fullPath + ".json").c_str(),
-        64, 64, 100);
+        Sprites::PROJECTILE_WIDTH,
+        Sprites::PROJECTILE_HEIGHT,
+        Sprites::DEFAULT_DRAW_ORDER);
 
     mAnimator->AddAnimation("magic", {0, 1, 2, 3, 4});
-    mAnimator->SetAnimFPS(10.0f);
+    mAnimator->SetAnimFPS(Animation::DEFAULT_FPS);
     mAnimator->SetAnimation("magic");
-
-    SDL_Log("Animação mágica carregada: %s", fullPath.c_str());
 }
 

@@ -202,7 +202,6 @@ void Game::UpdateGame(float deltaTime)
 void Game::SetScene(GameScene* scene)
 {
     mPendingScene = scene;
-    SDL_Log("Scene change requested to: %s", scene->GetName());
 
     // Iniciar fade OUT automaticamente
     if (!mIsFading)
@@ -213,7 +212,6 @@ void Game::SetScene(GameScene* scene)
 
 void Game::StartFade(bool fadeOut, float duration)
 {
-    SDL_Log("[Fade] Starting fade %s, duration: %.2f", fadeOut ? "OUT" : "IN", duration);
     mIsFading = true;
     mFadeOut = fadeOut;
     mFadeDuration = duration;
@@ -234,7 +232,6 @@ void Game::UpdateFade(float deltaTime)
 
         if (t >= 1.0f)
         {
-            SDL_Log("[Fade] Fade OUT complete, changing scene");
             mFadeOut = false;
             mFadeTimer = 0.0f;
 
@@ -279,7 +276,6 @@ void Game::UpdateFade(float deltaTime)
 
         if (t >= 1.0f)
         {
-            SDL_Log("[Fade] Fade IN complete");
             mIsFading = false;
             mFadeAlpha = 0.0f;
         }

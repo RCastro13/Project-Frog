@@ -1,5 +1,4 @@
 #include "CombatManager.h"
-#include <algorithm>
 #include <SDL_log.h>
 
 CombatManager::CombatManager(Player* player, Enemy* enemy, int coinReward)
@@ -134,7 +133,7 @@ void CombatManager::ResolveCombat()
         SDL_Log("🤝 EMPATE! Ninguém causou dano.");
     }
 
-    mEnemy->LearnFromAtack(mPlayerSelectedCard);
+    mEnemy->LearnFromAttack(mPlayerSelectedCard);
 
     // Aplicar tempos de recarga (cooldowns) às cartas usadas
     mPlayerSelectedCard->StartCooldown();
