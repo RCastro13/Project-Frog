@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
@@ -55,6 +56,8 @@ add_executable(${PROJECT_NAME}
         Source/Renderer/VertexArray.cpp
         Source/Renderer/Texture.cpp
         Source/Renderer/Texture.h
+        Source/Renderer/TextureUtils.cpp
+        Source/Renderer/TextureUtils.h
         Source/Components/Drawing/AnimatorComponent.cpp
         Source/Components/Drawing/AnimatorComponent.h
         Source/Components/Drawing/RectComponent.cpp
@@ -69,6 +72,10 @@ add_executable(${PROJECT_NAME}
         Source/Audio/AudioSystem.h
         Source/Audio/AudioSystem.cpp
         Source/GameScene/GameScene.h
+        Source/GameScene/AnimationTestScene.h
+        Source/GameScene/AnimationTestScene.cpp
+        Source/GameScene/DebugMenuScene.h
+        Source/GameScene/DebugMenuScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
@@ -81,6 +88,9 @@ add_executable(${PROJECT_NAME}
         Source/Map/MapGenerator.cpp
         Source/Combat/Card.h
         Source/Combat/Card.cpp
+        Source/Combat/CombatConstants.h
+        Source/Combat/CombatRenderer.h
+        Source/Combat/CombatRenderer.cpp
         Source/Actors/Combatant.h
         Source/Actors/Combatant.cpp
         Source/Actors/Player.h
@@ -90,10 +100,24 @@ add_executable(${PROJECT_NAME}
         Source/Combat/CombatManager.cpp
         Source/Actors/Enemy.h
         Source/Actors/Enemy.cpp
+        Source/Actors/ActorConstants.h
+        Source/Actors/AnimatedCharacterActor.h
+        Source/Actors/AnimatedCharacterActor.cpp
         Source/Actors/FrogActor.h
         Source/Actors/FrogActor.cpp
         Source/Actors/BearActor.h
         Source/Actors/BearActor.cpp
+        Source/Actors/EnemyType.h
+        Source/Actors/EnemyFactory.h
+        Source/Actors/EnemyFactory.cpp
+        Source/Actors/BeatleActor.h
+        Source/Actors/BeatleActor.cpp
+        Source/Actors/SnakeActor.h
+        Source/Actors/SnakeActor.cpp
+        Source/Actors/WolfActor.h
+        Source/Actors/WolfActor.cpp
+        Source/Actors/MagicProjectileActor.h
+        Source/Actors/MagicProjectileActor.cpp
 )
 
 # Libs

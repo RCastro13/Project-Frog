@@ -98,13 +98,12 @@ private:
     class Texture* mBackgroundTexture;
 
     // Sistema de menu com opções
-    int mSelectedOption;      // 0 = Iniciar Jogo, 1 = Game Over (teste), 2 = Vitória (teste), 3 = Sair
+    int mSelectedOption;      // 0 = Jogar, 1 = Sair, 2 = Debugar
     bool mKeyWasPressed;      // Controle de input
 
     // Texturas das opções do menu
     class Texture* mOptionStartTexture;
-    class Texture* mOptionGameOverTexture;
-    class Texture* mOptionVictoryTexture;
+    class Texture* mOptionDebugTexture;
     class Texture* mOptionExitTexture;
 };
 
@@ -187,7 +186,7 @@ private:
 
     // Atores visuais
     class FrogActor* mFrogActor;
-    class BearActor* mBearActor;
+    class AnimatedCharacterActor* mEnemyActor;
 
     // Background
     class Texture* mBackgroundTexture;

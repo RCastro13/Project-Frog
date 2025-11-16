@@ -72,6 +72,10 @@ add_executable(${PROJECT_NAME}
         Source/Audio/AudioSystem.h
         Source/Audio/AudioSystem.cpp
         Source/GameScene/GameScene.h
+        Source/GameScene/AnimationTestScene.h
+        Source/GameScene/AnimationTestScene.cpp
+        Source/GameScene/DebugMenuScene.h
+        Source/GameScene/DebugMenuScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
@@ -103,6 +107,15 @@ add_executable(${PROJECT_NAME}
         Source/Actors/FrogActor.cpp
         Source/Actors/BearActor.h
         Source/Actors/BearActor.cpp
+        Source/Actors/EnemyType.h
+        Source/Actors/EnemyFactory.h
+        Source/Actors/EnemyFactory.cpp
+        Source/Actors/BeatleActor.h
+        Source/Actors/BeatleActor.cpp
+        Source/Actors/SnakeActor.h
+        Source/Actors/SnakeActor.cpp
+        Source/Actors/WolfActor.h
+        Source/Actors/WolfActor.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
 )

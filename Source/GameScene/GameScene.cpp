@@ -3,6 +3,8 @@
 //
 
 #include "GameScene.h"
+#include "AnimationTestScene.h"
+#include "DebugMenuScene.h"
 #include "../Game.h"
 #include "../Combat/CombatManager.h"
 #include "../Combat/CombatRenderer.h"
@@ -11,7 +13,9 @@
 #include "../Actors/Player.h"
 #include "../Actors/Enemy.h"
 #include "../Actors/FrogActor.h"
-#include "../Actors/BearActor.h"
+#include "../Actors/EnemyFactory.h"
+#include "../Actors/EnemyType.h"
+#include "../Actors/AnimatedCharacterActor.h"
 #include "../Actors/MagicProjectileActor.h"
 #include "../Map/MapNode.h"
 #include "../Map/MapGenerator.h"
@@ -75,8 +79,7 @@ MainMenuScene::MainMenuScene(Game* game)
     , mSelectedOption(0)
     , mKeyWasPressed(false)
     , mOptionStartTexture(nullptr)
-    , mOptionGameOverTexture(nullptr)
-    , mOptionVictoryTexture(nullptr)
+    , mOptionDebugTexture(nullptr)
     , mOptionExitTexture(nullptr)
 {
 }
@@ -86,11 +89,8 @@ MainMenuScene::~MainMenuScene()
     if (mOptionStartTexture) {
         delete mOptionStartTexture;
     }
-    if (mOptionGameOverTexture) {
-        delete mOptionGameOverTexture;
-    }
-    if (mOptionVictoryTexture) {
-        delete mOptionVictoryTexture;
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
     }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
@@ -124,52 +124,39 @@ void MainMenuScene::UpdateMenuTextures()
         delete mOptionStartTexture;
         mOptionStartTexture = nullptr;
     }
-    if (mOptionGameOverTexture) {
-        delete mOptionGameOverTexture;
-        mOptionGameOverTexture = nullptr;
-    }
-    if (mOptionVictoryTexture) {
-        delete mOptionVictoryTexture;
-        mOptionVictoryTexture = nullptr;
-    }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
         mOptionExitTexture = nullptr;
     }
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+        mOptionDebugTexture = nullptr;
+    }
 
-    // Criar textura "Iniciar Jogo" com cor apropriada
+    // Criar textura "Jogar" com cor apropriada
     Vector3 startColor = (mSelectedOption == 0) ? goldColor : whiteColor;
     mOptionStartTexture = mGame->GetFont()->RenderText(
-        "Iniciar Jogo",
+        "Jogar",
         startColor,
-        18,
-        400
-    );
-
-    // Criar textura "Game Over (teste)" com cor apropriada
-    Vector3 gameOverColor = (mSelectedOption == 1) ? goldColor : whiteColor;
-    mOptionGameOverTexture = mGame->GetFont()->RenderText(
-        "Game Over (teste)",
-        gameOverColor,
-        18,
-        400
-    );
-
-    // Criar textura "Vitória (teste)" com cor apropriada
-    Vector3 victoryColor = (mSelectedOption == 2) ? goldColor : whiteColor;
-    mOptionVictoryTexture = mGame->GetFont()->RenderText(
-        "Vitoria (teste)",
-        victoryColor,
-        18,
+        22,
         400
     );
 
     // Criar textura "Sair" com cor apropriada
-    Vector3 exitColor = (mSelectedOption == 3) ? goldColor : whiteColor;
+    Vector3 exitColor = (mSelectedOption == 1) ? goldColor : whiteColor;
     mOptionExitTexture = mGame->GetFont()->RenderText(
         "Sair",
         exitColor,
-        18,
+        22,
+        400
+    );
+
+    // Criar textura "Debugar" com cor apropriada
+    Vector3 debugColor = (mSelectedOption == 2) ? goldColor : whiteColor;
+    mOptionDebugTexture = mGame->GetFont()->RenderText(
+        "Debugar",
+        debugColor,
+        22,
         400
     );
 }
@@ -177,12 +164,7 @@ void MainMenuScene::UpdateMenuTextures()
 void MainMenuScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
-
-    // Atualizar fade in
     UpdateFade(deltaTime);
-
-    // TODO (Kayque): Atualizar animações do menu
-    // TODO (Kayque): Verificar seleção de botões
 }
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
@@ -194,32 +176,29 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     // Navegar para baixo (Seta baixo ou S)
     if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
     {
-        mSelectedOption = (mSelectedOption + 1) % 4;
-        UpdateMenuTextures();  // Atualizar cores
+        mSelectedOption = (mSelectedOption + 1) % 3;
+        UpdateMenuTextures();
         mKeyWasPressed = true;
     }
     // Navegar para cima (Seta cima ou W)
     else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {
-        mSelectedOption = (mSelectedOption - 1 + 4) % 4;
-        UpdateMenuTextures();  // Atualizar cores
+        mSelectedOption = (mSelectedOption - 1 + 3) % 3;
+        UpdateMenuTextures();
         mKeyWasPressed = true;
     }
     // Confirmar seleção (Enter ou Space)
     else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
         if (mSelectedOption == 0) {
-            // Iniciar Jogo -> Vai para o Mapa (com fade out automático)
+            // Jogar -> Vai para o Mapa
             mGame->SetScene(new MapScene(mGame));
         } else if (mSelectedOption == 1) {
-            // Game Over (teste) -> Vai direto para tela de Game Over
-            mGame->SetScene(new GameOverScene(mGame));
-        } else if (mSelectedOption == 2) {
-            // Vitória (teste) -> Vai direto para tela de Vitória
-            mGame->SetScene(new VictoryScene(mGame));
-        } else {
             // Sair -> Vai para tela preta que fechará o jogo
             mGame->SetScene(new BlackScreenScene(mGame));
+        } else {
+            // Debugar -> Vai para menu de debug
+            mGame->SetScene(new class DebugMenuScene(mGame));
         }
         mKeyWasPressed = true;
     }
@@ -250,10 +229,10 @@ void MainMenuScene::RenderBackground()
 void MainMenuScene::Render()
 {
     // Posição vertical base para as opções
-    float startY = 165.0f;
-    float optionSpacing = 45.0f;
+    float startY = 180.0f;
+    float optionSpacing = 80.0f;
 
-    // Opção 1: "Iniciar Jogo" (cor já está na textura)
+    // Opção 1: "Jogar"
     if (mOptionStartTexture) {
         mGame->GetRenderer()->DrawTexture(
             Vector2(320.0f, startY),
@@ -266,40 +245,27 @@ void MainMenuScene::Render()
         );
     }
 
-    // Opção 2: "Game Over (teste)" (cor já está na textura)
-    if (mOptionGameOverTexture) {
-        mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, startY + optionSpacing),
-            Vector2(mOptionGameOverTexture->GetWidth(), mOptionGameOverTexture->GetHeight()),
-            0.0f,
-            Vector3(1.0f, 1.0f, 1.0f),
-            mOptionGameOverTexture,
-            Vector4::UnitRect,
-            Vector2::Zero
-        );
-    }
-
-    // Opção 3: "Vitória (teste)" (cor já está na textura)
-    if (mOptionVictoryTexture) {
-        mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, startY + optionSpacing * 2),
-            Vector2(mOptionVictoryTexture->GetWidth(), mOptionVictoryTexture->GetHeight()),
-            0.0f,
-            Vector3(1.0f, 1.0f, 1.0f),
-            mOptionVictoryTexture,
-            Vector4::UnitRect,
-            Vector2::Zero
-        );
-    }
-
-    // Opção 4: "Sair" (cor já está na textura)
+    // Opção 3: "Sair"
     if (mOptionExitTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, startY + optionSpacing * 3),
+            Vector2(320.0f, startY + optionSpacing),
             Vector2(mOptionExitTexture->GetWidth(), mOptionExitTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
             mOptionExitTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Opção 3: "Debugar"
+    if (mOptionDebugTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, startY + optionSpacing * 2),
+            Vector2(mOptionDebugTexture->GetWidth(), mOptionDebugTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mOptionDebugTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
@@ -311,19 +277,14 @@ void MainMenuScene::Render()
 
 void MainMenuScene::Exit()
 {
-
     // Limpar texturas
     if (mOptionStartTexture) {
         delete mOptionStartTexture;
         mOptionStartTexture = nullptr;
     }
-    if (mOptionGameOverTexture) {
-        delete mOptionGameOverTexture;
-        mOptionGameOverTexture = nullptr;
-    }
-    if (mOptionVictoryTexture) {
-        delete mOptionVictoryTexture;
-        mOptionVictoryTexture = nullptr;
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+        mOptionDebugTexture = nullptr;
     }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
@@ -368,10 +329,6 @@ void MapScene::Enter()
 
     // Carregar background do mapa
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
-    if (mBackgroundTexture) {
-    } else {
-        SDL_Log("AVISO: Falha ao carregar background do mapa");
-    }
 
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
 
@@ -422,11 +379,8 @@ void MapScene::Enter()
     // Inicializar posição da câmera para colocar o nó inicial mais à esquerda
     if (mCurrentNode) {
         Vector2 startPos = mCurrentNode->GetPosition();
-        mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f); // Nó inicial mais à esquerda (100px da borda)
+        mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f);
     }
-
-    SDL_Log("Mapa carregado com %d nós", (int)mMapNodes.size());
-    SDL_Log("Nó atual: %d", mCurrentNode ? mCurrentNode->GetID() : -1);
 }
 
 void MapScene::Update(float deltaTime)
@@ -495,7 +449,6 @@ void MapScene::ProcessInput(const Uint8* keyState)
 
 void MapScene::Exit()
 {
-
     // Limpar referência ao background (Renderer gerencia a memória)
     mBackgroundTexture = nullptr;
 }
@@ -627,15 +580,6 @@ void MapScene::RenderNode(MapNode* node)
             RendererMode::TRIANGLES
         );
     }
-
-    // Log informativo quando renderizar pela primeira vez
-    static bool firstRender = true;
-    if (firstRender && node == mCurrentNode) {
-        SDL_Log("Renderizando nó %d (%s) na posição (%.1f, %.1f)",
-                node->GetID(), GetNodeTypeName(node->GetType()),
-                pos.x, pos.y);
-        firstRender = false;
-    }
 }
 
 void MapScene::RenderConnections()
@@ -681,10 +625,6 @@ void MapScene::SelectNextAccessibleNode()
 
     mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
-
-    SDL_Log("Nó selecionado: %d (%s)",
-            mSelectedNode->GetID(),
-            GetNodeTypeName(mSelectedNode->GetType()));
 }
 
 void MapScene::SelectPreviousAccessibleNode()
@@ -694,25 +634,16 @@ void MapScene::SelectPreviousAccessibleNode()
 
     mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
-
-    SDL_Log("Nó selecionado: %d (%s)",
-            mSelectedNode->GetID(),
-            GetNodeTypeName(mSelectedNode->GetType()));
 }
 
 void MapScene::ConfirmSelection()
 {
     if (!mSelectedNode || !CanSelectNode(mSelectedNode)) {
-        SDL_Log("Não é possível selecionar este nó");
         return;
     }
 
     // Guardar o nó selecionado antes de fazer mudanças
     MapNode* nodeToMoveTo = mSelectedNode;
-
-    SDL_Log("Confirmando seleção do nó %d (%s)",
-            nodeToMoveTo->GetID(),
-            GetNodeTypeName(nodeToMoveTo->GetType()));
 
     // Marcar nó atual como completo
     if (mCurrentNode) {
@@ -805,8 +736,6 @@ std::vector<MapNode*> MapScene::GetAccessibleNodes()
 
 void MapScene::LoadAvailableIcons()
 {
-    // Não precisa mais carregar lista aleatória - cada tipo terá seu ícone específico
-    // Esta função agora apenas inicializa o sistema de ícones
 }
 
 std::string MapScene::GetIconPathForNodeType(MapNodeType type)
@@ -877,7 +806,7 @@ CombatScene::CombatScene(Game* game)
     , mEnemy(nullptr)
     , mCombatRenderer(nullptr)
     , mFrogActor(nullptr)
-    , mBearActor(nullptr)
+    , mEnemyActor(nullptr)
     , mBackgroundTexture(nullptr)
     , mSelectedCardIndex(0)
     , mKeyWasPressed(false)
@@ -913,14 +842,8 @@ void CombatScene::Enter()
         "../Assets/Background/Combat/pantano.jpeg",
     };
 
-    int randomIndex = Random::GetIntRange(0, 0);  // Apenas 1 background disponível
+    int randomIndex = Random::GetIntRange(0, 0);
     mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
-
-    if (mBackgroundTexture) {
-        SDL_Log("Background de combate carregado: %s", backgroundFiles[randomIndex]);
-    } else {
-        SDL_Log("ERRO: Falha ao carregar background de combate");
-    }
 
     mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -938,13 +861,9 @@ void CombatScene::Enter()
 
     // Carregar ícone de cooldown
     mTimeIconTexture = mGame->GetRenderer()->GetTexture("../Assets/Icons/White/icon_time.png");
-    if (mTimeIconTexture) {
-    }
 
     // Carregar moldura de vencedor
-    mWinnerFrameTexture = mGame->GetRenderer()->GetTexture("../Assets/Card/winner-frame.png");
-    if (mWinnerFrameTexture) {
-    }
+    mWinnerFrameTexture = mGame->GetRenderer()->GetTexture("../Assets/Cards/winner-frame.png");
 }
 
 void CombatScene::CreateTestCombatants()
@@ -963,9 +882,14 @@ void CombatScene::CreateTestCombatants()
     enemyDeck.push_back(new Card("Enemy Plant", AttackType::Plant, 4, 2, nullptr));
     enemyDeck.push_back(new Card("Enemy Neutral", AttackType::Neutral, 3, 0, nullptr));
 
-    // Criar Player e Enemy
+    // Criar Player
     mPlayer = new Player(mGame, "Frog Hero", 20, 20, playerDeck);
-    mEnemy = new Enemy(mGame, "Slime", 15, 15, enemyDeck);
+
+    // Criar Enemy com stats baseados no tipo aleatório
+    EnemyType enemyType = EnemyFactory::GetRandomEnemyType();
+    EnemyFactory::EnemyStats stats = EnemyFactory::GetStatsForType(enemyType);
+    mEnemy = new Enemy(mGame, "Enemy", stats.health, stats.maxHealth, enemyDeck);
+    mEnemy->SetDifficulty(stats.difficulty);
 
     // Configurar owners das cartas
     for (Card* card : mPlayer->GetDeck()) {
@@ -986,19 +910,12 @@ void CombatScene::CreateVisualActors()
 {
     // Criar sapo (player) à esquerda
     mFrogActor = new FrogActor(mGame);
-    mFrogActor->SetPosition(Vector2(150.0f, 224.0f)); // Esquerda, centro vertical
+    mFrogActor->SetPosition(Vector2(150.0f, 224.0f));
     mFrogActor->SetScale(Vector2(1.0f, 1.0f));
 
-    SDL_Log("FrogActor criado na posição (%.1f, %.1f)",
-            mFrogActor->GetPosition().x, mFrogActor->GetPosition().y);
-
-    // Criar urso (inimigo) à direita
-    mBearActor = new BearActor(mGame);
-    mBearActor->SetPosition(Vector2(490.0f, 224.0f)); // Direita, centro vertical
-    mBearActor->SetScale(Vector2(-1.0f, 1.0f)); // Inverter horizontalmente (olhar para a esquerda)
-
-    SDL_Log("BearActor criado na posição (%.1f, %.1f)",
-            mBearActor->GetPosition().x, mBearActor->GetPosition().y);
+    // Criar inimigo aleatório à direita
+    mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    mEnemyActor->SetPosition(Vector2(490.0f, 224.0f));
 }
 
 void CombatScene::LoadCardTextures()
@@ -1059,7 +976,6 @@ void CombatScene::AtualizarExibicaoCartas(float deltaTime)
         }
         else
         {
-            SDL_Log("Empate! Nenhuma animação de ataque.");
             // Em caso de empate, registra o uso das cartas sem causar dano
             if (mDisplayPlayerCard)
             {
@@ -1165,10 +1081,10 @@ void CombatScene::RenderCombatUI()
     // Renderizar barras de HP
     if (mPlayer && mEnemy && mCombatRenderer) {
         Vector2 playerHPPos = Vector2(CombatConstants::Positions::FROG_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
-        mCombatRenderer->RenderizarBarraHP(playerHPPos, mPlayer->GetHealth(), 20, false);
+        mCombatRenderer->RenderizarBarraHP(playerHPPos, mPlayer->GetHealth(), mPlayer->GetMaxHealth(), false);
 
         Vector2 enemyHPPos = Vector2(CombatConstants::Positions::BEAR_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
-        mCombatRenderer->RenderizarBarraHP(enemyHPPos, mEnemy->GetHealth(), 15, true);
+        mCombatRenderer->RenderizarBarraHP(enemyHPPos, mEnemy->GetHealth(), mEnemy->GetMaxHealth(), true);
     }
 
     // Se está mostrando as cartas no centro, renderizar elas
@@ -1337,7 +1253,7 @@ void CombatScene::ProcessInput(const Uint8* keyState)
 
     // Bloquear inputs enquanto os personagens estão em animação
     if ((mFrogActor && mFrogActor->IsInAnimation()) ||
-        (mBearActor && mBearActor->IsInAnimation()))
+        (mEnemyActor && mEnemyActor->IsInAnimation()))
         return;
 
     // Só processar input se estiver esperando o jogador
@@ -1363,12 +1279,6 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         // Verificar se a carta está disponível (não em cooldown)
         if (selectedCard->IsAvailable())
         {
-            SDL_Log("TURNO %d", mCombatManager->GetCurrentTurn());
-            SDL_Log("Player usou: %s (Tipo: %s, Dano: %d)",
-                    selectedCard->GetName().c_str(),
-                    GetTypeName(selectedCard->GetType()),
-                    selectedCard->GetDamage());
-
             // Ao invés de chamar PlayerSelectCard imediatamente,
             // ativar o modo de exibição de cartas
             mDisplayPlayerCard = selectedCard;
@@ -1407,11 +1317,6 @@ void CombatScene::ProcessInput(const Uint8* keyState)
                 mWasTie = false;
             }
 
-            SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
-                    mDisplayEnemyCard ? mDisplayEnemyCard->GetName().c_str() : "None",
-                    mDisplayEnemyCard ? GetTypeName(mDisplayEnemyCard->GetType()) : "None",
-                    mDisplayEnemyCard ? mDisplayEnemyCard->GetDamage() : 0);
-
             mKeyWasPressed = true;
         }
         else
@@ -1429,11 +1334,10 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         mKeyWasPressed = false;
     }
 
-    // ESC para voltar ao menu (apenas para teste)
+    // ESC para voltar ao menu
     static bool escWasPressed = false;
     if (keyState[SDL_SCANCODE_ESCAPE] && !escWasPressed)
     {
-        SDL_Log("\n[Voltando ao menu principal]\n");
         mGame->SetScene(new MainMenuScene(mGame));
         escWasPressed = true;
     }
@@ -1515,19 +1419,13 @@ void CombatScene::LaunchProjectile()
     if (mPlayerWonLastTurn)
     {
         if (mFrogActor) mFrogActor->PlayAttack();
-        SDL_Log("Player attacking!");
     }
     else
     {
-        if (mBearActor) mBearActor->PlayAttack();
-        SDL_Log("Enemy attacking!");
+        if (mEnemyActor) mEnemyActor->PlayAttack();
     }
 
     mProjectile = new MagicProjectileActor(mGame, type, startPos, endPos, 1.0f, rotate180);
-
-    SDL_Log("Launching magic projectile from (%.0f, %.0f) to (%.0f, %.0f) %s",
-            startPos.x, startPos.y, endPos.x, endPos.y,
-            rotate180 ? "(flipped horizontal)" : "");
 }
 
 void CombatScene::TriggerDefenderAnimation()
@@ -1540,15 +1438,11 @@ void CombatScene::TriggerDefenderAnimation()
 
         if (enemyHP - damage <= 0)
         {
-            // Enemy morre
-            if (mBearActor) mBearActor->PlayDeath();
-            SDL_Log("Enemy will die from this hit");
+            if (mEnemyActor) mEnemyActor->PlayDeath();
         }
         else
         {
-            // Enemy toma dano
-            if (mBearActor) mBearActor->PlayHurt();
-            SDL_Log("Enemy takes damage");
+            if (mEnemyActor) mEnemyActor->PlayHurt();
         }
     }
     else
@@ -1559,22 +1453,17 @@ void CombatScene::TriggerDefenderAnimation()
 
         if (playerHP - damage <= 0)
         {
-            // Player morre
             if (mFrogActor) mFrogActor->PlayDeath();
-            SDL_Log("Player will die from this hit");
         }
         else
         {
-            // Player toma dano
             if (mFrogActor) mFrogActor->PlayHurt();
-            SDL_Log("Player takes damage");
         }
     }
 }
 
 void CombatScene::Exit()
 {
-
     // Limpar sistema de renderização
     if (mCombatRenderer)
     {
@@ -1589,10 +1478,10 @@ void CombatScene::Exit()
         mFrogActor = nullptr;
     }
 
-    if (mBearActor)
+    if (mEnemyActor)
     {
-        mBearActor->SetState(ActorState::Destroy);
-        mBearActor = nullptr;
+        mEnemyActor->SetState(ActorState::Destroy);
+        mEnemyActor = nullptr;
     }
 
     // Limpar projétil se existir
@@ -1756,7 +1645,6 @@ void GameOverScene::Render()
 
 void GameOverScene::Exit()
 {
-
     // Limpar texturas
     if (mMenuTexture)
     {
@@ -1886,7 +1774,6 @@ void VictoryScene::Render()
 
 void VictoryScene::Exit()
 {
-
     // Limpar texturas
     if (mPlayAgainTexture)
     {

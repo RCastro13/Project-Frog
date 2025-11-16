@@ -18,6 +18,7 @@ class Combatant : Actor
     void GiveCard(Card* card);
 
     int GetHealth() const { return mHealth; }
+    int GetMaxHealth() const { return mMaxHealth; }
 
     virtual void Death();
 
