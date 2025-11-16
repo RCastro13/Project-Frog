@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
@@ -55,6 +56,8 @@ add_executable(${PROJECT_NAME}
         Source/Renderer/VertexArray.cpp
         Source/Renderer/Texture.cpp
         Source/Renderer/Texture.h
+        Source/Renderer/TextureUtils.cpp
+        Source/Renderer/TextureUtils.h
         Source/Components/Drawing/AnimatorComponent.cpp
         Source/Components/Drawing/AnimatorComponent.h
         Source/Components/Drawing/RectComponent.cpp
@@ -81,6 +84,9 @@ add_executable(${PROJECT_NAME}
         Source/Map/MapGenerator.cpp
         Source/Combat/Card.h
         Source/Combat/Card.cpp
+        Source/Combat/CombatConstants.h
+        Source/Combat/CombatRenderer.h
+        Source/Combat/CombatRenderer.cpp
         Source/Actors/Combatant.h
         Source/Actors/Combatant.cpp
         Source/Actors/Player.h
@@ -94,6 +100,8 @@ add_executable(${PROJECT_NAME}
         Source/Actors/FrogActor.cpp
         Source/Actors/BearActor.h
         Source/Actors/BearActor.cpp
+        Source/Actors/MagicProjectileActor.h
+        Source/Actors/MagicProjectileActor.cpp
 )
 
 # Libs

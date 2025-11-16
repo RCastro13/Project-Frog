@@ -1,49 +1,46 @@
 #include "FrogActor.h"
 #include "../Game.h"
 #include "../Components/Drawing/AnimatorComponent.h"
+#include <SDL_log.h>
 
 FrogActor::FrogActor(Game* game)
     : Actor(game)
-    , mAnimator(nullptr)
+    , mAnimatorIdle(nullptr)
+    , mAnimatorAttack(nullptr)
     , mCurrentState(AnimState::Idle)
     , mAttackTimer(0.0f)
 {
-    // Criar AnimatorComponent com as sprites do sapo
-    // Sprites são 24x24, vamos escalar para 96x96 (4x)
-    mAnimator = new AnimatorComponent(this,
+    // Animator para idle, hurt e death
+    mAnimatorIdle = new AnimatorComponent(this,
         "../Assets/Frog/Frog.png",
         "../Assets/Frog/Frog.json",
         96, 96, 100);
 
-    // Definir animações (usando frames disponíveis no JSON)
-    // Idle: frames 0-3 (parado/esperando)
-    mAnimator->AddAnimation("idle", {0, 1, 2, 3});
+    mAnimatorIdle->AddAnimation("idle", {0, 1, 2, 3});
+    mAnimatorIdle->AddAnimation("hurt", {5, 10, 13, 16});
+    mAnimatorIdle->AddAnimation("death", {10, 11, 17, 14});
+    mAnimatorIdle->SetAnimFPS(10.0f);
 
-    // Attack: frames 4-7 (ataque)
-    mAnimator->AddAnimation("attack", {4, 5, 6, 7});
+    // Animator para attack (mesmo arquivo)
+    mAnimatorAttack = new AnimatorComponent(this,
+        "../Assets/Frog/Frog.png",
+        "../Assets/Frog/Frog.json",
+        96, 96, 100);
 
-    // Hurt: frames 8-9 (tomando dano)
-    mAnimator->AddAnimation("hurt", {8, 9});
+    mAnimatorAttack->AddAnimation("attack", {17, 18, 20, 22});
+    mAnimatorAttack->SetAnimFPS(10.0f);
+    mAnimatorAttack->SetEnabled(false);
 
-    // Death: frames 10-11 (morrendo)
-    mAnimator->AddAnimation("death", {10, 11});
-
-    // Configurar velocidade da animação
-    mAnimator->SetAnimFPS(8.0f);
-
-    // Iniciar com animação idle
     PlayIdle();
 }
 
 FrogActor::~FrogActor()
 {
-    // AnimatorComponent será deletado automaticamente pelo Actor
 }
 
 void FrogActor::OnUpdate(float deltaTime)
 {
-    // Se estiver em ataque, contar o timer
-    if (mCurrentState == AnimState::Attack)
+    if (mCurrentState == AnimState::Attack || mCurrentState == AnimState::Hurt || mCurrentState == AnimState::Death)
     {
         mAttackTimer -= deltaTime;
         if (mAttackTimer <= 0.0f)
@@ -55,40 +52,53 @@ void FrogActor::OnUpdate(float deltaTime)
 
 void FrogActor::PlayIdle()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Idle;
-        mAnimator->SetAnimation("idle");
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("idle");
     }
 }
 
 void FrogActor::PlayAttack()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Attack;
-        mAnimator->SetAnimation("attack");
-        mAttackTimer = 0.8f; // Duração da animação de ataque
+        mAnimatorIdle->SetEnabled(false);
+        mAnimatorAttack->SetEnabled(true);
+        mAnimatorAttack->SetAnimation("attack");
+        mAttackTimer = 2.0f;
     }
 }
 
 void FrogActor::PlayHurt()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Hurt;
-        mAnimator->SetAnimation("hurt");
-        mAttackTimer = 0.4f; // Duração curta para hurt
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("hurt");
+        mAttackTimer = 2.0f;
     }
 }
 
 void FrogActor::PlayDeath()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Death;
-        mAnimator->SetAnimation("death");
-        mAnimator->SetIsPaused(true); // Pausar no último frame
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("death");
+        mAttackTimer = 2.0f;
     }
+}
+
+bool FrogActor::IsInAnimation() const
+{
+    return mCurrentState != AnimState::Idle;
 }
 

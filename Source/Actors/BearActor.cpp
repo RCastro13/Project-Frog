@@ -1,49 +1,45 @@
 #include "BearActor.h"
 #include "../Game.h"
 #include "../Components/Drawing/AnimatorComponent.h"
+#include <SDL_log.h>
 
 BearActor::BearActor(Game* game)
     : Actor(game)
-    , mAnimator(nullptr)
+    , mAnimatorIdle(nullptr)
+    , mAnimatorAttack(nullptr)
     , mCurrentState(AnimState::Idle)
     , mAttackTimer(0.0f)
 {
-    // Criar AnimatorComponent com as sprites do urso
-    // Sprites são 24x24, vamos escalar para 96x96 (4x)
-    mAnimator = new AnimatorComponent(this,
+    mAnimatorIdle = new AnimatorComponent(this,
         "../Assets/Enemies/Bear/Bear.png",
         "../Assets/Enemies/Bear/Bear.json",
         96, 96, 100);
 
-    // Definir animações (usando frames disponíveis no JSON)
-    // Idle: frames 0-7 (parado/esperando)
-    mAnimator->AddAnimation("idle", {0, 1, 2, 3, 4, 5, 6, 7});
+    mAnimatorIdle->AddAnimation("idle", {0, 1, 2, 3});
+    mAnimatorIdle->AddAnimation("hurt", {48, 49, 50, 50});
+    mAnimatorIdle->AddAnimation("death", {50, 51, 50, 51});
+    mAnimatorIdle->SetAnimFPS(10.0f);
 
-    // Attack: frames 8-15 (ataque)
-    mAnimator->AddAnimation("attack", {8, 9, 10, 11, 12, 13, 14, 15});
+    mAnimatorAttack = new AnimatorComponent(this,
+        "../Assets/Enemies/BearAttack/BearAttack.png",
+        "../Assets/Enemies/BearAttack/BearAttack.json",
+        96, 96, 100);
 
-    // Hurt: frames 16-19 (tomando dano)
-    mAnimator->AddAnimation("hurt", {16, 17, 18, 19});
+    mAnimatorAttack->AddAnimation("attack", {0, 1, 2, 3});
+    mAnimatorAttack->SetAnimFPS(10.0f);
+    mAnimatorAttack->SetEnabled(false);
 
-    // Death: frames 20-23 (morrendo)
-    mAnimator->AddAnimation("death", {20, 21, 22, 23});
-
-    // Configurar velocidade da animação
-    mAnimator->SetAnimFPS(10.0f);
-
-    // Iniciar com animação idle
+    SetScale(Vector2(-1.0f, 1.0f));
     PlayIdle();
 }
 
 BearActor::~BearActor()
 {
-    // AnimatorComponent será deletado automaticamente pelo Actor
 }
 
 void BearActor::OnUpdate(float deltaTime)
 {
-    // Se estiver em ataque, contar o timer
-    if (mCurrentState == AnimState::Attack)
+    if (mCurrentState == AnimState::Attack || mCurrentState == AnimState::Hurt || mCurrentState == AnimState::Death)
     {
         mAttackTimer -= deltaTime;
         if (mAttackTimer <= 0.0f)
@@ -55,40 +51,53 @@ void BearActor::OnUpdate(float deltaTime)
 
 void BearActor::PlayIdle()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Idle;
-        mAnimator->SetAnimation("idle");
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("idle");
     }
 }
 
 void BearActor::PlayAttack()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Attack;
-        mAnimator->SetAnimation("attack");
-        mAttackTimer = 0.8f; // Duração da animação de ataque
+        mAnimatorIdle->SetEnabled(false);
+        mAnimatorAttack->SetEnabled(true);
+        mAnimatorAttack->SetAnimation("attack");
+        mAttackTimer = 2.0f;
     }
 }
 
 void BearActor::PlayHurt()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Hurt;
-        mAnimator->SetAnimation("hurt");
-        mAttackTimer = 0.4f; // Duração curta para hurt
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("hurt");
+        mAttackTimer = 2.0f;
     }
 }
 
 void BearActor::PlayDeath()
 {
-    if (mAnimator)
+    if (mAnimatorIdle && mAnimatorAttack)
     {
         mCurrentState = AnimState::Death;
-        mAnimator->SetAnimation("death");
-        mAnimator->SetIsPaused(true); // Pausar no último frame
+        mAnimatorIdle->SetEnabled(true);
+        mAnimatorAttack->SetEnabled(false);
+        mAnimatorIdle->SetAnimation("death");
+        mAttackTimer = 2.0f; // Duração da animação
     }
+}
+
+bool BearActor::IsInAnimation() const
+{
+    return mCurrentState != AnimState::Idle;
 }
 

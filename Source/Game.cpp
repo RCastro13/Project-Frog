@@ -8,19 +8,13 @@
 
 #include <algorithm>
 #include <vector>
-#include <map>
-#include <fstream>
-#include "CSV.h"
 #include "Game.h"
 #include "Components/Drawing/DrawComponent.h"
-#include "Components/Physics/RigidBodyComponent.h"
 #include "Random.h"
 #include "Actors/Actor.h"
 
-#include <sstream>
 #include <SDL_ttf.h>
 
-#include "Renderer/Shader.h"
 #include "GameScene/GameScene.h"
 #include "Map/MapNode.h"
 
@@ -40,6 +34,12 @@ Game::Game()
         ,mCurrentScene(nullptr)
         ,mPendingScene(nullptr)
         ,mCurrentMapNode(nullptr)
+        ,mIsChangingScene(false)
+        ,mIsFading(false)
+        ,mFadeOut(false)
+        ,mFadeDuration(0.8f)
+        ,mFadeTimer(0.0f)
+        ,mFadeAlpha(0.0f)
 {
 
 }
@@ -172,18 +172,8 @@ void Game::ProcessInput()
 
 void Game::UpdateGame(float deltaTime)
 {
-    // Troca de cena pendente
-    if (mPendingScene)
-    {
-        if (mCurrentScene)
-        {
-            mCurrentScene->Exit();
-            delete mCurrentScene;
-        }
-        mCurrentScene = mPendingScene;
-        mCurrentScene->Enter();
-        mPendingScene = nullptr;
-    }
+    // Update fade (handles scene transition)
+    UpdateFade(deltaTime);
 
     // Update da cena atual
     if (mCurrentScene && !mIsPaused)
@@ -208,10 +198,83 @@ void Game::UpdateGame(float deltaTime)
 
 void Game::SetScene(GameScene* scene)
 {
-    // Não trocar imediatamente para evitar problemas
-    // A troca será feita no início do próximo frame
     mPendingScene = scene;
     SDL_Log("Scene change requested to: %s", scene->GetName());
+
+    // Iniciar fade OUT automaticamente
+    if (!mIsFading)
+    {
+        StartFade(true);
+    }
+}
+
+void Game::StartFade(bool fadeOut, float duration)
+{
+    SDL_Log("[Fade] Starting fade %s, duration: %.2f", fadeOut ? "OUT" : "IN", duration);
+    mIsFading = true;
+    mFadeOut = fadeOut;
+    mFadeDuration = duration;
+    mFadeTimer = 0.0f;
+    mFadeAlpha = fadeOut ? 0.0f : 1.0f;
+}
+
+void Game::UpdateFade(float deltaTime)
+{
+    if (!mIsFading) return;
+
+    mFadeTimer += deltaTime;
+    float t = Math::Min(mFadeTimer / mFadeDuration, 1.0f);
+
+    if (mFadeOut)
+    {
+        mFadeAlpha = t;
+
+        if (t >= 1.0f)
+        {
+            SDL_Log("[Fade] Fade OUT complete, changing scene");
+            mFadeOut = false;
+            mFadeTimer = 0.0f;
+
+            // Trocar cena agora que está escuro
+            if (mPendingScene)
+            {
+                if (mCurrentScene)
+                {
+                    mCurrentScene->Exit();
+                    delete mCurrentScene;
+                }
+
+                mIsChangingScene = true;
+                std::vector<Actor*> actorsToDelete = mActors;
+                mActors.clear();
+                mPendingActors.clear();
+
+                for (auto actor : actorsToDelete)
+                {
+                    delete actor;
+                }
+                mIsChangingScene = false;
+
+                mCurrentScene = mPendingScene;
+                mCurrentScene->Enter();
+                mPendingScene = nullptr;
+            }
+
+            // Iniciar fade IN
+            StartFade(false, mFadeDuration);
+        }
+    }
+    else
+    {
+        mFadeAlpha = 1.0f - t;
+
+        if (t >= 1.0f)
+        {
+            SDL_Log("[Fade] Fade IN complete");
+            mIsFading = false;
+            mFadeAlpha = 0.0f;
+        }
+    }
 }
 
 void Game::UpdateActors(float deltaTime)
@@ -229,16 +292,26 @@ void Game::UpdateActors(float deltaTime)
     }
     mPendingActors.clear();
 
-    std::vector<Actor*> deadActors;
+    // Deletar atores marcados como Destroy
+    std::vector<Actor*> actorsToDelete;
     for (auto actor : mActors)
     {
         if (actor->GetState() == ActorState::Destroy)
         {
-            deadActors.emplace_back(actor);
+            actorsToDelete.push_back(actor);
         }
     }
 
-    for (auto actor : deadActors)
+    for (auto actor : actorsToDelete)
+    {
+        auto it = std::find(mActors.begin(), mActors.end(), actor);
+        if (it != mActors.end())
+        {
+            mActors.erase(it);
+        }
+    }
+
+    for (auto actor : actorsToDelete)
     {
         delete actor;
     }
@@ -262,10 +335,15 @@ void Game::AddActor(Actor* actor)
 
 void Game::RemoveActor(Actor* actor)
 {
+    // Prevenir remoção durante transição de cena
+    if (mIsChangingScene)
+    {
+        return;
+    }
+
     auto iter = std::find(mPendingActors.begin(), mPendingActors.end(), actor);
     if (iter != mPendingActors.end())
     {
-        // Swap to end of vector and pop off (avoid erase copies)
         std::iter_swap(iter, mPendingActors.end() - 1);
         mPendingActors.pop_back();
     }
@@ -273,7 +351,6 @@ void Game::RemoveActor(Actor* actor)
     iter = std::find(mActors.begin(), mActors.end(), actor);
     if (iter != mActors.end())
     {
-        // Swap to end of vector and pop off (avoid erase copies)
         std::iter_swap(iter, mActors.end() - 1);
         mActors.pop_back();
     }
@@ -336,8 +413,27 @@ void Game::GenerateOutput()
         mCurrentScene->Render();
     }
 
+    // Render fade overlay
+    RenderFade();
+
     // Swap front buffer and back buffer
     mRenderer->Present();
+}
+
+void Game::RenderFade()
+{
+    if (mIsFading && mFadeAlpha > 0.0f)
+    {
+        mRenderer->DrawRectAlpha(
+            Vector2(WINDOW_WIDTH / 2.0f, WINDOW_HEIGHT / 2.0f),
+            Vector2(static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT)),
+            0.0f,
+            Vector3(0.0f, 0.0f, 0.0f),
+            mFadeAlpha,
+            Vector2::Zero,
+            RendererMode::TRIANGLES
+        );
+    }
 }
 
 void Game::InitializeMap()
@@ -379,6 +475,7 @@ void Game::Shutdown()
     // Limpar atores
     while (!mActors.empty()) {
         delete mActors.back();
+        mActors.pop_back();
     }
 
     // Delete level data

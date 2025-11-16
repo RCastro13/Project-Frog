@@ -164,12 +164,21 @@ private:
     Player* mPlayer;
     Enemy* mEnemy;
 
+    // Renderização
+    class CombatRenderer* mCombatRenderer;
+
     // Atores visuais
     class FrogActor* mFrogActor;
     class BearActor* mBearActor;
 
     // Background
     class Texture* mBackgroundTexture;
+
+    // Texturas das cartas
+    std::map<AttackType, class Texture*> mCardTexturesActive;
+    std::map<AttackType, class Texture*> mCardTexturesCooldown;
+    class Texture* mTimeIconTexture;  // Ícone de cooldown
+    class Texture* mWinnerFrameTexture;  // Moldura de vencedor
 
     // UI - Seleção de cartas
     int mSelectedCardIndex;
@@ -182,17 +191,31 @@ private:
     Card* mDisplayEnemyCard;      // Carta do enemy sendo mostrada
     bool mPlayerWonLastTurn;      // Se o player venceu o último turno
 
+    // Magic projectile system
+    class MagicProjectileActor* mProjectile;  // Projétil mágico atual
+    bool mShowingProjectile;                  // Se está mostrando o projétil
+    float mProjectileTimer;                   // Timer do projétil
+
     // Helper methods
     void CreateTestCombatants();
     void CreateVisualActors();
+    void LoadCardTextures();
     void RenderCombatUI();
-    void RenderHealthBar(Vector2 position, int currentHP, int maxHP, bool isEnemy);
     void RenderCards();
     void RenderCardDisplay();
     void HandleCombatEnd();
     const char* GetTypeName(AttackType type);
-    void LogAvailableCards();
     Vector3 GetCardColor(AttackType type);
+    class Texture* GetCardTexture(AttackType type, bool isAvailable);
+
+    // Projectile system helpers
+    void LaunchProjectile();
+    void TriggerDefenderAnimation();
+
+    // Update helpers
+    void AtualizarExibicaoCartas(float deltaTime);
+    void AtualizarProjetil(float deltaTime);
+    void AtualizarEstadoCombate();
 
     // Estado para controlar quando mostrar cartas
     bool mCardsShown;

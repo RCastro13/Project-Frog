@@ -15,8 +15,12 @@ public:
     void PlayHurt();
     void PlayDeath();
 
+    // Verifica se está em animação (não idle)
+    bool IsInAnimation() const;
+
 private:
-    class AnimatorComponent* mAnimator;
+    class AnimatorComponent* mAnimatorIdle;
+    class AnimatorComponent* mAnimatorAttack;
 
     // Estado da animação
     enum class AnimState

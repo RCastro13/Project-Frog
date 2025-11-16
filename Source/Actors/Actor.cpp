@@ -23,7 +23,10 @@ Actor::Actor(Game* game)
 
 Actor::~Actor()
 {
-    mGame->RemoveActor(this);
+    if (mGame)
+    {
+        mGame->RemoveActor(this);
+    }
 
     for(auto component : mComponents)
     {

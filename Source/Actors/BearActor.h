@@ -15,8 +15,12 @@ public:
     void PlayHurt();
     void PlayDeath();
 
+    // Verifica se está em animação (não idle)
+    bool IsInAnimation() const;
+
 private:
-    class AnimatorComponent* mAnimator;
+    class AnimatorComponent* mAnimatorIdle;    // Para idle, hurt, death (Bear.json)
+    class AnimatorComponent* mAnimatorAttack;  // Para attack (BearAttack.json)
 
     // Estado da animação
     enum class AnimState
