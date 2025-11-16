@@ -12,6 +12,8 @@
 
 #include "GameScene/GameScene.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/Font.h"
+#include "Audio/AudioSystem.h"
 
 class Game
 {
@@ -33,8 +35,24 @@ public:
     void SetScene(GameScene* scene);
     GameScene* GetCurrentScene() const { return mCurrentScene; }
 
+    // Fade system
+    void StartFade(bool fadeOut, float duration = 0.8f);
+    bool IsFading() const { return mIsFading; }
+
+    // Map management
+    void InitializeMap();
+    void ClearMap();
+    std::vector<class MapNode*> GetMapNodes() const { return mMapNodes; }
+    void SetMapNodes(const std::vector<class MapNode*>& nodes) { mMapNodes = nodes; }
+    class MapNode* GetCurrentMapNode() const { return mCurrentMapNode; }
+    void SetCurrentMapNode(class MapNode* node) { mCurrentMapNode = node; }
+
     // Renderer
     class Renderer* GetRenderer() { return mRenderer; }
+
+    // Font and Audio
+    class Font* GetFont() { return mDefaultFont; }
+    class AudioSystem* GetAudio() { return mAudio; }
 
     // Window
     SDL_Window* GetWindow() { return mWindow; }
@@ -69,6 +87,8 @@ private:
     void UpdateGame(float deltaTime);
     void UpdateCamera();
     void GenerateOutput();
+    void UpdateFade(float deltaTime);
+    void RenderFade();
 
     // Level loading
     int **LoadLevel(const std::string& fileName, int width, int height);
@@ -77,6 +97,9 @@ private:
     // All the actors in the game
     std::vector<class Actor*> mActors;
     std::vector<class Actor*> mPendingActors;
+
+    // Flag para indicar que estamos em transição de cena
+    bool mIsChangingScene;
 
     // Camera
     Vector2 mCameraPos;
@@ -91,6 +114,10 @@ private:
     SDL_Window* mWindow;
     class Renderer* mRenderer;
 
+    // Font and Audio systems
+    class Font* mDefaultFont;
+    class AudioSystem* mAudio;
+
     // Track elapsed time since game start
     Uint32 mTicksCount;
 
@@ -103,6 +130,17 @@ private:
     // Scenes & state
     GameScene* mCurrentScene;
     GameScene* mPendingScene;  // Para trocar cena no próximo frame
+
+    // Fade system
+    bool mIsFading;
+    bool mFadeOut;
+    float mFadeDuration;
+    float mFadeTimer;
+    float mFadeAlpha;
+
+    // Map system
+    std::vector<class MapNode*> mMapNodes;
+    class MapNode* mCurrentMapNode;
 
     // Game-specific
     class Mario *mMario;

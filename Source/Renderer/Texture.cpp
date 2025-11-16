@@ -1,4 +1,6 @@
 #include "Texture.h"
+#include "TextureUtils.h"
+#include <SDL.h>
 
 Texture::Texture()
 : mTextureID(0)
@@ -20,21 +22,54 @@ bool Texture::Load(const std::string &filePath)
 
     SDL_Surface* surf = IMG_Load(filePath.c_str());
     if (!surf) {
-        SDL_Log("Failed to load texture file %s", filePath.c_str());
+        SDL_Log("Falha ao carregar textura: %s", filePath.c_str());
         return false;
     }
 
-    mWidth = surf->w;
-    mHeight = surf->h;
-    glGenTextures(1, &mTextureID); // Cria textura na GPU
-    glActiveTexture(GL_TEXTURE0); // Coloca textura na região 0 da memória de textura
-    glBindTexture(GL_TEXTURE_2D, mTextureID); // Ativa a textura no pipeline gráfico
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, surf->pixels);
+    SDL_Surface* formattedSurf = TextureUtils::ConverterParaRGBA32(surf);
+    SDL_FreeSurface(surf);
+
+    if (!formattedSurf) {
+        return false;
+    }
+
+    mWidth = formattedSurf->w;
+    mHeight = formattedSurf->h;
+    glGenTextures(1, &mTextureID);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, formattedSurf->pixels);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    SDL_FreeSurface(formattedSurf);
+
     return true;
+}
+
+void Texture::CreateFromSurface(SDL_Surface* surf)
+{
+    if (!surf) {
+        SDL_Log("Não é possível criar textura de surface nulo");
+        return;
+    }
+
+    SDL_Surface* formattedSurf = TextureUtils::ConverterParaRGBA32(surf);
+    if (!formattedSurf) {
+        return;
+    }
+
+    mWidth = formattedSurf->w;
+    mHeight = formattedSurf->h;
+    glGenTextures(1, &mTextureID);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, formattedSurf->pixels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    SDL_FreeSurface(formattedSurf);
 }
 
 void Texture::Unload()
@@ -44,6 +79,6 @@ void Texture::Unload()
 
 void Texture::SetActive(int index) const
 {
-    glActiveTexture(GL_TEXTURE0 + index); // Coloca textura na região 0 da memória de textura
-    glBindTexture(GL_TEXTURE_2D, mTextureID); // Ativa a textura no pipeline gráfico
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, mTextureID);
 }

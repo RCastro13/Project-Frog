@@ -11,6 +11,7 @@ public:
 	~Texture();
 
 	bool Load(const std::string& fileName);
+	void CreateFromSurface(SDL_Surface* surface);
 	void Unload();
 
 	void SetActive(int index = 0) const;

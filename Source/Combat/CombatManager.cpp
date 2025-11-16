@@ -1,5 +1,4 @@
 #include "CombatManager.h"
-#include <algorithm>
 #include <SDL_log.h>
 
 CombatManager::CombatManager(Player* player, Enemy* enemy, int coinReward)
@@ -54,18 +53,36 @@ void CombatManager::Update()
     }
 }
 
-void CombatManager::PlayerSelectCard(Card* selectedCard)
+void CombatManager::PlayerSelectCard(Card* selectedCard, Card* enemyCard)
 {
     if (mCurrentState == CombatState::WAITING_FOR_PLAYER)
     {
         mPlayerSelectedCard = selectedCard;
-        mCurrentState = CombatState::ENEMY_TURN;
+
+        // Se a carta do inimigo já foi fornecida (feedback visual), usá-la diretamente
+        if (enemyCard != nullptr)
+        {
+            mEnemySelectedCard = enemyCard;
+            mCurrentState = CombatState::RESOLVING_COMBAT;
+        }
+        else
+        {
+            // Caso contrário, passar pelo estado ENEMY_TURN normalmente
+            mCurrentState = CombatState::ENEMY_TURN;
+        }
     }
 }
 
 void CombatManager::EnemySelectCard()
 {
     mEnemySelectedCard = mEnemy->SelectCard();
+
+    // Verificar se a seleção foi bem-sucedida
+    if (!mEnemySelectedCard)
+    {
+        SDL_Log("ERROR: Enemy failed to select a card!");
+        return;
+    }
 
     // Log da ação do inimigo
     const char* typeName = "";
@@ -116,7 +133,7 @@ void CombatManager::ResolveCombat()
         SDL_Log("🤝 EMPATE! Ninguém causou dano.");
     }
 
-    mEnemy->LearnFromAtack(mPlayerSelectedCard);
+    mEnemy->LearnFromAttack(mPlayerSelectedCard);
 
     // Aplicar tempos de recarga (cooldowns) às cartas usadas
     mPlayerSelectedCard->StartCooldown();

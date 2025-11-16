@@ -1,23 +1,31 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
 
-find_package(SDL2 2.32.2 EXACT REQUIRED)
-find_package(SDL2_image REQUIRED)
+# macOS - SDL2 via Frameworks (padrão do time)
+set(CMAKE_PREFIX_PATH "/opt/homebrew")
 
-set(GLEW_ROOT "C:/Program Files/GLEW")
-set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
-set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+# SDL2 Frameworks
+find_library(SDL2_LIBRARY SDL2 PATHS /Library/Frameworks)
+find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS /Library/Frameworks)
+find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS /Library/Frameworks)
+find_library(SDL2_MIXER_LIBRARY SDL2_mixer PATHS /Library/Frameworks)
 
-include_directories(${GLEW_INCLUDE_DIRS})
+# GLEW e OpenGL via Homebrew
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 
 include_directories(
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2_IMAGE_INCLUDE_DIR}
+        /Library/Frameworks/SDL2.framework/Headers
+        /Library/Frameworks/SDL2_image.framework/Headers
+        /Library/Frameworks/SDL2_ttf.framework/Headers
+        /Library/Frameworks/SDL2_mixer.framework/Headers
         ${GLEW_INCLUDE_DIRS}
+        ${OPENGL_INCLUDE_DIR}
 )
 
 add_executable(${PROJECT_NAME}
@@ -48,6 +56,8 @@ add_executable(${PROJECT_NAME}
         Source/Renderer/VertexArray.cpp
         Source/Renderer/Texture.cpp
         Source/Renderer/Texture.h
+        Source/Renderer/TextureUtils.cpp
+        Source/Renderer/TextureUtils.h
         Source/Components/Drawing/AnimatorComponent.cpp
         Source/Components/Drawing/AnimatorComponent.h
         Source/Components/Drawing/RectComponent.cpp
@@ -57,21 +67,66 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIButton.h
         Source/Interface/UIImage.h
         Source/Interface/HUD/HUD.h
+        Source/Renderer/Font.h
+        Source/Renderer/Font.cpp
         Source/Audio/AudioSystem.h
+        Source/Audio/AudioSystem.cpp
         Source/GameScene/GameScene.h
+        Source/GameScene/AnimationTestScene.h
+        Source/GameScene/AnimationTestScene.cpp
+        Source/GameScene/DebugMenuScene.h
+        Source/GameScene/DebugMenuScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/Map/MapNodeType.h
+        Source/Map/MapNode.h
+        Source/Map/MapNode.cpp
+        Source/Map/MapGenerator.h
+        Source/Map/MapGenerator.cpp
+        Source/Combat/Card.h
+        Source/Combat/Card.cpp
+        Source/Combat/CombatConstants.h
+        Source/Combat/CombatRenderer.h
+        Source/Combat/CombatRenderer.cpp
+        Source/Actors/Combatant.h
+        Source/Actors/Combatant.cpp
+        Source/Actors/Player.h
+        Source/Combat/Item.h
+        Source/Actors/Player.cpp
+        Source/Combat/CombatManager.h
+        Source/Combat/CombatManager.cpp
+        Source/Actors/Enemy.h
+        Source/Actors/Enemy.cpp
+        Source/Actors/ActorConstants.h
+        Source/Actors/AnimatedCharacterActor.h
+        Source/Actors/AnimatedCharacterActor.cpp
+        Source/Actors/FrogActor.h
+        Source/Actors/FrogActor.cpp
+        Source/Actors/BearActor.h
+        Source/Actors/BearActor.cpp
+        Source/Actors/EnemyType.h
+        Source/Actors/EnemyFactory.h
+        Source/Actors/EnemyFactory.cpp
+        Source/Actors/BeatleActor.h
+        Source/Actors/BeatleActor.cpp
+        Source/Actors/SnakeActor.h
+        Source/Actors/SnakeActor.cpp
+        Source/Actors/WolfActor.h
+        Source/Actors/WolfActor.cpp
+        Source/Actors/MagicProjectileActor.h
+        Source/Actors/MagicProjectileActor.cpp
 )
 
 # Libs
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
-        ${GLEW_LIBRARIES}
-        SDL2::SDL2main
-        SDL2_image::SDL2_image
-        SDL2::SDL2
-        opengl32
+        ${SDL2_LIBRARY}
+        ${SDL2_IMAGE_LIBRARY}
+        ${SDL2_TTF_LIBRARY}
+        ${SDL2_MIXER_LIBRARY}
+        GLEW::GLEW
+        OpenGL::GL
 )

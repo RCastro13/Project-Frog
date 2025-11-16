@@ -3,7 +3,6 @@
 #include "../Combat/Item.h"
 #include "../Combat/Card.h"
 #include "../Random.h"
-#include "../Math.h"
 
 #include <vector>
 #include <deque>
@@ -16,7 +15,7 @@ public:
 
     Card* SelectCard();
 
-    void LearnFromAtack(Card* card);
+    void LearnFromAttack(Card* card);
 
     void Death() override;
 

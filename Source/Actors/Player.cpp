@@ -9,5 +9,5 @@ Player::Player(Game *game, std::string name, int health, int maxHealth, std::vec
 }
 
 void Player::Death() {
-    //TODO : O que acontece quando o Player morre?
+    // TODO: Transição para tela de game over, salvar progresso da run, mostrar estatísticas
 }

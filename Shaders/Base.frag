@@ -19,14 +19,14 @@ uniform sampler2D uTexture;
 // This is used for texture blending
 uniform float uTextureFactor;
 
+// Alpha channel support
+uniform float uAlpha;
+
 // Tex coord input from vertex shader
 in vec2 fragTexCoord;
 
 void main()
 {
-    //outColor = vec4(uColor, 1.0);
-
     vec4 texColor = texture(uTexture, fragTexCoord);
-    outColor = mix(vec4(uColor, 1.0), texColor, uTextureFactor);
-    //outColor = texture(uTexture, fragTexCoord);
+    outColor = mix(vec4(uColor, uAlpha), texColor, uTextureFactor);
 }

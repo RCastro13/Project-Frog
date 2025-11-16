@@ -6,7 +6,6 @@
 #include "../../Actors/Actor.h"
 #include "../../Game.h"
 #include "../../Json.h"
-#include "../../Renderer/Texture.h"
 #include <fstream>
 
 AnimatorComponent::AnimatorComponent(class Actor* owner, const std::string &texPath, const std::string &dataPath,
@@ -30,7 +29,6 @@ AnimatorComponent::~AnimatorComponent()
 
 bool AnimatorComponent::LoadSpriteSheetData(const std::string& dataPath)
 {
-    // Load sprite sheet data and return false if it fails
     std::ifstream spriteSheetFile(dataPath);
 
     if (!spriteSheetFile.is_open()) {
@@ -64,52 +62,73 @@ bool AnimatorComponent::LoadSpriteSheetData(const std::string& dataPath)
 
 void AnimatorComponent::Draw(Renderer* renderer)
 {
-    if (mIsVisible) {
-        if (mAnimations.empty()) {
-            renderer->DrawTexture(
+    if (!mIsVisible || !mIsEnabled || !mSpriteTexture || mSpriteSheetData.empty()) {
+        return;
+    }
+
+    if (mAnimations.empty() || mAnimName.empty()) {
+        renderer->DrawTexture(
                 mOwner->GetPosition(),
                 Vector2(mWidth, mHeight),
                 mOwner->GetRotation(),
                 Color::White,
                 mSpriteTexture,
-                Vector4(0.0f, 0.0f, 1.0f, 1.0f),
+            mSpriteSheetData[0],
                 mOwner->GetGame()->GetCameraPos(),
                 (mOwner->GetScale().x < 0),
                 mTextureFactor
             );
         } else {
+        // Verificar se a animação existe e tem frames
+        auto it = mAnimations.find(mAnimName);
+        if (it != mAnimations.end() && !it->second.empty()) {
+            int frameIndex = static_cast<int>(mAnimTimer);
+            if (frameIndex >= 0 && frameIndex < static_cast<int>(it->second.size())) {
+                int spriteIndex = it->second[frameIndex];
+                if (spriteIndex >= 0 && spriteIndex < static_cast<int>(mSpriteSheetData.size())) {
             renderer->DrawTexture(
                 mOwner->GetPosition(),
                 Vector2(mWidth, mHeight),
                 mOwner->GetRotation(),
                 Color::White,
                 mSpriteTexture,
-                mSpriteSheetData[mAnimations[mAnimName][static_cast<int>(mAnimTimer)]],
+                        mSpriteSheetData[spriteIndex],
                 mOwner->GetGame()->GetCameraPos(),
                 (mOwner->GetScale().x < 0),
                 mTextureFactor
             );
+                }
+            }
         }
     }
 }
 
 void AnimatorComponent::Update(float deltaTime)
 {
-    if (mIsPaused || mAnimations.empty()) {
+    if (mIsPaused || mAnimations.empty() || mAnimName.empty()) {
+        return;
+    }
+
+    auto it = mAnimations.find(mAnimName);
+    if (it == mAnimations.end() || it->second.empty()) {
         return;
     }
 
     mAnimTimer += mAnimFPS * deltaTime;
 
-    while (mAnimTimer >= mAnimations[mAnimName].size()) {
-        mAnimTimer -= mAnimations[mAnimName].size();
+    while (mAnimTimer >= static_cast<float>(it->second.size())) {
+        mAnimTimer -= static_cast<float>(it->second.size());
     }
 }
 
 void AnimatorComponent::SetAnimation(const std::string& name)
 {
+    if (mAnimations.find(name) != mAnimations.end()) {
     mAnimName = name;
-    Update(0.0f);
+        mAnimTimer = 0.0f;
+    } else {
+        SDL_Log("Warning: Animation '%s' not found", name.c_str());
+    }
 }
 
 void AnimatorComponent::AddAnimation(const std::string& name, const std::vector<int>& spriteNums)
