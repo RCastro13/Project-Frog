@@ -3,9 +3,19 @@
 Player::Player(Game *game, std::string name, int health, int maxHealth, std::vector<Card *> deck)
     : Combatant(game, name, health, maxHealth, deck)
     ,mInventory(std::vector<Item*>())
-    ,mCoins(0)
+    ,mCoins(50)  // Player começa com 50 moedas
 {
 
+}
+
+bool Player::SpendCoins(int amount)
+{
+    if (mCoins >= amount)
+    {
+        mCoins -= amount;
+        return true;
+    }
+    return false;
 }
 
 void Player::Death() {
