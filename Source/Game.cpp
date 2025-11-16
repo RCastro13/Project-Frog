@@ -18,13 +18,17 @@
 #include "Actors/Actor.h"
 
 #include <sstream>
+#include <SDL_ttf.h>
 
 #include "Renderer/Shader.h"
 #include "GameScene/GameScene.h"
+#include "Map/MapNode.h"
 
 Game::Game()
         :mWindow(nullptr)
         ,mRenderer(nullptr)
+        ,mDefaultFont(nullptr)
+        ,mAudio(nullptr)
         ,mTicksCount(0)
         ,mIsRunning(true)
         ,mIsDebugging(true)
@@ -63,6 +67,26 @@ bool Game::Initialize()
         SDL_Log("Failed to initialize renderer");
         return false;
     }
+
+    // Inicializar SDL_ttf
+    if (TTF_Init() != 0)
+    {
+        SDL_Log("Failed to initialize SDL_ttf: %s", TTF_GetError());
+        return false;
+    }
+
+    // Carregar fonte padrão
+    mDefaultFont = new Font();
+    if (!mDefaultFont->Load("../Assets/Fonts/PressStart2P.ttf"))
+    {
+        SDL_Log("Failed to load default font");
+        // Não retornar false - continuar sem fonte
+    }
+
+    // Inicializar sistema de áudio
+    mAudio = new AudioSystem(8);
+    SDL_Log("Audio system initialized");
+    // CacheAllSounds() será chamado quando houver sons em Assets/Sounds/
 
     // Init all game actors
     InitializeActors();
@@ -170,6 +194,12 @@ void Game::UpdateGame(float deltaTime)
     // Update all actors and pending actors
     if (!mIsPaused) {
         UpdateActors(deltaTime);
+    }
+
+    // Update do sistema de áudio
+    if (mAudio)
+    {
+        mAudio->Update(deltaTime);
     }
 
     // Update camera position
@@ -359,6 +389,24 @@ void Game::Shutdown()
         delete[] mLevelData;
         mLevelData = nullptr;
     }
+
+    // Desligar sistema de áudio
+    if (mAudio)
+    {
+        delete mAudio;
+        mAudio = nullptr;
+    }
+
+    // Limpar fonte
+    if (mDefaultFont)
+    {
+        mDefaultFont->Unload();
+        delete mDefaultFont;
+        mDefaultFont = nullptr;
+    }
+
+    // Finalizar SDL_ttf
+    TTF_Quit();
 
     mRenderer->Shutdown();
     delete mRenderer;

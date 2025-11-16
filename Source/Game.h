@@ -12,6 +12,8 @@
 
 #include "GameScene/GameScene.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/Font.h"
+#include "Audio/AudioSystem.h"
 
 class Game
 {
@@ -43,6 +45,10 @@ public:
 
     // Renderer
     class Renderer* GetRenderer() { return mRenderer; }
+
+    // Font and Audio
+    class Font* GetFont() { return mDefaultFont; }
+    class AudioSystem* GetAudio() { return mAudio; }
 
     // Window
     SDL_Window* GetWindow() { return mWindow; }
@@ -98,6 +104,10 @@ private:
     // SDL stuff
     SDL_Window* mWindow;
     class Renderer* mRenderer;
+
+    // Font and Audio systems
+    class Font* mDefaultFont;
+    class AudioSystem* mAudio;
 
     // Track elapsed time since game start
     Uint32 mTicksCount;

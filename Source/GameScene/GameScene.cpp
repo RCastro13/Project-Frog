@@ -15,9 +15,11 @@
 #include "../Random.h"
 #include "../Renderer/Texture.h"
 #include "../Renderer/Renderer.h"
+#include "../Renderer/Font.h"
 #include <SDL.h>
 #include <SDL_log.h>
 #include <algorithm>
+#include <cstdio>
 
 // ============================================
 // CLASSE BASE: GameScene
@@ -67,11 +69,19 @@ void GameScene::RenderFade()
 
 MainMenuScene::MainMenuScene(Game* game)
     : GameScene(game)
+    , mTitleTexture(nullptr)
+    , mCommandsTexture(nullptr)
 {
 }
 
 MainMenuScene::~MainMenuScene()
 {
+    if (mTitleTexture) {
+        delete mTitleTexture;
+    }
+    if (mCommandsTexture) {
+        delete mCommandsTexture;
+    }
 }
 
 void MainMenuScene::Enter()
@@ -85,9 +95,24 @@ void MainMenuScene::Enter()
     // Cor de fundo: Azul escuro (como o Mario original)
     mGame->GetRenderer()->SetClearColor(0.0f, 0.3f, 0.6f, 1.0f);
 
-    // TODO (Kayque): Carregar assets do menu
-    // TODO (Kayque): Criar botões (Novo Jogo, Sair)
-    // TODO (Kayque): Carregar música do menu
+    // Criar texturas de texto
+    if (mGame->GetFont()) {
+        // Título do jogo
+        mTitleTexture = mGame->GetFont()->RenderText(
+            "PROJECT FROG",
+            Vector3(1.0f, 1.0f, 0.0f),  // Amarelo
+            48,
+            500  // Limitar largura
+        );
+
+        // Comandos (com quebras de linha e wrap length reduzido)
+        mCommandsTexture = mGame->GetFont()->RenderText(
+            "[1] Mapa\n[2] Combate\n[ESC] Sair",
+            Vector3(1.0f, 1.0f, 1.0f),  // Branco
+            20,
+            300  // Limitar largura para 300px
+        );
+    }
 }
 
 void MainMenuScene::Update(float deltaTime)
@@ -146,12 +171,51 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     }
 }
 
+void MainMenuScene::Render()
+{
+    // Renderizar título
+    if (mTitleTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 120.0f),  // Centro superior
+            Vector2(mTitleTexture->GetWidth(), mTitleTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mTitleTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Renderizar comandos
+    if (mCommandsTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 260.0f),  // Centro da tela (ajustado para ficar melhor posicionado)
+            Vector2(mCommandsTexture->GetWidth(), mCommandsTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mCommandsTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Renderizar fade
+    RenderFade();
+}
+
 void MainMenuScene::Exit()
 {
     SDL_Log("Exiting MainMenuScene");
 
-    // TODO (Kayque): Limpar recursos do menu
-    // TODO (Kayque): Parar música do menu
+    // Limpar texturas
+    if (mTitleTexture) {
+        delete mTitleTexture;
+        mTitleTexture = nullptr;
+    }
+    if (mCommandsTexture) {
+        delete mCommandsTexture;
+        mCommandsTexture = nullptr;
+    }
 }
 
 // ============================================
@@ -234,11 +298,11 @@ void MapScene::Update(float deltaTime)
 
     // Atualizar fade in
     UpdateFade(deltaTime);
-    
+
     // Atualizar scrolling com deltaTime correto
     const Uint8* keyState = SDL_GetKeyboardState(nullptr);
     static const float scrollSpeed = 300.0f; // pixels por segundo
-    
+
     if (keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) {
         mCameraPosition.x -= scrollSpeed * deltaTime;
     }
@@ -342,7 +406,7 @@ void MapScene::RenderNode(MapNode* node)
 
     // Carregar a textura do ícone com a cor correta
     Texture* iconTexture = mGame->GetRenderer()->GetTexture(iconName);
-    
+
     // Se não encontrou na pasta de cor, tentar White como fallback
     if (!iconTexture) {
         std::string fallbackPath = GetIconPathForNodeType(node->GetType());
@@ -357,7 +421,7 @@ void MapScene::RenderNode(MapNode* node)
         // Efeito pulsante baseado no tempo
         float pulse = 0.5f + 0.3f * Math::Sin(mStateTime * 4.0f); // Pulsa entre 0.5 e 0.8
         float highlightSize = size + 12.0f * pulse;
-        
+
         // Desenhar borda amarela ao redor do nó selecionado
         mGame->GetRenderer()->DrawRect(
             pos,
@@ -951,6 +1015,29 @@ void CombatScene::RenderCardDisplay()
             Vector2(borderThickness, cardHeight + borderThickness * 2),
             0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
         );
+
+        // Renderizar valor de poder
+        if (mGame->GetFont()) {
+            char powerText[16];
+            snprintf(powerText, sizeof(powerText), "%d", mDisplayPlayerCard->GetDamage());
+            Texture* powerTexture = mGame->GetFont()->RenderText(
+                powerText,
+                Vector3(1.0f, 1.0f, 1.0f),  // Branco
+                42
+            );
+            if (powerTexture) {
+                mGame->GetRenderer()->DrawTexture(
+                    Vector2(playerCardX, centerY),
+                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
+                    0.0f,
+                    Vector3(1.0f, 1.0f, 1.0f),
+                    powerTexture,
+                    Vector4::UnitRect,
+                    Vector2::Zero
+                );
+                delete powerTexture;
+            }
+        }
     }
 
     // Renderizar carta do Enemy (direita)
@@ -1003,6 +1090,29 @@ void CombatScene::RenderCardDisplay()
             Vector2(borderThickness, cardHeight + borderThickness * 2),
             0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
         );
+
+        // Renderizar valor de poder
+        if (mGame->GetFont()) {
+            char powerText[16];
+            snprintf(powerText, sizeof(powerText), "%d", mDisplayEnemyCard->GetDamage());
+            Texture* powerTexture = mGame->GetFont()->RenderText(
+                powerText,
+                Vector3(1.0f, 1.0f, 1.0f),  // Branco
+                42
+            );
+            if (powerTexture) {
+                mGame->GetRenderer()->DrawTexture(
+                    Vector2(enemyCardX, centerY),
+                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
+                    0.0f,
+                    Vector3(1.0f, 1.0f, 1.0f),
+                    powerTexture,
+                    Vector4::UnitRect,
+                    Vector2::Zero
+                );
+                delete powerTexture;
+            }
+        }
     }
 }
 
@@ -1083,6 +1193,29 @@ void CombatScene::RenderCards()
             Vector2(borderThickness, cardHeight + borderThickness * 2),
             0.0f, borderColor, Vector2::Zero, RendererMode::TRIANGLES
         );
+
+        // Renderizar valor de poder (centralizado na carta)
+        if (mGame->GetFont() && card->IsAvailable()) {
+            char powerText[16];
+            snprintf(powerText, sizeof(powerText), "%d", card->GetDamage());
+            Texture* powerTexture = mGame->GetFont()->RenderText(
+                powerText,
+                Vector3(1.0f, 1.0f, 1.0f),  // Branco
+                28
+            );
+            if (powerTexture) {
+                mGame->GetRenderer()->DrawTexture(
+                    Vector2(cardX, cardY),
+                    Vector2(powerTexture->GetWidth(), powerTexture->GetHeight()),
+                    0.0f,
+                    Vector3(1.0f, 1.0f, 1.0f),
+                    powerTexture,
+                    Vector4::UnitRect,
+                    Vector2::Zero
+                );
+                delete powerTexture;
+            }
+        }
     }
 }
 

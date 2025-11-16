@@ -1,4 +1,5 @@
 #include "Texture.h"
+#include <SDL.h>
 
 Texture::Texture()
 : mTextureID(0)
@@ -35,6 +36,36 @@ bool Texture::Load(const std::string &filePath)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     return true;
+}
+
+void Texture::CreateFromSurface(SDL_Surface* surf)
+{
+    if (!surf) {
+        SDL_Log("Cannot create texture from null surface");
+        return;
+    }
+
+    // Converter surface para formato RGBA32 consistente
+    SDL_Surface* formattedSurf = SDL_ConvertSurfaceFormat(surf, SDL_PIXELFORMAT_RGBA32, 0);
+    if (!formattedSurf) {
+        SDL_Log("Failed to convert surface format: %s", SDL_GetError());
+        return;
+    }
+
+    mWidth = formattedSurf->w;
+    mHeight = formattedSurf->h;
+    glGenTextures(1, &mTextureID);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mTextureID);
+
+    // Usar formato RGBA com dados do surface convertido
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mWidth, mHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, formattedSurf->pixels);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // Liberar surface convertido
+    SDL_FreeSurface(formattedSurf);
 }
 
 void Texture::Unload()

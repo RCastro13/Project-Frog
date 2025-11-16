@@ -5,19 +5,26 @@ set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
 
-find_package(SDL2 2.32.2 EXACT REQUIRED)
-find_package(SDL2_image REQUIRED)
+# macOS - SDL2 via Frameworks (padrão do time)
+set(CMAKE_PREFIX_PATH "/opt/homebrew")
 
-set(GLEW_ROOT "C:/Program Files/GLEW")
-set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
-set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+# SDL2 Frameworks
+find_library(SDL2_LIBRARY SDL2 PATHS /Library/Frameworks)
+find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS /Library/Frameworks)
+find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS /Library/Frameworks)
+find_library(SDL2_MIXER_LIBRARY SDL2_mixer PATHS /Library/Frameworks)
 
-include_directories(${GLEW_INCLUDE_DIRS})
+# GLEW e OpenGL via Homebrew
+find_package(GLEW REQUIRED)
+find_package(OpenGL REQUIRED)
 
 include_directories(
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2_IMAGE_INCLUDE_DIR}
+        /Library/Frameworks/SDL2.framework/Headers
+        /Library/Frameworks/SDL2_image.framework/Headers
+        /Library/Frameworks/SDL2_ttf.framework/Headers
+        /Library/Frameworks/SDL2_mixer.framework/Headers
         ${GLEW_INCLUDE_DIRS}
+        ${OPENGL_INCLUDE_DIR}
 )
 
 add_executable(${PROJECT_NAME}
@@ -57,7 +64,10 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIButton.h
         Source/Interface/UIImage.h
         Source/Interface/HUD/HUD.h
+        Source/Renderer/Font.h
+        Source/Renderer/Font.cpp
         Source/Audio/AudioSystem.h
+        Source/Audio/AudioSystem.cpp
         Source/GameScene/GameScene.h
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
@@ -89,9 +99,10 @@ add_executable(${PROJECT_NAME}
 # Libs
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
-        ${GLEW_LIBRARIES}
-        SDL2::SDL2main
-        SDL2_image::SDL2_image
-        SDL2::SDL2
-        opengl32
+        ${SDL2_LIBRARY}
+        ${SDL2_IMAGE_LIBRARY}
+        ${SDL2_TTF_LIBRARY}
+        ${SDL2_MIXER_LIBRARY}
+        GLEW::GLEW
+        OpenGL::GL
 )

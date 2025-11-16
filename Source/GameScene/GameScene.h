@@ -83,11 +83,16 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
 
     SceneType GetType() const override { return SceneType::MAIN_MENU; }
     const char* GetName() const override { return "MainMenu"; }
+
+private:
+    class Texture* mTitleTexture;
+    class Texture* mCommandsTexture;
 };
 
 class MapScene : public GameScene
@@ -114,10 +119,10 @@ private:
     class MapNode* mCurrentNode;
     class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
     int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
-    
+
     // Camera/Scrolling
     Vector2 mCameraPosition;      // Posição da câmera para scrolling
-    
+
     // Icon management
     std::vector<std::string> mAvailableIcons;  // Lista de caminhos de ícones disponíveis
     std::map<class MapNode*, class Texture*> mNodeIcons;  // Mapeia cada nó para sua textura de ícone
