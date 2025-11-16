@@ -76,6 +76,12 @@ add_executable(${PROJECT_NAME}
         Source/GameScene/AnimationTestScene.cpp
         Source/GameScene/DebugMenuScene.h
         Source/GameScene/DebugMenuScene.cpp
+        Source/GameScene/RewardScene.h
+        Source/GameScene/RewardScene.cpp
+        Source/GameScene/ShopScene.h
+        Source/GameScene/ShopScene.cpp
+        Source/GameScene/RestScene.h
+        Source/GameScene/RestScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
@@ -118,6 +124,10 @@ add_executable(${PROJECT_NAME}
         Source/Actors/WolfActor.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
+        Source/Actors/NPCActor.h
+        Source/Actors/NPCActor.cpp
+        Source/Actors/RabbitNPC.h
+        Source/Actors/RabbitNPC.cpp
 )
 
 # Libs
