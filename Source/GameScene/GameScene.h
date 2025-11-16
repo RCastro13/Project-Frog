@@ -26,7 +26,8 @@ enum class SceneType
     MAP,
     COMBAT,
     GAME_OVER,
-    VICTORY
+    VICTORY,
+    BLACK_SCREEN
 };
 
 // Classe base abstrata para todas as cenas do jogo
@@ -83,6 +84,7 @@ public:
 
     void Enter() override;
     void Update(float deltaTime) override;
+    void RenderBackground() override;
     void Render() override;
     void ProcessInput(const Uint8* keyState) override;
     void Exit() override;
@@ -91,8 +93,19 @@ public:
     const char* GetName() const override { return "MainMenu"; }
 
 private:
-    class Texture* mTitleTexture;
-    class Texture* mCommandsTexture;
+    void UpdateMenuTextures();  // Atualizar texturas com cores apropriadas
+
+    class Texture* mBackgroundTexture;
+
+    // Sistema de menu com opções
+    int mSelectedOption;      // 0 = Iniciar Jogo, 1 = Game Over (teste), 2 = Vitória (teste), 3 = Sair
+    bool mKeyWasPressed;      // Controle de input
+
+    // Texturas das opções do menu
+    class Texture* mOptionStartTexture;
+    class Texture* mOptionGameOverTexture;
+    class Texture* mOptionVictoryTexture;
+    class Texture* mOptionExitTexture;
 };
 
 class MapScene : public GameScene
@@ -195,11 +208,15 @@ private:
     Card* mDisplayPlayerCard;     // Carta do player sendo mostrada
     Card* mDisplayEnemyCard;      // Carta do enemy sendo mostrada
     bool mPlayerWonLastTurn;      // Se o player venceu o último turno
+    bool mWasTie;                 // Se o último turno foi empate
 
     // Magic projectile system
     class MagicProjectileActor* mProjectile;  // Projétil mágico atual
     bool mShowingProjectile;                  // Se está mostrando o projétil
     float mProjectileTimer;                   // Timer do projétil
+
+    // Combat end
+    bool mCombatEndHandled;                   // Se o fim do combate já foi processado
 
     // Helper methods
     void CreateTestCombatants();
@@ -235,10 +252,18 @@ public:
     void Enter() override;
     void Update(float deltaTime) override;
     void ProcessInput(const Uint8* keyState) override;
+    void RenderBackground() override;
+    void Render() override;
     void Exit() override;
 
     SceneType GetType() const override { return SceneType::GAME_OVER; }
     const char* GetName() const override { return "GameOver"; }
+
+private:
+    class Texture* mBackgroundTexture;
+    class Texture* mMenuTexture;
+    float mPulseTimer;
+    bool mKeyWasPressed;
 };
 
 class VictoryScene : public GameScene
@@ -250,8 +275,32 @@ public:
     void Enter() override;
     void Update(float deltaTime) override;
     void ProcessInput(const Uint8* keyState) override;
+    void RenderBackground() override;
+    void Render() override;
     void Exit() override;
 
     SceneType GetType() const override { return SceneType::VICTORY; }
     const char* GetName() const override { return "Victory"; }
+
+private:
+    class Texture* mBackgroundTexture;
+    class Texture* mPlayAgainTexture;
+    float mPulseTimer;
+    bool mKeyWasPressed;
+};
+
+class BlackScreenScene : public GameScene
+{
+public:
+    BlackScreenScene(Game* game);
+    ~BlackScreenScene();
+
+    void Enter() override;
+    void Update(float deltaTime) override;
+    void RenderBackground() override;
+    void ProcessInput(const Uint8* keyState) override;
+    void Exit() override;
+
+    SceneType GetType() const override { return SceneType::BLACK_SCREEN; }
+    const char* GetName() const override { return "BlackScreen"; }
 };

@@ -95,6 +95,9 @@ bool Game::Initialize()
     mCurrentScene = new MainMenuScene(this);
     mCurrentScene->Enter();
 
+    // Iniciar o jogo com fade in
+    StartFade(false, mFadeDuration);
+
     mTicksCount = SDL_GetTicks();
 
     return true;
@@ -258,10 +261,16 @@ void Game::UpdateFade(float deltaTime)
                 mCurrentScene = mPendingScene;
                 mCurrentScene->Enter();
                 mPendingScene = nullptr;
-            }
 
-            // Iniciar fade IN
-            StartFade(false, mFadeDuration);
+                // Iniciar fade IN apenas se trocamos de cena
+                StartFade(false, mFadeDuration);
+            }
+            else
+            {
+                // Sem cena pendente, apenas terminar o fade (para casos como sair do jogo)
+                mIsFading = false;
+                mFadeAlpha = 1.0f;  // Manter tela preta
+            }
         }
     }
     else
@@ -458,11 +467,17 @@ void Game::Shutdown()
     // Limpar mapa
     ClearMap();
 
+    // Limpar atores ANTES das cenas para evitar acessos inválidos
+    while (!mActors.empty()) {
+        Actor* actor = mActors.back();
+        mActors.pop_back();
+        delete actor;
+    }
+    mPendingActors.clear();
 
-    // Limpar cenas
+    // Limpar cenas (SEM chamar Exit() pois os atores já foram deletados)
     if (mCurrentScene)
     {
-        mCurrentScene->Exit();
         delete mCurrentScene;
         mCurrentScene = nullptr;
     }
@@ -470,12 +485,6 @@ void Game::Shutdown()
     {
         delete mPendingScene;
         mPendingScene = nullptr;
-    }
-
-    // Limpar atores
-    while (!mActors.empty()) {
-        delete mActors.back();
-        mActors.pop_back();
     }
 
     // Delete level data

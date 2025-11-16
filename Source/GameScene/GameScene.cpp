@@ -71,18 +71,29 @@ void GameScene::RenderFade()
 
 MainMenuScene::MainMenuScene(Game* game)
     : GameScene(game)
-    , mTitleTexture(nullptr)
-    , mCommandsTexture(nullptr)
+    , mBackgroundTexture(nullptr)
+    , mSelectedOption(0)
+    , mKeyWasPressed(false)
+    , mOptionStartTexture(nullptr)
+    , mOptionGameOverTexture(nullptr)
+    , mOptionVictoryTexture(nullptr)
+    , mOptionExitTexture(nullptr)
 {
 }
 
 MainMenuScene::~MainMenuScene()
 {
-    if (mTitleTexture) {
-        delete mTitleTexture;
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
     }
-    if (mCommandsTexture) {
-        delete mCommandsTexture;
+    if (mOptionGameOverTexture) {
+        delete mOptionGameOverTexture;
+    }
+    if (mOptionVictoryTexture) {
+        delete mOptionVictoryTexture;
+    }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
     }
 }
 
@@ -91,30 +102,77 @@ void MainMenuScene::Enter()
     SDL_Log("Entering MainMenuScene");
     mStateTime = 0.0f;
 
-    // Atualizar título da janela para indicar cena ativa
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAIN MENU [1=Mapa 2=Combate ESC=Sair]");
+    // Atualizar título da janela
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
-    // Cor de fundo: Azul escuro (como o Mario original)
-    mGame->GetRenderer()->SetClearColor(0.0f, 0.3f, 0.6f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/menu.png");
 
-    // Criar texturas de texto
-    if (mGame->GetFont()) {
-        // Título do jogo
-        mTitleTexture = mGame->GetFont()->RenderText(
-            "PROJECT FROG",
-            Vector3(1.0f, 1.0f, 0.0f),  // Amarelo
-            48,
-            500  // Limitar largura
-        );
+    // Criar texturas das opções do menu com cores apropriadas
+    UpdateMenuTextures();
+}
 
-        // Comandos (com quebras de linha e wrap length reduzido)
-        mCommandsTexture = mGame->GetFont()->RenderText(
-            "[1] Mapa\n[2] Combate\n[ESC] Sair",
-            Vector3(1.0f, 1.0f, 1.0f),  // Branco
-            20,
-            300  // Limitar largura para 300px
-        );
+void MainMenuScene::UpdateMenuTextures()
+{
+    // Cor amarelo dourado para opção selecionada
+    Vector3 goldColor(1.0f, 0.84f, 0.0f);
+    Vector3 whiteColor(1.0f, 1.0f, 1.0f);
+
+    if (!mGame->GetFont()) return;
+
+    // Limpar texturas antigas
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
+        mOptionStartTexture = nullptr;
     }
+    if (mOptionGameOverTexture) {
+        delete mOptionGameOverTexture;
+        mOptionGameOverTexture = nullptr;
+    }
+    if (mOptionVictoryTexture) {
+        delete mOptionVictoryTexture;
+        mOptionVictoryTexture = nullptr;
+    }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
+        mOptionExitTexture = nullptr;
+    }
+
+    // Criar textura "Iniciar Jogo" com cor apropriada
+    Vector3 startColor = (mSelectedOption == 0) ? goldColor : whiteColor;
+    mOptionStartTexture = mGame->GetFont()->RenderText(
+        "Iniciar Jogo",
+        startColor,
+        18,
+        400
+    );
+
+    // Criar textura "Game Over (teste)" com cor apropriada
+    Vector3 gameOverColor = (mSelectedOption == 1) ? goldColor : whiteColor;
+    mOptionGameOverTexture = mGame->GetFont()->RenderText(
+        "Game Over (teste)",
+        gameOverColor,
+        18,
+        400
+    );
+
+    // Criar textura "Vitória (teste)" com cor apropriada
+    Vector3 victoryColor = (mSelectedOption == 2) ? goldColor : whiteColor;
+    mOptionVictoryTexture = mGame->GetFont()->RenderText(
+        "Vitoria (teste)",
+        victoryColor,
+        18,
+        400
+    );
+
+    // Criar textura "Sair" com cor apropriada
+    Vector3 exitColor = (mSelectedOption == 3) ? goldColor : whiteColor;
+    mOptionExitTexture = mGame->GetFont()->RenderText(
+        "Sair",
+        exitColor,
+        18,
+        400
+    );
 }
 
 void MainMenuScene::Update(float deltaTime)
@@ -130,72 +188,123 @@ void MainMenuScene::Update(float deltaTime)
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante o fade in
+    // Bloquear inputs durante o fade
     if (mFadeAlpha > 0.0f)
         return;
 
-    // TODO (Kayque): Implementar navegação do menu
-
-    // ===== TESTE TEMPORÁRIO =====
-    // Pressione 1 para ir ao Mapa
-    // Pressione 2 para ir ao Combate
-    // Pressione ESC para sair
-
-    static bool key1WasPressed = false;
-    static bool key2WasPressed = false;
-
-    if (keyState[SDL_SCANCODE_1] && !key1WasPressed)
+    // Navegar para baixo (Seta baixo ou S)
+    if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
     {
-        SDL_Log("==> TESTE: Transição Menu -> Mapa");
-        mGame->SetScene(new MapScene(mGame));
-        key1WasPressed = true;
+        mSelectedOption = (mSelectedOption + 1) % 4;
+        UpdateMenuTextures();  // Atualizar cores
+        mKeyWasPressed = true;
     }
-    else if (!keyState[SDL_SCANCODE_1])
+    // Navegar para cima (Seta cima ou W)
+    else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {
-        key1WasPressed = false;
+        mSelectedOption = (mSelectedOption - 1 + 4) % 4;
+        UpdateMenuTextures();  // Atualizar cores
+        mKeyWasPressed = true;
     }
+    // Confirmar seleção (Enter ou Space)
+    else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    {
+        if (mSelectedOption == 0) {
+            // Iniciar Jogo -> Vai para o Mapa (com fade out automático)
+            SDL_Log("==> Menu: Iniciando jogo");
+            mGame->SetScene(new MapScene(mGame));
+        } else if (mSelectedOption == 1) {
+            // Game Over (teste) -> Vai direto para tela de Game Over
+            SDL_Log("==> Menu: Indo para Game Over (teste)");
+            mGame->SetScene(new GameOverScene(mGame));
+        } else if (mSelectedOption == 2) {
+            // Vitória (teste) -> Vai direto para tela de Vitória
+            SDL_Log("==> Menu: Indo para Vitória (teste)");
+            mGame->SetScene(new VictoryScene(mGame));
+        } else {
+            // Sair -> Vai para tela preta que fechará o jogo
+            SDL_Log("==> Menu: Indo para tela preta");
+            mGame->SetScene(new BlackScreenScene(mGame));
+        }
+        mKeyWasPressed = true;
+    }
+    else if (!keyState[SDL_SCANCODE_DOWN] && !keyState[SDL_SCANCODE_S] &&
+             !keyState[SDL_SCANCODE_UP] && !keyState[SDL_SCANCODE_W] &&
+             !keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
+    {
+        mKeyWasPressed = false;
+    }
+}
 
-    if (keyState[SDL_SCANCODE_2] && !key2WasPressed)
-    {
-        SDL_Log("==> TESTE: Transição Menu -> Combate");
-        mGame->SetScene(new CombatScene(mGame));
-        key2WasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_2])
-    {
-        key2WasPressed = false;
-    }
-
-    if (keyState[SDL_SCANCODE_ESCAPE])
-    {
-        SDL_Log("==> TESTE: Saindo do jogo");
-        mGame->Quit();
+void MainMenuScene::RenderBackground()
+{
+    // Renderizar background
+    if (mBackgroundTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
     }
 }
 
 void MainMenuScene::Render()
 {
-    // Renderizar título
-    if (mTitleTexture) {
+    // Posição vertical base para as opções
+    float startY = 165.0f;
+    float optionSpacing = 45.0f;
+
+    // Opção 1: "Iniciar Jogo" (cor já está na textura)
+    if (mOptionStartTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, 120.0f),  // Centro superior
-            Vector2(mTitleTexture->GetWidth(), mTitleTexture->GetHeight()),
+            Vector2(320.0f, startY),
+            Vector2(mOptionStartTexture->GetWidth(), mOptionStartTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mTitleTexture,
+            mOptionStartTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
     }
 
-    // Renderizar comandos
-    if (mCommandsTexture) {
+    // Opção 2: "Game Over (teste)" (cor já está na textura)
+    if (mOptionGameOverTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, 260.0f),  // Centro da tela (ajustado para ficar melhor posicionado)
-            Vector2(mCommandsTexture->GetWidth(), mCommandsTexture->GetHeight()),
+            Vector2(320.0f, startY + optionSpacing),
+            Vector2(mOptionGameOverTexture->GetWidth(), mOptionGameOverTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mCommandsTexture,
+            mOptionGameOverTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Opção 3: "Vitória (teste)" (cor já está na textura)
+    if (mOptionVictoryTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, startY + optionSpacing * 2),
+            Vector2(mOptionVictoryTexture->GetWidth(), mOptionVictoryTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mOptionVictoryTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Opção 4: "Sair" (cor já está na textura)
+    if (mOptionExitTexture) {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, startY + optionSpacing * 3),
+            Vector2(mOptionExitTexture->GetWidth(), mOptionExitTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mOptionExitTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
@@ -210,14 +319,25 @@ void MainMenuScene::Exit()
     SDL_Log("Exiting MainMenuScene");
 
     // Limpar texturas
-    if (mTitleTexture) {
-        delete mTitleTexture;
-        mTitleTexture = nullptr;
+    if (mOptionStartTexture) {
+        delete mOptionStartTexture;
+        mOptionStartTexture = nullptr;
     }
-    if (mCommandsTexture) {
-        delete mCommandsTexture;
-        mCommandsTexture = nullptr;
+    if (mOptionGameOverTexture) {
+        delete mOptionGameOverTexture;
+        mOptionGameOverTexture = nullptr;
     }
+    if (mOptionVictoryTexture) {
+        delete mOptionVictoryTexture;
+        mOptionVictoryTexture = nullptr;
+    }
+    if (mOptionExitTexture) {
+        delete mOptionExitTexture;
+        mOptionExitTexture = nullptr;
+    }
+
+    // Limpar referência do background (não delete, é gerenciado pelo Renderer)
+    mBackgroundTexture = nullptr;
 }
 
 // ============================================
@@ -782,9 +902,11 @@ CombatScene::CombatScene(Game* game)
     , mDisplayPlayerCard(nullptr)
     , mDisplayEnemyCard(nullptr)
     , mPlayerWonLastTurn(false)
+    , mWasTie(false)
     , mProjectile(nullptr)
     , mShowingProjectile(false)
     , mProjectileTimer(0.0f)
+    , mCombatEndHandled(false)
 {
 }
 
@@ -946,9 +1068,22 @@ void CombatScene::AtualizarExibicaoCartas(float deltaTime)
         mShowingCards = false;
         mCardDisplayTimer = 0.0f;
 
-        LaunchProjectile();
-        mShowingProjectile = true;
-        mProjectileTimer = 0.0f;
+        // Só lança projétil se não foi empate
+        if (!mWasTie)
+        {
+            LaunchProjectile();
+            mShowingProjectile = true;
+            mProjectileTimer = 0.0f;
+        }
+        else
+        {
+            SDL_Log("Empate! Nenhuma animação de ataque.");
+            // Em caso de empate, registra o uso das cartas sem causar dano
+            if (mDisplayPlayerCard)
+            {
+                mCombatManager->PlayerSelectCard(mDisplayPlayerCard, mDisplayEnemyCard);
+            }
+        }
     }
 }
 
@@ -1267,14 +1402,27 @@ void CombatScene::ProcessInput(const Uint8* keyState)
 
                 if (playerHasAdvantage) {
                     mPlayerWonLastTurn = true;
+                    mWasTie = false;
                 } else if (enemyHasAdvantage) {
                     mPlayerWonLastTurn = false;
+                    mWasTie = false;
                 } else {
                     // Sem vantagem de tipo, comparar dano
-                    mPlayerWonLastTurn = (mDisplayPlayerCard->GetDamage() >= mDisplayEnemyCard->GetDamage());
+                    int playerDamage = mDisplayPlayerCard->GetDamage();
+                    int enemyDamage = mDisplayEnemyCard->GetDamage();
+
+                    if (playerDamage == enemyDamage) {
+                        // Empate: danos iguais e sem vantagem de tipo
+                        mWasTie = true;
+                        mPlayerWonLastTurn = false;
+                    } else {
+                        mWasTie = false;
+                        mPlayerWonLastTurn = (playerDamage > enemyDamage);
+                    }
                 }
             } else {
                 mPlayerWonLastTurn = true;
+                mWasTie = false;
             }
 
             SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
@@ -1327,6 +1475,12 @@ const char* CombatScene::GetTypeName(AttackType type)
 
 void CombatScene::HandleCombatEnd()
 {
+    // Garantir que só processa o fim do combate uma vez
+    if (mCombatEndHandled)
+        return;
+
+    mCombatEndHandled = true;
+
     SDL_Log("\n========================================");
     if (mCombatManager->IsPlayerVictorious())
     {
@@ -1509,6 +1663,10 @@ void CombatScene::Exit()
 
 GameOverScene::GameOverScene(Game* game)
     : GameScene(game)
+    , mBackgroundTexture(nullptr)
+    , mMenuTexture(nullptr)
+    , mPulseTimer(0.0f)
+    , mKeyWasPressed(false)
 {
 }
 
@@ -1520,38 +1678,115 @@ void GameOverScene::Enter()
 {
     SDL_Log("Entering GameOverScene");
     mStateTime = 0.0f;
+    mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - GAME OVER [ENTER=Menu]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - GAME OVER");
 
-    mGame->GetRenderer()->SetClearColor(0.3f, 0.2f, 0.4f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/gameover.png");
+    if (!mBackgroundTexture)
+    {
+        SDL_Log("Erro ao carregar background de Game Over!");
+    }
+
+    // Criar textura do texto "MENU"
+    mMenuTexture = mGame->GetFont()->RenderText(
+        "Menu",
+        Vector3(1.0f, 0.84f, 0.0f), // Gold Yellow
+        24,
+        400
+    );
 }
 
 void GameOverScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
+    mPulseTimer += deltaTime;
+
+    // Atualizar fade in
+    UpdateFade(deltaTime);
 }
 
 void GameOverScene::ProcessInput(const Uint8* keyState)
 {
+    // Bloquear inputs durante o fade
+    if (mFadeAlpha > 0.0f)
+        return;
 
-    static bool enterWasPressed = false;
-
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed)
+    // Pressionar ENTER ou SPACE para voltar ao menu
+    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> TESTE: Game Over -> Menu");
+        SDL_Log("==> Game Over -> Menu Principal");
         mGame->SetScene(new MainMenuScene(mGame));
-        enterWasPressed = true;
+        mKeyWasPressed = true;
     }
-    else if (!keyState[SDL_SCANCODE_RETURN])
+    else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
     {
-        enterWasPressed = false;
+        mKeyWasPressed = false;
     }
+}
+
+void GameOverScene::RenderBackground()
+{
+    if (mBackgroundTexture)
+    {
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+}
+
+void GameOverScene::Render()
+{
+    RenderBackground();
+
+    // Renderizar botão "MENU" com efeito de pulsação
+    if (mMenuTexture)
+    {
+        // Calcular escala de pulsação usando seno (oscila entre 0.9 e 1.1)
+        float pulseSpeed = 1.5f; // Velocidade da pulsação (2 ciclos por segundo)
+        float pulseAmount = 0.1f; // Amplitude da pulsação
+        float scale = 0.8f + Math::Sin(mPulseTimer * pulseSpeed) * pulseAmount;
+
+        // Posição na parte inferior da caixa bege
+        Vector2 position(320.0f, 365.0f);
+        Vector2 size(mMenuTexture->GetWidth() * scale, mMenuTexture->GetHeight() * scale);
+
+        mGame->GetRenderer()->DrawTexture(
+            position,
+            size,
+            0.0f,
+            Vector3(1.0f, 0.84f, 0.0f),
+            mMenuTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
+    // Renderizar fade
+    RenderFade();
 }
 
 void GameOverScene::Exit()
 {
     SDL_Log("Exiting GameOverScene");
+
+    // Limpar texturas
+    if (mMenuTexture)
+    {
+        mMenuTexture->Unload();
+        delete mMenuTexture;
+        mMenuTexture = nullptr;
+    }
+
+    mBackgroundTexture = nullptr;
 }
 
 // ============================================
@@ -1560,6 +1795,10 @@ void GameOverScene::Exit()
 
 VictoryScene::VictoryScene(Game* game)
     : GameScene(game)
+    , mBackgroundTexture(nullptr)
+    , mPlayAgainTexture(nullptr)
+    , mPulseTimer(0.0f)
+    , mKeyWasPressed(false)
 {
 }
 
@@ -1571,36 +1810,159 @@ void VictoryScene::Enter()
 {
     SDL_Log("Entering VictoryScene");
     mStateTime = 0.0f;
+    mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - VITORIA! [ENTER=Menu]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - VITÓRIA!");
 
-    mGame->GetRenderer()->SetClearColor(0.8f, 0.7f, 0.2f, 1.0f);
+    // Carregar background
+    mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/youwin.png");
+    if (!mBackgroundTexture)
+    {
+        SDL_Log("Erro ao carregar background de Vitória!");
+    }
+
+    mPlayAgainTexture = mGame->GetFont()->RenderText(
+        "Menu",
+        Vector3(1.0f, 0.84f, 0.0f), // Gold Yellow
+        20,
+        400
+    );
 }
 
 void VictoryScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
+    mPulseTimer += deltaTime;
+
+    // Atualizar fade in
+    UpdateFade(deltaTime);
 }
 
 void VictoryScene::ProcessInput(const Uint8* keyState)
 {
+    // Bloquear inputs durante o fade
+    if (mFadeAlpha > 0.0f)
+        return;
 
-    static bool enterWasPressed = false;
+    // Pressionar ENTER ou SPACE para jogar novamente
+    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    {
+        SDL_Log("==> Vitória -> Jogar Novamente (Novo Mapa)");
+        mGame->ClearMap();  // Limpar mapa atual
+        mGame->SetScene(new MapScene(mGame));  // Criar novo mapa
+        mKeyWasPressed = true;
+    }
+    else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
+    {
+        mKeyWasPressed = false;
+    }
+}
 
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed)
+void VictoryScene::RenderBackground()
+{
+    if (mBackgroundTexture)
     {
-        SDL_Log("==> TESTE: Vitória -> Menu");
-        mGame->SetScene(new MainMenuScene(mGame));
-        enterWasPressed = true;
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, 224.0f),  // Centro da tela (640x448)
+            Vector2(640.0f, 448.0f),  // Tamanho da tela
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mBackgroundTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
     }
-    else if (!keyState[SDL_SCANCODE_RETURN])
+}
+
+void VictoryScene::Render()
+{
+    RenderBackground();
+
+    // Renderizar botão "Jogar Novamente" com efeito de pulsação
+    if (mPlayAgainTexture)
     {
-        enterWasPressed = false;
+        // Calcular escala de pulsação usando seno (oscila entre 0.7 e 0.9)
+        float pulseSpeed = 1.5f; // Velocidade da pulsação
+        float pulseAmount = 0.1f; // Amplitude da pulsação
+        float scale = 0.8f + Math::Sin(mPulseTimer * pulseSpeed) * pulseAmount;
+
+        // Posição na parte inferior da caixa bege
+        Vector2 position(320.0f, 365.0f);
+        Vector2 size(mPlayAgainTexture->GetWidth() * scale, mPlayAgainTexture->GetHeight() * scale);
+
+        mGame->GetRenderer()->DrawTexture(
+            position,
+            size,
+            0.0f,
+            Vector3(1.0f, 0.84f, 0.0f),
+            mPlayAgainTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
     }
+
+    // Renderizar fade
+    RenderFade();
 }
 
 void VictoryScene::Exit()
 {
     SDL_Log("Exiting VictoryScene");
+
+    // Limpar texturas
+    if (mPlayAgainTexture)
+    {
+        mPlayAgainTexture->Unload();
+        delete mPlayAgainTexture;
+        mPlayAgainTexture = nullptr;
+    }
+
+    mBackgroundTexture = nullptr;
+}
+
+// ============================================
+// BLACK SCREEN SCENE
+// ============================================
+
+BlackScreenScene::BlackScreenScene(Game* game)
+    : GameScene(game)
+{
+}
+
+BlackScreenScene::~BlackScreenScene()
+{
+}
+
+void BlackScreenScene::Enter()
+{
+    SDL_Log("Entering BlackScreenScene");
+    mStateTime = 0.0f;
+}
+
+void BlackScreenScene::Update(float deltaTime)
+{
+    mStateTime += deltaTime;
+
+    // Após 0.5s na tela preta, fechar o jogo
+    if (mStateTime >= 0.5f)
+    {
+        mGame->Quit();
+    }
+}
+
+void BlackScreenScene::RenderBackground()
+{
+    // Renderizar fundo preto (já é o default, mas garantir)
+    mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+void BlackScreenScene::ProcessInput(const Uint8* keyState)
+{
+    // Não processar input nesta cena
+}
+
+void BlackScreenScene::Exit()
+{
+    SDL_Log("Exiting BlackScreenScene");
 }
