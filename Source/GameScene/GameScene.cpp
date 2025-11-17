@@ -580,7 +580,7 @@ void MapScene::RenderNode(MapNode* node)
     Vector3 color = Vector3(1.0f, 1.0f, 1.0f);
 
     // Desenhar highlight para nó selecionado (borda pulsante)
-    if (node == mSelectedNode && node != mCurrentNode) {
+    if (node == mSelectedNode && node != mCurrentNode && CanSelectNode(node)) {
         // Efeito pulsante baseado no tempo
         float pulse = 0.5f + 0.3f * Math::Sin(mStateTime * 4.0f); // Pulsa entre 0.5 e 0.8
         float highlightSize = size + 12.0f * pulse;
@@ -1623,6 +1623,7 @@ void GameOverScene::ProcessInput(const Uint8* keyState)
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
         SDL_Log("==> Game Over -> Menu Principal");
+        mGame->ClearMap();  // Limpar mapa para permitir novo jogo
         mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;
     }
@@ -1747,12 +1748,12 @@ void VictoryScene::ProcessInput(const Uint8* keyState)
     if (mFadeAlpha > 0.0f)
         return;
 
-    // Pressionar ENTER ou SPACE para jogar novamente
+    // Pressionar ENTER ou SPACE para voltar ao menu
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> Vitória -> Jogar Novamente (Novo Mapa)");
-        mGame->ClearMap();  // Limpar mapa atual
-        mGame->SetScene(new MapScene(mGame));  // Criar novo mapa
+        SDL_Log("==> Vitória -> Menu Principal");
+        mGame->ClearMap();
+        mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;
     }
     else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
