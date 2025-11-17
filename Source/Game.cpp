@@ -86,7 +86,7 @@ bool Game::Initialize()
     // Inicializar sistema de áudio
     mAudio = new AudioSystem(8);
     SDL_Log("Audio system initialized");
-    // CacheAllSounds() será chamado quando houver sons em Assets/Sounds/
+    mAudio->CacheAllSounds(); //será chamado quando houver sons em Assets/Sounds/
 
     // Init all game actors
     InitializeActors();

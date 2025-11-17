@@ -112,6 +112,9 @@ void MainMenuScene::Enter()
 
     // Criar texturas das opções do menu com cores apropriadas
     UpdateMenuTextures();
+
+    // Iniciando a música do MainMenu
+    mMenuSound = mGame->GetAudio()->PlaySound("MainMenu.wav", true);
 }
 
 void MainMenuScene::UpdateMenuTextures()
@@ -182,6 +185,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         mSelectedOption = (mSelectedOption + 1) % 3;
         UpdateMenuTextures();
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
     }
     // Navegar para cima (Seta cima ou W)
     else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
@@ -189,6 +193,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         mSelectedOption = (mSelectedOption - 1 + 3) % 3;
         UpdateMenuTextures();
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
     }
     // Confirmar seleção (Enter ou Space)
     else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
@@ -296,6 +301,9 @@ void MainMenuScene::Exit()
 
     // Limpar referência do background (não delete, é gerenciado pelo Renderer)
     mBackgroundTexture = nullptr;
+
+    // Parando o audio do main menu
+    mGame->GetAudio()->StopSound(mMenuSound);
 }
 
 // ============================================
@@ -334,6 +342,9 @@ void MapScene::Enter()
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
 
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
+
+    //Carregar música do mapa
+    mMapSound = mGame->GetAudio()->PlaySound("MapSound.wav", true);
 
     // Obter mapa do Game (se já existe) ou gerar novo
     if (mGame->GetMapNodes().empty()) {
@@ -429,6 +440,11 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
         SelectPreviousAccessibleNode();
         upWasPressed = true;
+
+        //gerando audio aleatorio de opção
+        int randomChoiceAudio = Random::GetIntRange(1, 4);
+        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+        mGame->GetAudio()->PlaySound(audio, false);
     } else if (!keyState[SDL_SCANCODE_UP]) {
         upWasPressed = false;
     }
@@ -437,6 +453,11 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (keyState[SDL_SCANCODE_DOWN] && !downWasPressed) {
         SelectNextAccessibleNode();
         downWasPressed = true;
+
+        //gerando audio aleatorio de opção
+        int randomChoiceAudio = Random::GetIntRange(1, 4);
+        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+        mGame->GetAudio()->PlaySound(audio, false);
     } else if (!keyState[SDL_SCANCODE_DOWN]) {
         downWasPressed = false;
     }
@@ -445,6 +466,19 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed) {
         ConfirmSelection();
         enterWasPressed = true;
+
+        //gerando audio do som do nó selecionado
+        MapNodeType nodeType = mSelectedNode->GetType();
+
+        if (nodeType == MapNodeType::BOSS || nodeType == MapNodeType::COMBAT) {
+            mGame->GetAudio()->PlaySound("MapEnemySelection.ogg", false);
+        } else if (nodeType == MapNodeType::SHOP) {
+            mGame->GetAudio()->PlaySound("MapStoreSelection.ogg", false);
+        } else if (nodeType == MapNodeType::REST) {
+            mGame->GetAudio()->PlaySound("MapHealthSelection.ogg", false);
+        } else if (nodeType == MapNodeType::TREASURE) {
+            mGame->GetAudio()->PlaySound("MapCoinSelection.ogg", false);
+        }
     } else if (!keyState[SDL_SCANCODE_RETURN]) {
         enterWasPressed = false;
     }
@@ -454,6 +488,9 @@ void MapScene::Exit()
 {
     // Limpar referência ao background (Renderer gerencia a memória)
     mBackgroundTexture = nullptr;
+
+    //Parar a musica do mapa
+    mGame->GetAudio()->StopSound(mMapSound);
 }
 
 void MapScene::SetCurrentNode(MapNode* node)
