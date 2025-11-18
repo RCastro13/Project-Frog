@@ -438,26 +438,32 @@ void MapScene::ProcessInput(const Uint8* keyState)
 
     // Navegar para cima
     if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
+        MapNode* previousSelection = mSelectedNode;
         SelectPreviousAccessibleNode();
-        upWasPressed = true;
 
-        //gerando audio aleatorio de opção
-        int randomChoiceAudio = Random::GetIntRange(1, 4);
-        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
-        mGame->GetAudio()->PlaySound(audio, false);
+        // Só tocar som se a seleção mudou
+        if (mSelectedNode && mSelectedNode != previousSelection) {
+            int randomChoiceAudio = Random::GetIntRange(1, 4);
+            std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+            mGame->GetAudio()->PlaySound(audio, false);
+        }
+        upWasPressed = true;
     } else if (!keyState[SDL_SCANCODE_UP]) {
         upWasPressed = false;
     }
 
     // Navegar para baixo
     if (keyState[SDL_SCANCODE_DOWN] && !downWasPressed) {
+        MapNode* previousSelection = mSelectedNode;
         SelectNextAccessibleNode();
-        downWasPressed = true;
 
-        //gerando audio aleatorio de opção
-        int randomChoiceAudio = Random::GetIntRange(1, 4);
-        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
-        mGame->GetAudio()->PlaySound(audio, false);
+        // Só tocar som se a seleção mudou
+        if (mSelectedNode && mSelectedNode != previousSelection) {
+            int randomChoiceAudio = Random::GetIntRange(1, 4);
+            std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+            mGame->GetAudio()->PlaySound(audio, false);
+        }
+        downWasPressed = true;
     } else if (!keyState[SDL_SCANCODE_DOWN]) {
         downWasPressed = false;
     }
@@ -662,36 +668,77 @@ void MapScene::RenderConnections()
 void MapScene::SelectNextAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
+
     if (accessible.empty()) {
         mSelectedNode = nullptr;
         mSelectedIndex = 0;
         return;
     }
 
-    // Garantir que mSelectedIndex está dentro dos limites
-    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
+    // Se não há nó selecionado, selecionar o primeiro
+    if (!mSelectedNode) {
+        mSelectedNode = accessible[0];
         mSelectedIndex = 0;
+        return;
     }
 
-    mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
+    // Encontrar o índice atual
+    int currentIndex = -1;
+    for (size_t i = 0; i < accessible.size(); i++) {
+        if (accessible[i] == mSelectedNode) {
+            currentIndex = static_cast<int>(i);
+            break;
+        }
+    }
+
+    // Se não encontrou (nó não está mais acessível), resetar
+    if (currentIndex == -1) {
+        mSelectedNode = accessible[0];
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Avançar para o próximo (com wrap)
+    mSelectedIndex = (currentIndex + 1) % static_cast<int>(accessible.size());
     mSelectedNode = accessible[mSelectedIndex];
 }
 
 void MapScene::SelectPreviousAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
+
     if (accessible.empty()) {
         mSelectedNode = nullptr;
         mSelectedIndex = 0;
         return;
     }
 
-    // Garantir que mSelectedIndex está dentro dos limites
-    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
-        mSelectedIndex = 0;
+    // Se não há nó selecionado, selecionar o último
+    if (!mSelectedNode) {
+        mSelectedNode = accessible.back();
+        mSelectedIndex = static_cast<int>(accessible.size()) - 1;
+        return;
     }
 
-    mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
+    // Encontrar o índice atual
+    int currentIndex = -1;
+    for (size_t i = 0; i < accessible.size(); i++) {
+        if (accessible[i] == mSelectedNode) {
+            currentIndex = static_cast<int>(i);
+            break;
+        }
+    }
+
+    // Se não encontrou (nó não está mais acessível), resetar
+    if (currentIndex == -1) {
+        mSelectedNode = accessible[0];
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Voltar para o anterior (com wrap)
+    mSelectedIndex = (currentIndex - 1 + static_cast<int>(accessible.size()))
+                     % static_cast<int>(accessible.size());
     mSelectedNode = accessible[mSelectedIndex];
 }
 
@@ -757,6 +804,12 @@ void MapScene::ConfirmSelection()
 bool MapScene::CanSelectNode(MapNode* node)
 {
     if (!node) return false;
+
+    // Não pode selecionar o nó START
+    if (node->GetType() == MapNodeType::START) return false;
+
+    // Não pode selecionar o nó atual (onde o jogador está)
+    if (node == mCurrentNode) return false;
 
     // Só pode selecionar nós acessíveis que não estão completos
     return node->IsAccessible() && !node->IsCompleted();
@@ -876,15 +929,22 @@ void CombatScene::Enter()
     // Atualizar título da janela
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [Setas=Selecionar Enter=Confirmar]");
 
-    // Selecionar background aleatório
-    const char* backgroundFiles[] = {
-        "../Assets/Background/Combat/pedras.png",
-        "../Assets/Background/Combat/floresta.png",
-        "../Assets/Background/Combat/pantano.jpeg",
-    };
+    // Verificar se é boss fight
+    MapNode* currentNode = mGame->GetCurrentMapNode();
+    bool isBossFight = (currentNode && currentNode->GetType() == MapNodeType::BOSS);
 
-    int randomIndex = Random::GetIntRange(0, 0);
-    mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
+    // Selecionar background baseado no tipo de combate
+    if (isBossFight) {
+        mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Combat/dungeon.png");
+    } else {
+        const char* backgroundFiles[] = {
+            "../Assets/Background/Combat/pedras.png",
+            "../Assets/Background/Combat/floresta.png",
+            "../Assets/Background/Combat/pantano.jpeg",
+        };
+        int randomIndex = Random::GetIntRange(0, 2);
+        mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
+    }
 
     mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -916,33 +976,13 @@ void CombatScene::CreateTestCombatants()
     playerDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
     playerDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
 
-    // Criar cartas de teste para o Enemy
-    std::vector<Card*> enemyDeck;
-    enemyDeck.push_back(new Card("Enemy Fire", AttackType::Fire, 4, 1, nullptr));
-    enemyDeck.push_back(new Card("Enemy Water", AttackType::Water, 5, 2, nullptr));
-    enemyDeck.push_back(new Card("Enemy Plant", AttackType::Plant, 4, 2, nullptr));
-    enemyDeck.push_back(new Card("Enemy Neutral", AttackType::Neutral, 3, 0, nullptr));
-
     // Criar Player
     mPlayer = new Player(mGame, "Frog Hero", 20, 20, playerDeck);
 
-    // Criar Enemy com stats baseados no tipo aleatório
-    EnemyType enemyType = EnemyFactory::GetRandomEnemyType();
-    EnemyFactory::EnemyStats stats = EnemyFactory::GetStatsForType(enemyType);
-    mEnemy = new Enemy(mGame, "Enemy", stats.health, stats.maxHealth, enemyDeck);
-    mEnemy->SetDifficulty(stats.difficulty);
-
-    // Configurar owners das cartas
+    // Configurar owners das cartas do player
     for (Card* card : mPlayer->GetDeck()) {
         card->SetOwner(mPlayer);
     }
-    for (Card* card : mEnemy->GetDeck()) {
-        card->SetOwner(mEnemy);
-    }
-
-    // Criar CombatManager
-    mCombatManager = new CombatManager(mPlayer, mEnemy, 10); // 10 moedas de recompensa
-    mCombatManager->StartCombat();
 
     mSelectedCardIndex = 0;
 }
@@ -954,9 +994,36 @@ void CombatScene::CreateVisualActors()
     mFrogActor->SetPosition(Vector2(150.0f, 224.0f));
     mFrogActor->SetScale(Vector2(1.0f, 1.0f));
 
-    // Criar inimigo aleatório à direita
-    mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    // Verificar se é boss fight
+    MapNode* currentNode = mGame->GetCurrentMapNode();
+    bool isBossFight = (currentNode && currentNode->GetType() == MapNodeType::BOSS);
+
+    // Criar inimigo apropriado
+    if (isBossFight) {
+        mEnemyActor = EnemyFactory::CreateEnemy(mGame, EnemyType::GOLEM);
+    } else {
+        mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    }
+
     mEnemyActor->SetPosition(Vector2(490.0f, 224.0f));
+
+    // Obter stats do inimigo criado
+    AnimatedCharacterActor::EnemyStats stats = mEnemyActor->GetEnemyStats();
+
+    // Criar deck do inimigo
+    std::vector<Card*> enemyDeck = mEnemyActor->CreateEnemyDeck();
+
+    // Criar entidade Enemy com os stats e deck do inimigo visual
+    mEnemy = new Enemy(mGame, "Enemy", stats.health, stats.maxHealth, enemyDeck, stats.difficulty);
+
+    // Configurar owners das cartas do enemy
+    for (Card* card : mEnemy->GetDeck()) {
+        card->SetOwner(mEnemy);
+    }
+
+    // Criar CombatManager
+    mCombatManager = new CombatManager(mPlayer, mEnemy, 10); // 10 moedas de recompensa
+    mCombatManager->StartCombat();
 }
 
 void CombatScene::LoadCardTextures()
@@ -1119,12 +1186,14 @@ void CombatScene::Render()
 
 void CombatScene::RenderCombatUI()
 {
-    // Renderizar barras de HP
-    if (mPlayer && mEnemy && mCombatRenderer) {
-        Vector2 playerHPPos = Vector2(CombatConstants::Positions::FROG_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+    // Renderizar barras de HP dinamicamente baseadas na posição dos atores
+    if (mPlayer && mEnemy && mCombatRenderer && mFrogActor && mEnemyActor) {
+        float playerBarOffset = (mFrogActor->GetSpriteHeight() / 2.0f) + 2.0f;
+        Vector2 playerHPPos = Vector2(mFrogActor->GetPosition().x, mFrogActor->GetPosition().y - playerBarOffset);
         mCombatRenderer->RenderizarBarraHP(playerHPPos, mPlayer->GetHealth(), mPlayer->GetMaxHealth(), false);
 
-        Vector2 enemyHPPos = Vector2(CombatConstants::Positions::BEAR_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+        float enemyBarOffset = (mEnemyActor->GetSpriteHeight() / 2.0f) + 2.0f;
+        Vector2 enemyHPPos = Vector2(mEnemyActor->GetPosition().x, mEnemyActor->GetPosition().y - enemyBarOffset);
         mCombatRenderer->RenderizarBarraHP(enemyHPPos, mEnemy->GetHealth(), mEnemy->GetMaxHealth(), true);
     }
 
@@ -1209,8 +1278,8 @@ void CombatScene::RenderCardDisplay()
         );
     }
 
-    // Renderizar moldura de vencedor
-    if (mWinnerFrameTexture) {
+    // Renderizar moldura de vencedor (apenas se não foi empate)
+    if (mWinnerFrameTexture && !mWasTie) {
         float winnerX = mPlayerWonLastTurn ? playerCardX : enemyCardX;
         mCombatRenderer->RenderizarMolduraVencedor(
             Vector2(winnerX, centerY),

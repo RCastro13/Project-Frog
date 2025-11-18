@@ -6,5 +6,6 @@ enum class EnemyType
     BEATLE,
     SNAKE,
     WOLF,
+    GOLEM,  // Boss final
     COUNT  // Total de tipos (para randomização)
 };

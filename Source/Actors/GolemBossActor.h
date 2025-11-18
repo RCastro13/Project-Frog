@@ -1,12 +1,13 @@
 #pragma once
 #include "AnimatedCharacterActor.h"
 
-class BearActor : public AnimatedCharacterActor
+class GolemBossActor : public AnimatedCharacterActor
 {
 public:
-    BearActor(Game* game);
-    ~BearActor();
+    GolemBossActor(Game* game);
+    ~GolemBossActor();
 
     EnemyStats GetEnemyStats() const override;
     std::vector<Card*> CreateEnemyDeck() const override;
 };
+
