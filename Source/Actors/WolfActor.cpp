@@ -10,7 +10,9 @@ WolfActor::WolfActor(Game* game)
         {0, 1, 2, 3},        // idle frames
         {0, 1, 2, 3},        // attack frames
         {48, 49, 50, 50},    // hurt frames
-        {50, 51, 50, 51})    // death frames
+        {50, 51, 50, 51},    // death frames
+        96,   // width
+        96)   // height
 {
     SetScale(Vector2(-1.0f, 1.0f));
 }

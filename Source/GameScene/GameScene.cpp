@@ -929,15 +929,22 @@ void CombatScene::Enter()
     // Atualizar título da janela
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [Setas=Selecionar Enter=Confirmar]");
 
-    // Selecionar background aleatório
-    const char* backgroundFiles[] = {
-        "../Assets/Background/Combat/pedras.png",
-        "../Assets/Background/Combat/floresta.png",
-        "../Assets/Background/Combat/pantano.jpeg",
-    };
+    // Verificar se é boss fight
+    MapNode* currentNode = mGame->GetCurrentMapNode();
+    bool isBossFight = (currentNode && currentNode->GetType() == MapNodeType::BOSS);
 
-    int randomIndex = Random::GetIntRange(0, 0);
-    mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
+    // Selecionar background baseado no tipo de combate
+    if (isBossFight) {
+        mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Combat/dungeon.png");
+    } else {
+        const char* backgroundFiles[] = {
+            "../Assets/Background/Combat/pedras.png",
+            "../Assets/Background/Combat/floresta.png",
+            "../Assets/Background/Combat/pantano.jpeg",
+        };
+        int randomIndex = Random::GetIntRange(0, 2);
+        mBackgroundTexture = mGame->GetRenderer()->GetTexture(backgroundFiles[randomIndex]);
+    }
 
     mGame->GetRenderer()->SetClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -987,8 +994,17 @@ void CombatScene::CreateVisualActors()
     mFrogActor->SetPosition(Vector2(150.0f, 224.0f));
     mFrogActor->SetScale(Vector2(1.0f, 1.0f));
 
-    // Criar inimigo aleatório à direita
-    mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    // Verificar se é boss fight
+    MapNode* currentNode = mGame->GetCurrentMapNode();
+    bool isBossFight = (currentNode && currentNode->GetType() == MapNodeType::BOSS);
+
+    // Criar inimigo apropriado
+    if (isBossFight) {
+        mEnemyActor = EnemyFactory::CreateEnemy(mGame, EnemyType::GOLEM);
+    } else {
+        mEnemyActor = EnemyFactory::CreateRandomEnemy(mGame);
+    }
+
     mEnemyActor->SetPosition(Vector2(490.0f, 224.0f));
 
     // Obter stats do inimigo criado
@@ -1170,12 +1186,14 @@ void CombatScene::Render()
 
 void CombatScene::RenderCombatUI()
 {
-    // Renderizar barras de HP
-    if (mPlayer && mEnemy && mCombatRenderer) {
-        Vector2 playerHPPos = Vector2(CombatConstants::Positions::FROG_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+    // Renderizar barras de HP dinamicamente baseadas na posição dos atores
+    if (mPlayer && mEnemy && mCombatRenderer && mFrogActor && mEnemyActor) {
+        float playerBarOffset = (mFrogActor->GetSpriteHeight() / 2.0f) + 2.0f;
+        Vector2 playerHPPos = Vector2(mFrogActor->GetPosition().x, mFrogActor->GetPosition().y - playerBarOffset);
         mCombatRenderer->RenderizarBarraHP(playerHPPos, mPlayer->GetHealth(), mPlayer->GetMaxHealth(), false);
 
-        Vector2 enemyHPPos = Vector2(CombatConstants::Positions::BEAR_X, CombatConstants::Offsets::HP_BAR_Y_OFFSET);
+        float enemyBarOffset = (mEnemyActor->GetSpriteHeight() / 2.0f) + 2.0f;
+        Vector2 enemyHPPos = Vector2(mEnemyActor->GetPosition().x, mEnemyActor->GetPosition().y - enemyBarOffset);
         mCombatRenderer->RenderizarBarraHP(enemyHPPos, mEnemy->GetHealth(), mEnemy->GetMaxHealth(), true);
     }
 

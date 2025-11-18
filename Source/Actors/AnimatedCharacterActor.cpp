@@ -11,20 +11,23 @@ AnimatedCharacterActor::AnimatedCharacterActor(Game* game,
                                              const std::vector<int>& idleFrames,
                                              const std::vector<int>& attackFrames,
                                              const std::vector<int>& hurtFrames,
-                                             const std::vector<int>& deathFrames)
+                                             const std::vector<int>& deathFrames,
+                                             int width,
+                                             int height)
     : Actor(game)
     , mAnimatorIdle(nullptr)
     , mAnimatorAttack(nullptr)
     , mCurrentState(AnimState::Idle)
     , mAttackTimer(0.0f)
+    , mSpriteHeight(height)
 {
     using namespace ActorConstants;
 
     mAnimatorIdle = new AnimatorComponent(this,
         idleTexturePath,
         idleJsonPath,
-        Sprites::CHARACTER_WIDTH,
-        Sprites::CHARACTER_HEIGHT,
+        width,
+        height,
         Sprites::DEFAULT_DRAW_ORDER);
 
     mAnimatorIdle->AddAnimation("idle", idleFrames);
@@ -35,8 +38,8 @@ AnimatedCharacterActor::AnimatedCharacterActor(Game* game,
     mAnimatorAttack = new AnimatorComponent(this,
         attackTexturePath,
         attackJsonPath,
-        Sprites::CHARACTER_WIDTH,
-        Sprites::CHARACTER_HEIGHT,
+        width,
+        height,
         Sprites::DEFAULT_DRAW_ORDER);
 
     mAnimatorAttack->AddAnimation("attack", attackFrames);
