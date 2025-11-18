@@ -464,12 +464,13 @@ void MapScene::ProcessInput(const Uint8* keyState)
 
     // Confirmar seleção
     if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed) {
+        // Capturar tipo ANTES de confirmar (pois ConfirmSelection seta mSelectedNode = nullptr)
+        MapNodeType nodeType = mSelectedNode ? mSelectedNode->GetType() : MapNodeType::START;
+
         ConfirmSelection();
         enterWasPressed = true;
 
         //gerando audio do som do nó selecionado
-        MapNodeType nodeType = mSelectedNode->GetType();
-
         if (nodeType == MapNodeType::BOSS || nodeType == MapNodeType::COMBAT) {
             mGame->GetAudio()->PlaySound("MapEnemySelection.ogg", false);
         } else if (nodeType == MapNodeType::SHOP) {
@@ -661,7 +662,16 @@ void MapScene::RenderConnections()
 void MapScene::SelectNextAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (accessible.empty()) return;
+    if (accessible.empty()) {
+        mSelectedNode = nullptr;
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Garantir que mSelectedIndex está dentro dos limites
+    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
+        mSelectedIndex = 0;
+    }
 
     mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
@@ -670,7 +680,16 @@ void MapScene::SelectNextAccessibleNode()
 void MapScene::SelectPreviousAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (accessible.empty()) return;
+    if (accessible.empty()) {
+        mSelectedNode = nullptr;
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Garantir que mSelectedIndex está dentro dos limites
+    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
+        mSelectedIndex = 0;
+    }
 
     mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
@@ -695,27 +714,13 @@ void MapScene::ConfirmSelection()
     SetCurrentNode(nodeToMoveTo);
     mGame->SetCurrentMapNode(nodeToMoveTo);
 
-    // Prevenir retrocesso: marcar todos os nós como inacessíveis primeiro
-    for (MapNode* node : mMapNodes) {
-        if (node != nodeToMoveTo) {
-            node->SetAccessible(false);
-        }
-    }
+    // NÃO liberar os próximos nós aqui - isso só deve acontecer quando voltarmos
+    // ao mapa APÓS completar a missão (combate/loja/tesouro/rest)
+    // O MapScene::Enter() cuidará de liberar os filhos quando voltarmos
 
-    // Tornar apenas os filhos do novo nó atual acessíveis
-    for (MapNode* child : nodeToMoveTo->GetChildren()) {
-        child->SetAccessible(true);
-    }
-
-    // Atualizar seleção para o primeiro nó acessível (se houver)
-    std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (!accessible.empty()) {
-        mSelectedNode = accessible[0];
-        mSelectedIndex = 0;
-    } else {
-        mSelectedNode = nullptr;
-        mSelectedIndex = 0;
-    }
+    // Limpar seleção temporariamente
+    mSelectedNode = nullptr;
+    mSelectedIndex = 0;
 
     // Transição para a cena apropriada (usar o nó que foi selecionado, não o novo selecionado)
     switch (nodeToMoveTo->GetType()) {
