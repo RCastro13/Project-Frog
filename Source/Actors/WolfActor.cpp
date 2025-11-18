@@ -1,4 +1,5 @@
 #include "WolfActor.h"
+#include "../Combat/Card.h"
 
 WolfActor::WolfActor(Game* game)
     : AnimatedCharacterActor(game,
@@ -16,4 +17,23 @@ WolfActor::WolfActor(Game* game)
 
 WolfActor::~WolfActor()
 {
+}
+
+AnimatedCharacterActor::EnemyStats WolfActor::GetEnemyStats() const
+{
+    return {
+        2,    // health
+        32,    // maxHealth
+        0.38   // difficulty (mais forte)
+    };
+}
+
+std::vector<Card*> WolfActor::CreateEnemyDeck() const
+{
+    std::vector<Card*> deck;
+    deck.push_back(new Card("Wolf Fire", AttackType::Fire, 6, 2, nullptr));
+    deck.push_back(new Card("Wolf Water", AttackType::Water, 5, 2, nullptr));
+    deck.push_back(new Card("Wolf Plant", AttackType::Plant, 6, 3, nullptr));
+    deck.push_back(new Card("Wolf Neutral", AttackType::Neutral, 5, 1, nullptr));
+    return deck;
 }
