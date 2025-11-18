@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include "../Math.h"
+#include "../Audio/AudioSystem.h"
 
 // Forward declarations
 class Game;
@@ -104,6 +105,9 @@ private:
     int mSelectedOption;      // 0 = Jogar, 1 = Sair, 2 = Debugar
     bool mKeyWasPressed;      // Controle de input
 
+    // Variavel de audio para controle
+    SoundHandle mMenuSound;
+
     // Texturas das opções do menu
     class Texture* mOptionStartTexture;
     class Texture* mOptionDebugTexture;
@@ -142,6 +146,9 @@ private:
     Vector2 mCameraPosition;      // Posição da câmera para scrolling
     float mMinCameraX;            // Limite mínimo de scroll
     float mMaxCameraX;            // Limite máximo de scroll
+
+    // Variavel de audio para controle
+    SoundHandle mMapSound;
 
     // Icon management
     std::vector<std::string> mAvailableIcons;  // Lista de caminhos de ícones disponíveis

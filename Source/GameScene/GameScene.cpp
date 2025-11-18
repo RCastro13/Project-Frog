@@ -112,6 +112,9 @@ void MainMenuScene::Enter()
 
     // Criar texturas das opções do menu com cores apropriadas
     UpdateMenuTextures();
+
+    // Iniciando a música do MainMenu
+    mMenuSound = mGame->GetAudio()->PlaySound("MainMenu.wav", true);
 }
 
 void MainMenuScene::UpdateMenuTextures()
@@ -182,6 +185,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         mSelectedOption = (mSelectedOption + 1) % 3;
         UpdateMenuTextures();
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
     }
     // Navegar para cima (Seta cima ou W)
     else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
@@ -189,6 +193,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         mSelectedOption = (mSelectedOption - 1 + 3) % 3;
         UpdateMenuTextures();
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
     }
     // Confirmar seleção (Enter ou Space)
     else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
@@ -296,6 +301,9 @@ void MainMenuScene::Exit()
 
     // Limpar referência do background (não delete, é gerenciado pelo Renderer)
     mBackgroundTexture = nullptr;
+
+    // Parando o audio do main menu
+    mGame->GetAudio()->StopSound(mMenuSound);
 }
 
 // ============================================
@@ -334,6 +342,9 @@ void MapScene::Enter()
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
 
     mGame->GetRenderer()->SetClearColor(0.2f, 0.5f, 0.3f, 1.0f);
+
+    //Carregar música do mapa
+    mMapSound = mGame->GetAudio()->PlaySound("MapSound.wav", true);
 
     // Obter mapa do Game (se já existe) ou gerar novo
     if (mGame->GetMapNodes().empty()) {
@@ -429,6 +440,11 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
         SelectPreviousAccessibleNode();
         upWasPressed = true;
+
+        //gerando audio aleatorio de opção
+        int randomChoiceAudio = Random::GetIntRange(1, 4);
+        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+        mGame->GetAudio()->PlaySound(audio, false);
     } else if (!keyState[SDL_SCANCODE_UP]) {
         upWasPressed = false;
     }
@@ -437,14 +453,33 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (keyState[SDL_SCANCODE_DOWN] && !downWasPressed) {
         SelectNextAccessibleNode();
         downWasPressed = true;
+
+        //gerando audio aleatorio de opção
+        int randomChoiceAudio = Random::GetIntRange(1, 4);
+        std::string audio = "MapChoice" + std::to_string(randomChoiceAudio) + ".ogg";
+        mGame->GetAudio()->PlaySound(audio, false);
     } else if (!keyState[SDL_SCANCODE_DOWN]) {
         downWasPressed = false;
     }
 
     // Confirmar seleção
     if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed) {
+        // Capturar tipo ANTES de confirmar (pois ConfirmSelection seta mSelectedNode = nullptr)
+        MapNodeType nodeType = mSelectedNode ? mSelectedNode->GetType() : MapNodeType::START;
+
         ConfirmSelection();
         enterWasPressed = true;
+
+        //gerando audio do som do nó selecionado
+        if (nodeType == MapNodeType::BOSS || nodeType == MapNodeType::COMBAT) {
+            mGame->GetAudio()->PlaySound("MapEnemySelection.ogg", false);
+        } else if (nodeType == MapNodeType::SHOP) {
+            mGame->GetAudio()->PlaySound("MapStoreSelection.ogg", false);
+        } else if (nodeType == MapNodeType::REST) {
+            mGame->GetAudio()->PlaySound("MapHealthSelection.ogg", false);
+        } else if (nodeType == MapNodeType::TREASURE) {
+            mGame->GetAudio()->PlaySound("MapCoinSelection.ogg", false);
+        }
     } else if (!keyState[SDL_SCANCODE_RETURN]) {
         enterWasPressed = false;
     }
@@ -454,6 +489,9 @@ void MapScene::Exit()
 {
     // Limpar referência ao background (Renderer gerencia a memória)
     mBackgroundTexture = nullptr;
+
+    //Parar a musica do mapa
+    mGame->GetAudio()->StopSound(mMapSound);
 }
 
 void MapScene::SetCurrentNode(MapNode* node)
@@ -543,7 +581,7 @@ void MapScene::RenderNode(MapNode* node)
     Vector3 color = Vector3(1.0f, 1.0f, 1.0f);
 
     // Desenhar highlight para nó selecionado (borda pulsante)
-    if (node == mSelectedNode && node != mCurrentNode) {
+    if (node == mSelectedNode && node != mCurrentNode && CanSelectNode(node)) {
         // Efeito pulsante baseado no tempo
         float pulse = 0.5f + 0.3f * Math::Sin(mStateTime * 4.0f); // Pulsa entre 0.5 e 0.8
         float highlightSize = size + 12.0f * pulse;
@@ -624,7 +662,16 @@ void MapScene::RenderConnections()
 void MapScene::SelectNextAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (accessible.empty()) return;
+    if (accessible.empty()) {
+        mSelectedNode = nullptr;
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Garantir que mSelectedIndex está dentro dos limites
+    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
+        mSelectedIndex = 0;
+    }
 
     mSelectedIndex = (mSelectedIndex + 1) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
@@ -633,7 +680,16 @@ void MapScene::SelectNextAccessibleNode()
 void MapScene::SelectPreviousAccessibleNode()
 {
     std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (accessible.empty()) return;
+    if (accessible.empty()) {
+        mSelectedNode = nullptr;
+        mSelectedIndex = 0;
+        return;
+    }
+
+    // Garantir que mSelectedIndex está dentro dos limites
+    if (mSelectedIndex >= static_cast<int>(accessible.size())) {
+        mSelectedIndex = 0;
+    }
 
     mSelectedIndex = (mSelectedIndex - 1 + accessible.size()) % accessible.size();
     mSelectedNode = accessible[mSelectedIndex];
@@ -658,27 +714,13 @@ void MapScene::ConfirmSelection()
     SetCurrentNode(nodeToMoveTo);
     mGame->SetCurrentMapNode(nodeToMoveTo);
 
-    // Prevenir retrocesso: marcar todos os nós como inacessíveis primeiro
-    for (MapNode* node : mMapNodes) {
-        if (node != nodeToMoveTo) {
-            node->SetAccessible(false);
-        }
-    }
+    // NÃO liberar os próximos nós aqui - isso só deve acontecer quando voltarmos
+    // ao mapa APÓS completar a missão (combate/loja/tesouro/rest)
+    // O MapScene::Enter() cuidará de liberar os filhos quando voltarmos
 
-    // Tornar apenas os filhos do novo nó atual acessíveis
-    for (MapNode* child : nodeToMoveTo->GetChildren()) {
-        child->SetAccessible(true);
-    }
-
-    // Atualizar seleção para o primeiro nó acessível (se houver)
-    std::vector<MapNode*> accessible = GetAccessibleNodes();
-    if (!accessible.empty()) {
-        mSelectedNode = accessible[0];
-        mSelectedIndex = 0;
-    } else {
-        mSelectedNode = nullptr;
-        mSelectedIndex = 0;
-    }
+    // Limpar seleção temporariamente
+    mSelectedNode = nullptr;
+    mSelectedIndex = 0;
 
     // Transição para a cena apropriada (usar o nó que foi selecionado, não o novo selecionado)
     switch (nodeToMoveTo->GetType()) {
@@ -1586,6 +1628,7 @@ void GameOverScene::ProcessInput(const Uint8* keyState)
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
         SDL_Log("==> Game Over -> Menu Principal");
+        mGame->ClearMap();  // Limpar mapa para permitir novo jogo
         mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;
     }
@@ -1710,12 +1753,12 @@ void VictoryScene::ProcessInput(const Uint8* keyState)
     if (mFadeAlpha > 0.0f)
         return;
 
-    // Pressionar ENTER ou SPACE para jogar novamente
+    // Pressionar ENTER ou SPACE para voltar ao menu
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> Vitória -> Jogar Novamente (Novo Mapa)");
-        mGame->ClearMap();  // Limpar mapa atual
-        mGame->SetScene(new MapScene(mGame));  // Criar novo mapa
+        SDL_Log("==> Vitória -> Menu Principal");
+        mGame->ClearMap();
+        mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;
     }
     else if (!keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE])
