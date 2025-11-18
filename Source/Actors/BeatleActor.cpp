@@ -1,4 +1,5 @@
 #include "BeatleActor.h"
+#include "../Combat/Card.h"
 
 BeatleActor::BeatleActor(Game* game)
     : AnimatedCharacterActor(game,
@@ -16,4 +17,23 @@ BeatleActor::BeatleActor(Game* game)
 
 BeatleActor::~BeatleActor()
 {
+}
+
+AnimatedCharacterActor::EnemyStats BeatleActor::GetEnemyStats() const
+{
+    return {
+        2,    // health
+        25,    // maxHealth
+        0.30   // difficulty (mais fraco, menos esperto)
+    };
+}
+
+std::vector<Card*> BeatleActor::CreateEnemyDeck() const
+{
+    std::vector<Card*> deck;
+    deck.push_back(new Card("Beatle Fire", AttackType::Fire, 3, 1, nullptr));
+    deck.push_back(new Card("Beatle Water", AttackType::Water, 4, 2, nullptr));
+    deck.push_back(new Card("Beatle Plant", AttackType::Plant, 3, 1, nullptr));
+    deck.push_back(new Card("Beatle Neutral", AttackType::Neutral, 3, 0, nullptr));
+    return deck;
 }

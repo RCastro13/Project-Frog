@@ -1,4 +1,5 @@
 #include "FrogActor.h"
+#include "../Combat/Card.h"
 
 FrogActor::FrogActor(Game* game)
     : AnimatedCharacterActor(game,
@@ -15,5 +16,17 @@ FrogActor::FrogActor(Game* game)
 
 FrogActor::~FrogActor()
 {
+}
+
+AnimatedCharacterActor::EnemyStats FrogActor::GetEnemyStats() const
+{
+    // FrogActor é do player, não inimigo - retorna valores padrão
+    return {0, 0, 0.0};
+}
+
+std::vector<Card*> FrogActor::CreateEnemyDeck() const
+{
+    // FrogActor é do player, não inimigo - retorna deck vazio
+    return std::vector<Card*>();
 }
 
