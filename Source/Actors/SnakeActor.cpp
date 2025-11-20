@@ -10,7 +10,9 @@ SnakeActor::SnakeActor(Game* game)
         {0, 1, 2, 3},        // idle frames
         {0, 1, 2, 3},        // attack frames
         {28, 29, 30, 30},    // hurt frames
-        {30, 31, 30, 31})    // death frames
+        {30, 31, 30, 31},    // death frames
+        96,   // width
+        96)   // height
 {
     SetScale(Vector2(-1.0f, 1.0f));
 }

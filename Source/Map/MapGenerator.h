@@ -4,8 +4,8 @@
 #include <map>
 
 struct MapConfig {
-    int minLayers = 8;           // Número mínimo de camadas
-    int maxLayers = 10;          // Número máximo de camadas
+    int minLayers = 4;           // Número mínimo de camadas
+    int maxLayers = 4;          // Número máximo de camadas
     int minNodesPerLayer = 3;    // Mínimo de nós por camada
     int maxNodesPerLayer = 4;    // Máximo de nós por camada
     int minPathsPerNode = 1;     // Mínimo de caminhos saindo de cada nó

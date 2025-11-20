@@ -25,7 +25,9 @@ public:
                           const std::vector<int>& idleFrames,
                           const std::vector<int>& attackFrames,
                           const std::vector<int>& hurtFrames,
-                          const std::vector<int>& deathFrames);
+                          const std::vector<int>& deathFrames,
+                          int width = 64,
+                          int height = 64);
     virtual ~AnimatedCharacterActor();
 
     void OnUpdate(float deltaTime) override;
@@ -36,6 +38,8 @@ public:
     void PlayDeath();
 
     bool IsInAnimation() const;
+
+    int GetSpriteHeight() const { return mSpriteHeight; }
 
 protected:
     enum class AnimState
@@ -50,5 +54,6 @@ protected:
     class AnimatorComponent* mAnimatorAttack;
     AnimState mCurrentState;
     float mAttackTimer;
+    int mSpriteHeight;
 };
 

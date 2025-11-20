@@ -122,6 +122,8 @@ add_executable(${PROJECT_NAME}
         Source/Actors/SnakeActor.cpp
         Source/Actors/WolfActor.h
         Source/Actors/WolfActor.cpp
+        Source/Actors/GolemBossActor.h
+        Source/Actors/GolemBossActor.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
         Source/Actors/NPCActor.h

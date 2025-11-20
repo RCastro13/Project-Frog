@@ -10,7 +10,9 @@ FrogActor::FrogActor(Game* game)
         {0, 1, 2, 3},        // idle frames
         {17, 18, 20, 22},    // attack frames
         {5, 10, 13, 16},     // hurt frames
-        {10, 11, 17, 14})    // death frames
+        {10, 11, 17, 14},    // death frames
+        96,   // width: tamanho apropriado para o sapo
+        96)   // height: tamanho apropriado para o sapo
 {
 }
 

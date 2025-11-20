@@ -3,6 +3,7 @@
 #include "BeatleActor.h"
 #include "SnakeActor.h"
 #include "WolfActor.h"
+#include "GolemBossActor.h"
 #include "../Random.h"
 #include "../Game.h"
 
@@ -28,6 +29,9 @@ AnimatedCharacterActor* EnemyFactory::CreateEnemy(Game* game, EnemyType type)
         case EnemyType::WOLF:
             return new WolfActor(game);
 
+        case EnemyType::GOLEM:
+            return new GolemBossActor(game);
+
         default:
             return new BearActor(game);
     }
@@ -35,6 +39,7 @@ AnimatedCharacterActor* EnemyFactory::CreateEnemy(Game* game, EnemyType type)
 
 EnemyType EnemyFactory::GetRandomEnemyType()
 {
-    int randomIndex = Random::GetIntRange(0, static_cast<int>(EnemyType::COUNT) - 1);
+    // Gerar apenas entre BEAR e WOLF (excluir GOLEM e COUNT)
+    int randomIndex = Random::GetIntRange(0, static_cast<int>(EnemyType::WOLF));
     return static_cast<EnemyType>(randomIndex);
 }
