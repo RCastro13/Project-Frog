@@ -6,6 +6,9 @@
 #include "../Random.h"
 #include <SDL.h>
 
+#include "../Actors/ChestNPC.h"
+#include "../Actors/CoinNPC.h"
+
 RewardScene::RewardScene(Game* game, RewardMode mode)
     : GameScene(game)
     , mMode(mode)
@@ -14,6 +17,7 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
     , mBackgroundTexture(nullptr)
     , mSelectedOption(0)
     , mKeyWasPressed(false)
+    , mCoinSpawned(false)
 {
 }
 
@@ -27,6 +31,7 @@ void RewardScene::Enter()
     mFadeAlpha = 1.0f;
     mFadeTimer = 0.0f;
     mFadingIn = true;
+    mCoinSpawned = false;
 
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Rewards/rewards.png");
@@ -36,30 +41,72 @@ void RewardScene::Enter()
         mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Combat/floresta.png");
     }
 
-    DetermineReward();
+    //criar e posicionar o bau
+    mChestNPC = new ChestNPC(mGame);
+    mChestNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 + 50));
+    mChestNPC->Open();
 
-    if (mMode == RewardMode::COMBAT_VICTORY)
+    DetermineReward();
+}
+
+void RewardScene::DecideRewardSpawnLogic(float deltatime) {
+    //logica de spawn
+    if (!mCoinSpawned && mChestNPC && mChestNPC->IsOpenFinished()) // Só vai entrar nesse if se o baú tiver terminado de abrir
     {
-        SDL_Log("[REWARD] Vitoria em combate! Escolha:");
-        SDL_Log("  [1] Carta 1 (Fire Strike)");
-        SDL_Log("  [2] Carta 2 (Water Shield)");
-        SDL_Log("  [3] Carta 3 (Plant Whip)");
-        SDL_Log("  [4] Pegar 30 moedas");
-    }
-    else // TREASURE_CHEST
-    {
-        if (mRewardType == RewardType::CARD)
+        mCoinSpawned = true; // Trava para não entrar aqui de novo
+
+        if (mMode == RewardMode::COMBAT_VICTORY)
         {
-            SDL_Log("[REWARD] Bau encontrado! Carta rara disponivel!");
-            SDL_Log("  [1] Aceitar (trocar carta do deck)");
-            SDL_Log("  [2] Recusar");
+            // spawno a animação da moeda girando
+            mCoinNPC = new CoinNPC(mGame);
+            mCoinNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 - 100));
+
+            SpawnText("Você ganhou 30 moedas!");
+
+            SDL_Log("[REWARD] Bau abriu! Spawnando recompensas de combate.");
+            SDL_Log("  [1] Carta 1 (Fire Strike)");
+            SDL_Log("  [2] Carta 2 (Water Shield)");
+            SDL_Log("  [3] Carta 3 (Plant Whip)");
+            SDL_Log("  [4] Pegar 30 moedas");
         }
-        else
+        else // TREASURE_CHEST
         {
-            SDL_Log("[REWARD] Bau encontrado! %d moedas!", mCoinsAmount);
-            SDL_Log("  [ENTER] Coletar moedas");
+            if (mRewardType == RewardType::CARD)
+            {
+                SDL_Log("[REWARD] Bau encontrado! Carta rara disponivel!");
+                SDL_Log("  [1] Aceitar (trocar carta do deck)");
+                SDL_Log("  [2] Recusar");
+            }
+            else
+            {
+                SDL_Log("[REWARD] Bau encontrado! %d moedas!", mCoinsAmount);
+                SDL_Log("  [ENTER] Coletar moedas");
+
+                // Se tiver animação visual da moeda saindo do baú, spawna aqui também
+            }
         }
     }
+}
+
+void RewardScene::SpawnText(std::string text) {
+    // Cor do texto
+    Vector3 whiteColor(1.0f, 1.0f, 1.0f);
+
+    if (!mGame->GetFont()) return;
+
+    // Limpar texturas antigas
+    if (mTextTexture) {
+        delete mTextTexture;
+        mTextTexture = nullptr;
+    }
+
+    // Criar textura do texto com cor apropriada
+    mTextTexture = mGame->GetFont()->RenderText(
+        text,
+        whiteColor,
+        22,
+        400
+    );
 }
 
 void RewardScene::DetermineReward()
@@ -90,6 +137,8 @@ void RewardScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
     UpdateFade(deltaTime);
+
+    DecideRewardSpawnLogic(deltaTime);
 }
 
 void RewardScene::ProcessInput(const Uint8* keyState)
@@ -196,12 +245,27 @@ void RewardScene::RenderBackground()
 
 void RewardScene::Render()
 {
-    // UI: Sistema de Font existe, mas UI visual de recompensa ainda não implementada
+    if (mTextTexture) {
+        // Posição vertical base
+        float startY = 180.0f;
+
+        mGame->GetRenderer()->DrawTexture(
+            Vector2(320.0f, startY),
+            Vector2(mTextTexture->GetWidth(), mTextTexture->GetHeight()),
+            0.0f,
+            Vector3(1.0f, 1.0f, 1.0f),
+            mTextTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
+        );
+    }
+
     RenderFade();
 }
 
 void RewardScene::Exit()
 {
     mBackgroundTexture = nullptr;
+    mTextTexture = nullptr;
 }
 

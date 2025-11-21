@@ -31,11 +31,20 @@ private:
     int mCoinsAmount;
 
     class Texture* mBackgroundTexture;
+    class Texture* mTextTexture; // textura pro texto que aparece
+
+    class ChestNPC* mChestNPC;
+    class CoinNPC* mCoinNPC;
+
+    bool mCoinSpawned; // para saber quando spawnar a moeda saindo do bau
 
     int mSelectedOption;  // 0-2 = cartas (combat) ou 0=aceitar/1=recusar (treasure) ou 0=coletar (coins)
     bool mKeyWasPressed;
 
     void DetermineReward();
     void GiveRewardToPlayer();
+
+    void DecideRewardSpawnLogic(float deltatime); // função para fazer as animações das coisas dinâmicas dessa tela
+    void SpawnText(std::string text); // função pra spawnar o texto na tela
 };
 
