@@ -80,7 +80,7 @@ public:
     void SetCameraPos(const Vector2& position) { mCameraPos = position; };
 
     // Game specific
-    const class Mario* GetPlayer() { return mMario; }
+    Player* GetPlayer() { return mPlayer; }
 
 private:
     void ProcessInput();
@@ -143,6 +143,6 @@ private:
     class MapNode* mCurrentMapNode;
 
     // Game-specific
-    class Mario *mMario;
+    Player* mPlayer;
     int **mLevelData;
 };

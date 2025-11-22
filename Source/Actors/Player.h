@@ -6,6 +6,8 @@ class Player : public Combatant {
     public:
     Player(Game* game, std::string name, int health, int maxHealth, std::vector<Card*> deck = std::vector<Card*>());
 
+    ~Player();
+
     void Death() override;
 
     // Sistema de moedas

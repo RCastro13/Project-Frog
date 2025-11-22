@@ -8,6 +8,14 @@ Player::Player(Game *game, std::string name, int health, int maxHealth, std::vec
 
 }
 
+Player::~Player() {
+    if (this->GetDeck().size() > 0) {
+        for (Card* card : this->GetDeck()) {
+            delete card;
+        }
+    }
+}
+
 bool Player::SpendCoins(int amount)
 {
     if (mCoins >= amount)

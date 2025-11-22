@@ -18,6 +18,9 @@
 #include "GameScene/GameScene.h"
 #include "Map/MapNode.h"
 
+#include "Actors/Player.h"
+#include "Combat//Card.h"
+
 Game::Game()
         :mWindow(nullptr)
         ,mRenderer(nullptr)
@@ -28,7 +31,7 @@ Game::Game()
         ,mIsDebugging(true)
         ,mUpdatingActors(false)
         ,mCameraPos(Vector2::Zero)
-        ,mMario(nullptr)
+        ,mPlayer(nullptr)
         ,mLevelData(nullptr)
         ,mIsPaused(false)
         ,mCurrentScene(nullptr)
@@ -105,6 +108,22 @@ bool Game::Initialize()
 
 void Game::InitializeActors()
 {
+    // criar deck inicial
+    std::vector<Card*> startDeck;
+    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
+    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 1, nullptr));
+    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
+    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
+
+    // criar instância única do Player
+    mPlayer = new Player(this, "Frog Hero", 20, 20, startDeck);
+
+    // configurar owners das cartas
+    for (Card* card : mPlayer->GetDeck()) {
+        card->SetOwner(mPlayer);
+    }
+
+    SDL_Log("Player instance created via Game::InitializeActors");
 }
 
 int **Game::LoadLevel(const std::string& fileName, int width, int height)
@@ -251,8 +270,18 @@ void Game::UpdateFade(float deltaTime)
 
                 for (auto actor : actorsToDelete)
                 {
-                    delete actor;
+                    // NÃO DELETAR O PLAYER AQUI SE NA LISTA DE ATORES
+                    // pois ele só vai ser deletado se o jogador morrer ou no game::Shutdown
+                    if (actor != mPlayer) {
+                        delete actor;
+                    }
                 }
+
+                // IMPORTANTE: Manter o Player na lista de atores vivos para o Update funcionar
+                if (mPlayer) {
+                    mActors.push_back(mPlayer);
+                }
+
                 mIsChangingScene = false;
 
                 mCurrentScene = mPendingScene;
@@ -470,6 +499,20 @@ void Game::Shutdown()
         delete actor;
     }
     mPendingActors.clear();
+
+    // limpeza do player
+    // O mPlayer provavelmente já foi deletado no loop acima se ele estava em mActors
+    // Mas se por algum motivo foi removido da lista mas não deletado:
+    if (mPlayer) {
+        // Assumindo que o loop acima limpou tudo, apenas setamos null.
+        // Se mPlayer NÃO estiver em mActors (ex: removido manualmente), delete aqui.
+        // Para segurança, vamos assumir que o loop acima cuidou dele.
+
+        // O destrutor do Player deleta as cartas, entao n precisamos deletar aq
+
+        // Como o loop acima deleta TODOS (assim esperamos ;-;) os atores, e Player é um ator, ele já foi deletado.
+        mPlayer = nullptr;
+    }
 
     // Limpar cenas (SEM chamar Exit() pois os atores já foram deletados)
     if (mCurrentScene)

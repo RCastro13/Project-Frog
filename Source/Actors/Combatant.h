@@ -5,7 +5,7 @@
 #include "../Combat/Card.h"
 
 
-class Combatant : Actor
+class Combatant : public Actor
 {
     public:
     Combatant(Game* game, std::string name, int health, int maxHealth, std::vector<Card*> deck = std::vector<Card*>());

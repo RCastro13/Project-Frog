@@ -149,33 +149,40 @@ void RewardScene::ProcessInput(const Uint8* keyState)
 
     if (mMode == RewardMode::COMBAT_VICTORY)
     {
-        // Teclas 1-4 para escolher
-        if (keyState[SDL_SCANCODE_1] && !mKeyWasPressed)
-        {
-            SDL_Log("[REWARD] Player escolheu Carta 1");
+        if (keyState[SDL_SCANCODE_RETURN] && !mKeyWasPressed) {
+            SDL_Log("[REWARD] Player ganhou 30 moedas");
+            mGame->GetPlayer()->GiveCoins(30);
             // TODO: Implementar sistema de adicionar carta ao deck
             mKeyWasPressed = true;
             mGame->SetScene(new MapScene(mGame));
         }
-        else if (keyState[SDL_SCANCODE_2] && !mKeyWasPressed)
-        {
-            SDL_Log("[REWARD] Player escolheu Carta 2");
-            mKeyWasPressed = true;
-            mGame->SetScene(new MapScene(mGame));
-        }
-        else if (keyState[SDL_SCANCODE_3] && !mKeyWasPressed)
-        {
-            SDL_Log("[REWARD] Player escolheu Carta 3");
-            mKeyWasPressed = true;
-            mGame->SetScene(new MapScene(mGame));
-        }
-        else if (keyState[SDL_SCANCODE_4] && !mKeyWasPressed)
-        {
-            SDL_Log("[REWARD] Player escolheu 30 moedas");
-            GiveRewardToPlayer();
-            mKeyWasPressed = true;
-            mGame->SetScene(new MapScene(mGame));
-        }
+        // Teclas 1-4 para escolher
+        // if (keyState[SDL_SCANCODE_1] && !mKeyWasPressed)
+        // {
+        //     SDL_Log("[REWARD] Player escolheu Carta 1");
+        //     // TODO: Implementar sistema de adicionar carta ao deck
+        //     mKeyWasPressed = true;
+        //     mGame->SetScene(new MapScene(mGame));
+        // }
+        // else if (keyState[SDL_SCANCODE_2] && !mKeyWasPressed)
+        // {
+        //     SDL_Log("[REWARD] Player escolheu Carta 2");
+        //     mKeyWasPressed = true;
+        //     mGame->SetScene(new MapScene(mGame));
+        // }
+        // else if (keyState[SDL_SCANCODE_3] && !mKeyWasPressed)
+        // {
+        //     SDL_Log("[REWARD] Player escolheu Carta 3");
+        //     mKeyWasPressed = true;
+        //     mGame->SetScene(new MapScene(mGame));
+        // }
+        // else if (keyState[SDL_SCANCODE_4] && !mKeyWasPressed)
+        // {
+        //     SDL_Log("[REWARD] Player escolheu 30 moedas");
+        //     GiveRewardToPlayer();
+        //     mKeyWasPressed = true;
+        //     mGame->SetScene(new MapScene(mGame));
+        // }
     }
     else // TREASURE_CHEST
     {

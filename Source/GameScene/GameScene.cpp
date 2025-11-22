@@ -969,20 +969,26 @@ void CombatScene::Enter()
 
 void CombatScene::CreateTestCombatants()
 {
-    // Criar cartas de teste para o Player
-    std::vector<Card*> playerDeck;
-    playerDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
-    playerDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 1, nullptr));
-    playerDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
-    playerDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
+    mPlayer = mGame->GetPlayer();
 
-    // Criar Player
-    mPlayer = new Player(mGame, "Frog Hero", 20, 20, playerDeck);
+    // Verificar se o player existe (segurança)
+    if (!mPlayer) {
+        SDL_Log("CRITICAL ERROR: Player instance not found in Game!");
+        return;
+    }
 
-    // Configurar owners das cartas do player
+    // Configurar owners das cartas do player (caso tenha sido alterado ou perdido)
     for (Card* card : mPlayer->GetDeck()) {
         card->SetOwner(mPlayer);
     }
+
+    // Garantir que os cooldowns estejam zerados ou preservados conforme design
+    // Se quiser resetar cooldowns a cada batalha:
+    /*
+    for (Card* card : mPlayer->GetDeck()) {
+        card->ResetCooldown();
+    }
+    */
 
     mSelectedCardIndex = 0;
 }
@@ -1611,19 +1617,10 @@ void CombatScene::Exit()
         mCombatManager = nullptr;
     }
 
-    // IMPORTANTE: As cartas são deletadas com o Combatant
-    // Não deletar cartas manualmente aqui
-
-    if (mPlayer)
-    {
-        // Deletar cartas do player
-        for (Card* card : mPlayer->GetDeck())
-        {
-            delete card;
-        }
-        delete mPlayer;
-        mPlayer = nullptr;
-    }
+    // as cartas são deletadas com o destrutor do player quando ele morre
+    // O Player é deletado na classe Game qdn ele morre.
+    // Apenas setamos o ponteiro local como null.
+    mPlayer = nullptr;
 
     if (mEnemy)
     {
