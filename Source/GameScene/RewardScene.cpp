@@ -18,6 +18,7 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
     , mSelectedOption(0)
     , mKeyWasPressed(false)
     , mCoinSpawned(false)
+    , mTextTexture(nullptr)
 {
 }
 

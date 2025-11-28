@@ -115,6 +115,8 @@ void MainMenuScene::Enter()
 
     // Iniciando a música do MainMenu
     mMenuSound = mGame->GetAudio()->PlaySound("MainMenu.wav", true);
+
+    mGame->InitializeActors();      // De esta forma, el player no sera el mismo de la partida anterior.
 }
 
 void MainMenuScene::UpdateMenuTextures()

@@ -108,6 +108,10 @@ bool Game::Initialize()
 
 void Game::InitializeActors()
 {
+    if (!mPlayer) {
+        delete mPlayer;     // Para cuando se reinicia el juego.
+    }
+
     // criar deck inicial
     std::vector<Card*> startDeck;
     startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
