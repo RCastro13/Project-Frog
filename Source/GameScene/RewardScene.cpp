@@ -22,12 +22,8 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
     , mChestNPC(nullptr)
     , mCoinNPC(nullptr)
     , mCoinSpawned(false)
-<<<<<<< HEAD
-    , mTextTexture(nullptr)
-=======
     , mSelectedDeckIndex(0)
     , mKeyWasPressed(false)
->>>>>>> ab46ea5611655f01f9eec4a25aa428462acf32ac
 {
 }
 
