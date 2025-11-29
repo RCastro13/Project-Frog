@@ -25,7 +25,7 @@ AnimatedCharacterActor::EnemyStats WolfActor::GetEnemyStats() const
 {
     return {
         2,    // health
-        32,    // maxHealth
+        30,    // maxHealth
         0.38   // difficulty (mais forte)
     };
 }
