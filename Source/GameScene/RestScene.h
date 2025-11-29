@@ -20,6 +20,10 @@ public:
 private:
     class Texture* mBackgroundTexture;
 
+    class Texture* mTitleTexture;
+    class Texture* mOption1Texture;
+    class Texture* mOption2Texture;
+
     int mSelectedOption;  // 0 = descansar, 1 = meditar
     bool mKeyWasPressed;
 };

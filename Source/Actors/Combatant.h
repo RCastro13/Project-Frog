@@ -20,6 +20,8 @@ class Combatant : public Actor
     int GetHealth() const { return mHealth; }
     int GetMaxHealth() const { return mMaxHealth; }
 
+    void IncreaseMaxHealth(int amount);
+
     virtual void Death();
 
     std::vector<Card*> GetDeck(){return mDeck;}
