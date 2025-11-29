@@ -1,15 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
-# Configurando o padrão c++
 set(CMAKE_CXX_STANDARD 17)
 
-# Configurando o nome e executável do projeto
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
-#find_package(SDL2 2.32.2 EXACT REQUIRED)
-#find_package(SDL2_image REQUIRED)
-#find_package(GLEW REQUIRED)
-#find_package(OpenGL REQUIRED)
 
 find_package(SDL2 2.32.2 EXACT REQUIRED)
 find_package(SDL2_image REQUIRED)
@@ -18,21 +12,15 @@ find_package(SDL2_ttf REQUIRED)
 
 set(GLEW_ROOT "C:/Program Files/GLEW")
 set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
-set(GLEW_LIBRARIES       "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+
 include_directories(${GLEW_INCLUDE_DIRS})
 
-find_package(OpenGL REQUIRED)
-
-
 include_directories(
-        /Library/Frameworks/SDL2.framework/Headers
-        /Library/Frameworks/SDL2_image.framework/Headers
-        /Library/Frameworks/SDL2_ttf.framework/Headers
-        /Library/Frameworks/SDL2_mixer.framework/Headers
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
-        ${OPENGL_INCLUDE_DIR}
 )
-
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
         Source/Renderer/Shader.h
@@ -129,16 +117,26 @@ add_executable(${PROJECT_NAME}
         Source/Actors/WolfActor.cpp
         Source/Actors/GolemBossActor.h
         Source/Actors/GolemBossActor.cpp
+        Source/Actors/ChestNPC.h
+        Source/Actors/ChestNPC.cpp
+        Source/Actors/CoinNPC.h
+        Source/Actors/CoinNPC.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
         Source/Actors/NPCActor.h
         Source/Actors/NPCActor.cpp
         Source/Actors/RabbitNPC.h
         Source/Actors/RabbitNPC.cpp
-        Source/Actors/ChestNPC.cpp
-        Source/Actors/CoinNPC.cpp
 )
 
 # Libs
-#target_link_libraries(${PROJECT_NAME} PRIVATE GLEW::GLEW SDL2::SDL2 SDL2_image::SDL2_image)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GLEW_LIBRARIES} ${SDL2_LIBRARIES} opengl32 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer SDL2_ttf::SDL2_ttf)
+target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+        ${GLEW_LIBRARIES}
+        SDL2::SDL2main
+        SDL2_image::SDL2_image
+        SDL2_mixer::SDL2_mixer
+        SDL2_ttf::SDL2_ttf
+        SDL2::SDL2
+        opengl32
+)

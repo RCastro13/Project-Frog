@@ -191,6 +191,8 @@ private:
     Player* mPlayer;
     Enemy* mEnemy;
 
+    SoundHandle mCombatMusic;
+
     // Renderização
     class CombatRenderer* mCombatRenderer;
 
