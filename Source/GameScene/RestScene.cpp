@@ -93,7 +93,7 @@ void RestScene::ProcessInput(const Uint8* keyState)
         int cura = 15;
         mGame->GetPlayer()->Heal(cura);
 
-        SDL_Log("[REST] Voce descansou e recuperou %d HP. Vida atual: %d/%d",
+        SDL_Log("💤 Voce descansou e recuperou %d HP. Vida atual: %d/%d",
             cura, mGame->GetPlayer()->GetHealth(), mGame->GetPlayer()->GetMaxHealth());
         // Player.SetHealth() disponível, precisa acesso global
 
@@ -107,7 +107,7 @@ void RestScene::ProcessInput(const Uint8* keyState)
         int bonus = 10;
         mGame->GetPlayer()->IncreaseMaxHealth(bonus);
 
-        SDL_Log("[REST] Voce treinou! Vida Maxima aumentada em +%d. Vida atual: %d/%d",
+        SDL_Log("💪 Voce treinou! Vida Maxima aumentada em +%d. Vida atual: %d/%d",
             bonus, mGame->GetPlayer()->GetHealth(), mGame->GetPlayer()->GetMaxHealth());
 
         mKeyWasPressed = true;

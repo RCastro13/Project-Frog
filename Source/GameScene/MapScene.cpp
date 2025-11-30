@@ -497,7 +497,7 @@ void MapScene::AssignIconsToNodes()
         if (iconTexture) {
             mNodeIcons[node] = iconTexture;
         } else {
-            SDL_Log("AVISO: Falha ao carregar ícone: %s", iconPath.c_str());
+            SDL_Log("ERROR: Failed to load icon: %s", iconPath.c_str());
         }
     }
 }

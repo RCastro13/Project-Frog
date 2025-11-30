@@ -34,14 +34,14 @@ bool AnimatorComponent::LoadSpriteSheetData(const std::string& dataPath)
     std::ifstream spriteSheetFile(dataPath);
 
     if (!spriteSheetFile.is_open()) {
-        SDL_Log("Failed to open sprite sheet data file: %s", dataPath.c_str());
+        SDL_Log("ERROR: Failed to open sprite sheet data file: %s", dataPath.c_str());
         return false;
     }
 
     nlohmann::json spriteSheetData = nlohmann::json::parse(spriteSheetFile);
 
     if (spriteSheetData.is_null()) {
-        SDL_Log("Failed to parse sprite sheet data file: %s", dataPath.c_str());
+        SDL_Log("ERROR: Failed to parse sprite sheet data file: %s", dataPath.c_str());
         return false;
     }
 
@@ -153,7 +153,7 @@ void AnimatorComponent::SetAnimation(const std::string& name)
         mAnimTimer = 0.0f;
         mIsFinished = false;
     } else {
-        SDL_Log("Warning: Animation '%s' not found", name.c_str());
+        SDL_Log("ERROR: Animation '%s' not found", name.c_str());
     }
 }
 

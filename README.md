@@ -7,6 +7,28 @@ O jogador inicia sua jornada com 4 cartas e deve coletar ao longo de seu caminho
 
 A cada tentativa o jogador deve encarar um mapa novo e utilizar os conhecimentos de suas tentativas passadas para alcançar o final e levar o sapo a glória eterna!
 
+## Screenshots
+
+### Menu Principal
+![Menu Principal](screenshots/menu-playtest.png)
+*Tela inicial do jogo com opções de começar nova jornada ou sair*
+
+### Mapa
+![Mapa](screenshots/mapa-playtest.png)
+*Mapa procedural com diferentes tipos de nós: combates, tesouros, lojas e descansos*
+
+### Combate
+![Combate](screenshots/combate-playtest.png)
+*Sistema de combate baseado em turnos com mecânica de elementos (fogo, água, planta e neutro)*
+
+### Recompensas - Cartas
+![Baú de Cartas](screenshots/bau-carta-playtest.png)
+*Tela de recompensa após vitória em combate, permitindo escolher novas cartas para o deck*
+
+### Recompensas - Moedas
+![Baú de Moedas](screenshots/bau-moeda-playetst.png)
+*Coleta de moedas que podem ser usadas na loja para comprar itens e melhorias*
+
 ## Funcionalidades a serem testadas
 
 - Mapas aleatórios a cada tentativa;
@@ -16,7 +38,7 @@ A cada tentativa o jogador deve encarar um mapa novo e utilizar os conhecimentos
 - Itens recebidos pelo baús (após vitória em combate, após nó de baú no mapa ou pela loja);
 - Animações dos ataques e personagens nas cenas;
 - Itens funcionais da loja + recuperação após o descanso;
-  
+
 ## Créditos
 
 **Facundo Sanchez**

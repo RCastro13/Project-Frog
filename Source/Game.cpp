@@ -58,38 +58,38 @@ bool Game::Initialize()
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
+        SDL_Log("ERROR: Unable to initialize SDL: %s", SDL_GetError());
         return false;
     }
 
     mWindow = SDL_CreateWindow("Project Frog", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     if (!mWindow)
     {
-        SDL_Log("Failed to create window: %s", SDL_GetError());
+        SDL_Log("ERROR: Failed to create window: %s", SDL_GetError());
         return false;
     }
 
     mRenderer = new Renderer(mWindow);
     if (!mRenderer->Initialize(WINDOW_WIDTH, WINDOW_HEIGHT))
     {
-        SDL_Log("Failed to initialize renderer");
+        SDL_Log("ERROR:Failed to initialize renderer");
         return false;
     }
 
     if (TTF_Init() != 0)
     {
-        SDL_Log("Failed to initialize SDL_ttf: %s", TTF_GetError());
+        SDL_Log("ERROR: Failed to initialize SDL_ttf: %s", TTF_GetError());
         return false;
     }
 
     mDefaultFont = new Font();
     if (!mDefaultFont->Load("../Assets/Fonts/PressStart2P.ttf"))
     {
-        SDL_Log("Failed to load default font");
+        SDL_Log("ERROR: Failed to load default font");
     }
 
     mAudio = new AudioSystem(8);
-    SDL_Log("Audio system initialized");
+    SDL_Log("ERROR: Audio system initialized");
     mAudio->CacheAllSounds();
 
     InitializeActors();
@@ -117,7 +117,7 @@ void Game::InitializeActors()
         card->SetOwner(mPlayer);
     }
 
-    SDL_Log("Player instance created via Game::InitializeActors");
+    SDL_Log("ERROR: Player instance created via Game::InitializeActors");
 }
 
 std::vector<Card*> Game::CreateStarterDeck()

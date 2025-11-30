@@ -22,7 +22,7 @@ Renderer::~Renderer()
 bool Renderer::Initialize(float width, float height)
 {
     if (IMG_Init(IMG_INIT_PNG) == 0) {
-        SDL_Log("Unable to initialize SDL_image: %s", IMG_GetError());
+        SDL_Log("ERROR: Unable to initialize SDL_image: %s", IMG_GetError());
         return false;
     }
 
@@ -46,13 +46,13 @@ bool Renderer::Initialize(float width, float height)
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
-        SDL_Log("Failed to initialize GLEW.");
+        SDL_Log("ERROR: Failed to initialize GLEW.");
         return false;
     }
 
 	// Make sure we can create/compile shaders
 	if (!LoadShaders()) {
-		SDL_Log("Failed to load shaders.");
+		SDL_Log("ERROR: Failed to load shaders.");
 		return false;
 	}
 

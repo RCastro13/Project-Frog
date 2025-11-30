@@ -22,7 +22,7 @@ bool Font::Load(const std::string& fileName)
 		TTF_Font* font = TTF_OpenFont(fileName.c_str(), size);
 		if (font == nullptr)
 		{
-			SDL_Log("Failed to load font %s in size %d", fileName.c_str(), size);
+			SDL_Log("ERROR: Failed to load font %s in size %d", fileName.c_str(), size);
 			return false;
 		}
 		mFontData.emplace(size, font);
@@ -72,7 +72,7 @@ Texture* Font::RenderText(const std::string& text, const Vector3& color /*= Colo
 	}
 	else
 	{
-		SDL_Log("Point size %d is unsupported", pointSize);
+		SDL_Log("ERROR: Point size %d is unsupported", pointSize);
 	}
 
 	return texture;

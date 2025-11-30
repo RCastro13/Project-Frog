@@ -74,7 +74,7 @@ void ShopScene::Enter()
     UpdateCoinTexture();
     UpdateHPTexture(); // Gera a textura de HP inicial
 
-    SDL_Log("[SHOP] Bem-vindo a loja!");
+    SDL_Log("🏪 Bem-vindo a loja!");
 }
 
 void ShopScene::UpdateCoinTexture()
@@ -182,7 +182,7 @@ void ShopScene::ProcessInput(const Uint8* keyState)
     }
     else if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_BACKSPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("[SHOP] Saindo da loja...");
+        SDL_Log("🏪 Saindo da loja...");
         mKeyWasPressed = true;
         mGame->SetScene(new MapScene(mGame));
     }
@@ -210,31 +210,28 @@ void ShopScene::PurchaseItem(int index)
         player->SpendCoins(item.price);
         UpdateCoinTexture();
 
-        SDL_Log("[SHOP] Comprou %s por %d moedas.", item.name.c_str(), item.price);
+        SDL_Log("💰 Comprou %s por %d moedas.", item.name.c_str(), item.price);
 
         switch (item.type)
         {
             case ItemType::HEAL_POTION:
                 player->Heal(10);
                 UpdateHPTexture(); // Atualiza HP na tela
-                SDL_Log("       Curou 10 HP.");
                 break;
 
             case ItemType::MAX_HP_INCREASE:
                 player->IncreaseMaxHealth(5);
                 UpdateHPTexture(); // Atualiza HP na tela
-                SDL_Log("       Max HP aumentou em 5.");
                 break;
 
             case ItemType::MYSTERY_CHEST:
-                SDL_Log("       Abrindo bau misterioso!");
                 mGame->SetScene(new RewardScene(mGame, RewardMode::SHOP_TREASURE_CHEST));
                 return;
         }
     }
     else
     {
-        SDL_Log("[SHOP] Moedas insuficientes! Voce tem %d, precisa de %d.", player->GetCoins(), item.price);
+        SDL_Log("🚫 Moedas insuficientes! Voce tem %d, precisa de %d.", player->GetCoins(), item.price);
     }
 }
 

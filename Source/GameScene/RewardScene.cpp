@@ -269,7 +269,7 @@ void RewardScene::ProcessInput(const Uint8* keyState)
                 {
                     Card* oldCard = deck[mSelectedDeckIndex];
 
-                    SDL_Log("Trocando %s por %s", oldCard->GetName().c_str(), mRewardCard->GetName().c_str());
+                    SDL_Log("🔄 Trocando %s por %s", oldCard->GetName().c_str(), mRewardCard->GetName().c_str());
 
                     // Substituir diretamente no índice para manter a ordem
                     deck[mSelectedDeckIndex] = mRewardCard;
@@ -311,7 +311,7 @@ void RewardScene::GiveRewardToPlayer()
 {
     if (mRewardType == RewardType::COINS)
     {
-        SDL_Log("[REWARD] Player ganhou %d moedas!", mCoinsAmount);
+        SDL_Log("💰 Player ganhou %d moedas!", mCoinsAmount);
         mGame->GetPlayer()->GiveCoins(mCoinsAmount);
     }
 }
