@@ -120,15 +120,15 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
 
             mState = SceneState::SHOWING_REWARD;
         }
-        else // TREASURE_CHEST
+        else // TREASURE_CHEST ou SHOP_TREASURE_CHEST
         {
             if (mRewardType == RewardType::CARD)
             {
-                SDL_Log("[REWARD] Carta rara gerada!");
+                SDL_Log("[RECOMPENSA] Nova carta encontrada!");
                 GenerateRewardCard();
 
                 std::stringstream ss;
-                ss << "Carta Rara! [1] Aceitar [2] Recusar";
+                ss << "Carta Nova! [1] Aceitar [2] Recusar";
                 SpawnText(ss.str());
 
                 mState = SceneState::SHOWING_REWARD;
@@ -160,7 +160,8 @@ void RewardScene::SpawnText(std::string text) {
 
 void RewardScene::DetermineReward()
 {
-    if (mMode == RewardMode::TREASURE_CHEST) //bau do tesouro
+    // Verifica se é baú (seja do mapa ou da loja)
+    if (mMode == RewardMode::TREASURE_CHEST || mMode == RewardMode::SHOP_TREASURE_CHEST)
     {
         // 60% chance de carta, 40% chance de moedas
         int roll = Random::GetIntRange(0, 99);
@@ -202,8 +203,10 @@ void RewardScene::ProcessInput(const Uint8* keyState)
                 GiveRewardToPlayer();
                 mKeyWasPressed = true;
 
-                // Lógica de Retorno Ajustada
-                if (mMode == RewardMode::TREASURE_CHEST) {
+                // Lógica de Retorno Ajustada:
+                // Se for SHOP_TREASURE_CHEST -> volta pra Loja
+                // Se for TREASURE_CHEST (mapa) ou COMBAT_VICTORY -> volta pro Mapa
+                if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
                     mGame->SetScene(new ShopScene(mGame));
                 } else {
                     mGame->SetScene(new MapScene(mGame));
@@ -226,8 +229,8 @@ void RewardScene::ProcessInput(const Uint8* keyState)
                 SDL_Log("Jogador recusou a carta.");
                 mKeyWasPressed = true;
 
-                // Lógica de Retorno Ajustada
-                if (mMode == RewardMode::TREASURE_CHEST) {
+                // Retorno
+                if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
                     mGame->SetScene(new ShopScene(mGame));
                 } else {
                     mGame->SetScene(new MapScene(mGame));
@@ -272,8 +275,8 @@ void RewardScene::ProcessInput(const Uint8* keyState)
 
             mKeyWasPressed = true;
 
-            // Lógica de Retorno Ajustada
-            if (mMode == RewardMode::TREASURE_CHEST) {
+            // Retorno
+            if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
                 mGame->SetScene(new ShopScene(mGame));
             } else {
                 mGame->SetScene(new MapScene(mGame));

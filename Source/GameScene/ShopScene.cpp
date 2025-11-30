@@ -205,7 +205,7 @@ void ShopScene::PurchaseItem(int index)
 
             case ItemType::MYSTERY_CHEST:
                 SDL_Log("       Abrindo bau misterioso!");
-                mGame->SetScene(new RewardScene(mGame, RewardMode::TREASURE_CHEST));
+                mGame->SetScene(new RewardScene(mGame, RewardMode::SHOP_TREASURE_CHEST));
                 return;
         }
     }

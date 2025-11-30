@@ -5,7 +5,8 @@
 enum class RewardMode
 {
     COMBAT_VICTORY,   // Após vencer combate: 3 cartas ou 30 moedas
-    TREASURE_CHEST    // Nó do mapa: 1 carta (60%) ou moedas 50-80 (40%)
+    TREASURE_CHEST,    // Nó do mapa: 1 carta (60%) ou moedas 50-80 (40%)
+    SHOP_TREASURE_CHEST // Baús vindo da loja
 };
 
 // definições de constantes locais para UI (tipo no CombatConstants)
