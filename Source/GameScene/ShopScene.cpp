@@ -2,17 +2,22 @@
 #include "../Game.h"
 #include "../Renderer/Renderer.h"
 #include "../Renderer/Texture.h"
+#include "../Renderer/Font.h"
 #include "../Actors/Player.h"
-#include "../Actors/Combatant.h"
 #include "../Actors/RabbitNPC.h"
-#include "../Random.h"
+#include "../GameScene/GameScene.h"
+#include "../GameScene/RewardScene.h"
 #include <SDL.h>
-#include <cstdio>
+#include <string>
+
+#include "RewardScene.h"
 
 ShopScene::ShopScene(Game* game)
     : GameScene(game)
     , mBackgroundTexture(nullptr)
     , mRabbitNPC(nullptr)
+    , mPlayerCoinTexture(nullptr)
+    , mPlayerHPTexture(nullptr) // Inicializa nulo
     , mSelectedOption(0)
     , mKeyWasPressed(false)
 {
@@ -28,82 +33,101 @@ void ShopScene::Enter()
     mFadeAlpha = 1.0f;
     mFadeTimer = 0.0f;
     mFadingIn = true;
+    mSelectedOption = 0;
 
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Shop/shop.png");
     if (!mBackgroundTexture)
     {
-        // Fallback
         mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/menu.png");
     }
 
-    // Criar e posicionar o NPC Rabbit (vendedor)
+    // Criar e posicionar o NPC Rabbit
     mRabbitNPC = new RabbitNPC(mGame);
-    mRabbitNPC->SetPosition(Vector2(440.0f, 340.0f));
+    mRabbitNPC->SetPosition(Vector2(550.0f, 300.0f));
     mRabbitNPC->PlayIdle();
 
     GenerateItems();
+    UpdateCoinTexture();
+    UpdateHPTexture(); // Gera a textura de HP inicial
 
-    // NOTA: Sistema de moedas implementado no Player, mas ainda não há acesso global
-    // Por enquanto, o sistema funciona via logs
     SDL_Log("[SHOP] Bem-vindo a loja!");
-    SDL_Log("[SHOP] Itens disponiveis:");
-    for (size_t i = 0; i < mItems.size(); i++)
-    {
-        SDL_Log("  [%zu] %s - %d moedas - %s",
-                i + 1,
-                mItems[i].name.c_str(),
-                mItems[i].price,
-                mItems[i].description.c_str());
+}
+
+void ShopScene::UpdateCoinTexture()
+{
+    if (mPlayerCoinTexture) {
+        delete mPlayerCoinTexture;
+        mPlayerCoinTexture = nullptr;
     }
-    SDL_Log("  [0] Sair da loja");
+
+    Player* player = mGame->GetPlayer();
+    if (player && mGame->GetFont())
+    {
+        std::string coinText = "Moedas: " + std::to_string(player->GetCoins());
+        // Cor amarela
+        mPlayerCoinTexture = mGame->GetFont()->RenderText(coinText, Vector3(1.0f, 0.9f, 0.2f), 20);
+    }
+}
+
+// Implementação da atualização do texto de HP
+void ShopScene::UpdateHPTexture()
+{
+    if (mPlayerHPTexture) {
+        delete mPlayerHPTexture;
+        mPlayerHPTexture = nullptr;
+    }
+
+    Player* player = mGame->GetPlayer();
+    if (player && mGame->GetFont())
+    {
+        // Formato: HP: 50/100
+        std::string hpText = "HP: " + std::to_string(player->GetHealth()) + "/" + std::to_string(player->GetMaxHealth());
+        // Cor Vermelha/Rosada para vida
+        mPlayerHPTexture = mGame->GetFont()->RenderText(hpText, Vector3(1.0f, 0.4f, 0.4f), 20);
+    }
 }
 
 void ShopScene::GenerateItems()
 {
     mItems.clear();
+    Font* font = mGame->GetFont();
 
-    // Gerar 4-6 itens aleatórios
-    int numItems = Random::GetIntRange(4, 6);
-
-    for (int i = 0; i < numItems; i++)
-    {
-        int itemRoll = Random::GetIntRange(0, 3);
-        ShopItem item;
-
-        switch (itemRoll)
-        {
-            case 0: // Carta
-                item.name = "Carta Rara";
-                item.description = "Nova carta para o deck";
-                item.price = Random::GetIntRange(30, 50);
-                item.type = ItemType::CARD;
-                break;
-
-            case 1: // Upgrade
-                item.name = "Upgrade de Carta";
-                item.description = "+1 Dano ou -1 Cooldown";
-                item.price = 40;
-                item.type = ItemType::UPGRADE_CARD;
-                break;
-
-            case 2: // Poção de HP
-                item.name = "Pocao de Vida";
-                item.description = "+5 HP";
-                item.price = 25;
-                item.type = ItemType::HEAL_POTION;
-                break;
-
-            case 3: // Aumento de HP máx
-                item.name = "Amuleto de Vitalidade";
-                item.description = "+5 HP Maximo";
-                item.price = 60;
-                item.type = ItemType::MAX_HP_INCREASE;
-                break;
-        }
-
-        mItems.push_back(item);
+    // --- ITEM 0: Cura (+10 Vida) ---
+    ShopItem item1;
+    item1.name = "Pocao de Vida";
+    item1.price = 20;
+    item1.type = ItemType::HEAL_POTION;
+    if (font) {
+        item1.nameTexture = font->RenderText(item1.name, Vector3(1,1,1), 20);
+        item1.descTexture = font->RenderText("Recupera 10 HP", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item1.priceTexture = font->RenderText("$ " + std::to_string(item1.price), Vector3(1, 1, 0), 20);
     }
+    mItems.push_back(item1);
+
+    // --- ITEM 1: Upgrade (+5 Max HP) ---
+    ShopItem item2;
+    item2.name = "Cristal Vital";
+    item2.price = 50;
+    item2.type = ItemType::MAX_HP_INCREASE;
+    if (font) {
+        item2.nameTexture = font->RenderText(item2.name, Vector3(1,1,1), 20);
+        item2.descTexture = font->RenderText("+5 Vida Maxima", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item2.priceTexture = font->RenderText("$ " + std::to_string(item2.price), Vector3(1, 1, 0), 20);
+    }
+    mItems.push_back(item2);
+
+    // --- ITEM 2: Baú (Leva para RewardScene) ---
+    ShopItem item3;
+    item3.name = "Bau Misterioso";
+    item3.price = 100;
+    item3.type = ItemType::MYSTERY_CHEST;
+    if (font) {
+        item3.nameTexture = font->RenderText(item3.name, Vector3(1,1,1), 20);
+        item3.descTexture = font->RenderText("??? Surpresa ???", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item3.priceTexture = font->RenderText("$ " + std::to_string(item3.price), Vector3(1, 1, 0), 20);
+    }
+    mItems.push_back(item3);
 }
 
 void ShopScene::Update(float deltaTime)
@@ -114,39 +138,36 @@ void ShopScene::Update(float deltaTime)
 
 void ShopScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante fade
-    if (mFadeAlpha > 0.0f)
-        return;
+    if (mFadeAlpha > 0.0f) return;
 
-    // Tecla 0 para sair
-    if (keyState[SDL_SCANCODE_0] && !mKeyWasPressed)
+    if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {
-        SDL_Log("[SHOP] Player saiu da loja");
+        mSelectedOption--;
+        if (mSelectedOption < 0) mSelectedOption = 0;
+        mKeyWasPressed = true;
+    }
+    else if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
+    {
+        mSelectedOption++;
+        if (mSelectedOption >= (int)mItems.size()) mSelectedOption = (int)mItems.size() - 1;
+        mKeyWasPressed = true;
+    }
+    else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    {
+        PurchaseItem(mSelectedOption);
+        mKeyWasPressed = true;
+    }
+    else if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_BACKSPACE]) && !mKeyWasPressed)
+    {
+        SDL_Log("[SHOP] Saindo da loja...");
         mKeyWasPressed = true;
         mGame->SetScene(new MapScene(mGame));
-        return;
     }
 
-    // Teclas 1-6 para comprar itens
-    for (size_t i = 0; i < mItems.size() && i < 6; i++)
-    {
-        SDL_Scancode key = (SDL_Scancode)(SDL_SCANCODE_1 + i);
-        if (keyState[key] && !mKeyWasPressed)
-        {
-            PurchaseItem(i);
-            mKeyWasPressed = true;
-            return;
-        }
-    }
-
-    // Reset do flag
-    bool anyKeyPressed = keyState[SDL_SCANCODE_0];
-    for (int i = 0; i < 6; i++)
-    {
-        anyKeyPressed = anyKeyPressed || keyState[SDL_SCANCODE_1 + i];
-    }
-
-    if (!anyKeyPressed)
+    if (!keyState[SDL_SCANCODE_UP] && !keyState[SDL_SCANCODE_W] &&
+        !keyState[SDL_SCANCODE_DOWN] && !keyState[SDL_SCANCODE_S] &&
+        !keyState[SDL_SCANCODE_RETURN] && !keyState[SDL_SCANCODE_SPACE] &&
+        !keyState[SDL_SCANCODE_ESCAPE])
     {
         mKeyWasPressed = false;
     }
@@ -154,50 +175,43 @@ void ShopScene::ProcessInput(const Uint8* keyState)
 
 void ShopScene::PurchaseItem(int index)
 {
-    if (index < 0 || index >= static_cast<int>(mItems.size()))
-        return;
+    if (index < 0 || index >= static_cast<int>(mItems.size())) return;
 
     ShopItem& item = mItems[index];
+    Player* player = mGame->GetPlayer();
 
-    SDL_Log("[SHOP] Comprado: %s por %d moedas", item.name.c_str(), item.price);
-    // NOTA: Player.SpendCoins() já existe, mas precisa de acesso global ao Player
+    if (!player) return;
 
-    // Aplicar efeito do item
-    switch (item.type)
+    if (player->GetCoins() >= item.price)
     {
-        case ItemType::CARD:
-            SDL_Log("[SHOP] Nova carta adicionada ao deck!");
-            // TODO: Implementar sistema de adicionar carta ao deck
-            break;
+        player->SpendCoins(item.price);
+        UpdateCoinTexture();
 
-        case ItemType::UPGRADE_CARD:
-            SDL_Log("[SHOP] Carta melhorada!");
-            // TODO: Implementar sistema de upgrade de carta
-            break;
+        SDL_Log("[SHOP] Comprou %s por %d moedas.", item.name.c_str(), item.price);
 
-        case ItemType::HEAL_POTION:
-            SDL_Log("[SHOP] Pocao de vida comprada (+5 HP)");
-            // Player.SetHealth() disponível, precisa acesso global
-            break;
+        switch (item.type)
+        {
+            case ItemType::HEAL_POTION:
+                player->Heal(10);
+                UpdateHPTexture(); // Atualiza HP na tela
+                SDL_Log("       Curou 10 HP.");
+                break;
 
-        case ItemType::MAX_HP_INCREASE:
-            SDL_Log("[SHOP] Amuleto de vitalidade comprado (+5 HP max)");
-            // Player.SetMaxHealth() disponível, precisa acesso global
-            break;
+            case ItemType::MAX_HP_INCREASE:
+                player->IncreaseMaxHealth(5);
+                UpdateHPTexture(); // Atualiza HP na tela
+                SDL_Log("       Max HP aumentou em 5.");
+                break;
+
+            case ItemType::MYSTERY_CHEST:
+                SDL_Log("       Abrindo bau misterioso!");
+                mGame->SetScene(new RewardScene(mGame, RewardMode::TREASURE_CHEST));
+                return;
+        }
     }
-
-    // Remover item da loja (compra única)
-    mItems.erase(mItems.begin() + index);
-
-    // Atualizar lista no console
-    SDL_Log("[SHOP] Itens restantes:");
-    for (size_t i = 0; i < mItems.size(); i++)
+    else
     {
-        SDL_Log("  [%zu] %s - %d moedas", i + 1, mItems[i].name.c_str(), mItems[i].price);
-    }
-    if (mItems.empty())
-    {
-        SDL_Log("[SHOP] Loja vazia! Pressione 0 para sair");
+        SDL_Log("[SHOP] Moedas insuficientes! Voce tem %d, precisa de %d.", player->GetCoins(), item.price);
     }
 }
 
@@ -219,19 +233,140 @@ void ShopScene::RenderBackground()
 
 void ShopScene::Render()
 {
-    // UI: Sistema de Font existe, mas UI visual da loja ainda não implementada
+    Renderer* renderer = mGame->GetRenderer();
+
+    // 1. Renderizar Saldo de Moedas
+    if (mPlayerCoinTexture)
+    {
+        renderer->DrawTexture(
+            Vector2(175.0f, 50.0f),
+            Vector2(mPlayerCoinTexture->GetWidth(), mPlayerCoinTexture->GetHeight()),
+            0.0f, Vector3(1,1,1), mPlayerCoinTexture,
+            Vector4::UnitRect, Vector2::Zero
+        );
+    }
+
+    // 2. Renderizar HP do Player
+    if (mPlayerHPTexture)
+    {
+        // Posicionado um pouco mais à direita das moedas
+        renderer->DrawTexture(
+            Vector2(450.0f, 50.0f),
+            Vector2(mPlayerHPTexture->GetWidth(), mPlayerHPTexture->GetHeight()),
+            0.0f, Vector3(1,1,1), mPlayerHPTexture,
+            Vector4::UnitRect, Vector2::Zero
+        );
+    }
+
+    // 3. Renderizar Instruções
+    Font* font = mGame->GetFont();
+    if (font) {
+        Texture* instrTex = font->RenderText(
+            "[ENTER] Comprar   [ESC] Sair",
+            Vector3(1,1,1),
+            14
+        );
+
+        if (instrTex) {
+            renderer->DrawTexture(
+                Vector2(320.0f, 380.0f),
+                Vector2(instrTex->GetWidth(), instrTex->GetHeight()),
+                0.0f, Vector3(1,1,1), instrTex
+            );
+            delete instrTex;
+        }
+    }
+
+    // 4. Renderizar Itens
+    float startX = 60.0f;
+    float startY = 120.0f;
+    float gapY = 70.0f;
+
+    for (size_t i = 0; i < mItems.size(); i++)
+    {
+        float x = startX;
+        float y = startY + (i * gapY);
+        ShopItem& item = mItems[i];
+
+        if (i == mSelectedOption && font)
+        {
+            Texture* arrowTex = font->RenderText(">", Vector3(1,1,0), 24);
+            if (arrowTex) {
+                renderer->DrawTexture(
+                    Vector2(x - 20.0f, y),
+                    Vector2(arrowTex->GetWidth(), arrowTex->GetHeight()),
+                    0.0f, Vector3(1,1,1), arrowTex
+                );
+                delete arrowTex;
+            }
+        }
+
+        if (item.nameTexture)
+        {
+            renderer->DrawTexture(
+                Vector2(x+150.0f, y),
+                Vector2(item.nameTexture->GetWidth(), item.nameTexture->GetHeight()),
+                0.0f, (i == mSelectedOption ? Vector3(1,1,0) : Vector3(1,1,1)),
+                item.nameTexture,
+                Vector4::UnitRect,
+                Vector2::Zero
+            );
+        }
+
+        if (item.priceTexture)
+        {
+            renderer->DrawTexture(
+                Vector2(x + 400.0f, y),
+                Vector2(item.priceTexture->GetWidth(), item.priceTexture->GetHeight()),
+                0.0f, Vector3(0.5f, 1.0f, 0.5f), item.priceTexture,
+                Vector4::UnitRect,
+                Vector2::Zero
+            );
+        }
+
+        if (item.descTexture)
+        {
+            renderer->DrawTexture(
+                Vector2(x + 150.0f, y + 25.0f),
+                Vector2(item.descTexture->GetWidth(), item.descTexture->GetHeight()),
+                0.0f, Vector3(1,1,1), item.descTexture,
+                Vector4::UnitRect,
+                Vector2::Zero
+            );
+        }
+    }
+
     RenderFade();
 }
 
 void ShopScene::Exit()
 {
-    // Destruir o NPC
     if (mRabbitNPC)
     {
         mRabbitNPC->SetState(ActorState::Destroy);
         mRabbitNPC = nullptr;
     }
 
+    for (auto& item : mItems)
+    {
+        if (item.nameTexture) delete item.nameTexture;
+        if (item.descTexture) delete item.descTexture;
+        if (item.priceTexture) delete item.priceTexture;
+    }
+    mItems.clear();
+
+    if (mPlayerCoinTexture)
+    {
+        delete mPlayerCoinTexture;
+        mPlayerCoinTexture = nullptr;
+    }
+
+    // Deletar textura de HP
+    if (mPlayerHPTexture)
+    {
+        delete mPlayerHPTexture;
+        mPlayerHPTexture = nullptr;
+    }
+
     mBackgroundTexture = nullptr;
 }
-

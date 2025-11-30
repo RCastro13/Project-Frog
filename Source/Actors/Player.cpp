@@ -3,7 +3,7 @@
 Player::Player(Game *game, std::string name, int health, int maxHealth, std::vector<Card *> deck)
     : Combatant(game, name, health, maxHealth, deck)
     ,mInventory(std::vector<Item*>())
-    ,mCoins(50)  // Player começa com 50 moedas
+    ,mCoins(100)  // Player começa com 50 moedas
 {
 
 }

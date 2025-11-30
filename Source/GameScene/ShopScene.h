@@ -22,28 +22,39 @@ public:
 private:
     enum class ItemType
     {
-        CARD,
-        UPGRADE_CARD,
         HEAL_POTION,
-        MAX_HP_INCREASE
+        MAX_HP_INCREASE,
+        MYSTERY_CHEST
     };
 
     struct ShopItem
     {
         std::string name;
-        std::string description;
         int price;
         ItemType type;
+
+        // Texturas cacheadas para renderização otimizada
+        class Texture* nameTexture = nullptr;
+        class Texture* descTexture = nullptr;
+        class Texture* priceTexture = nullptr;
     };
 
     class Texture* mBackgroundTexture;
     class RabbitNPC* mRabbitNPC;  // NPC vendedor
 
+    // Textura para mostrar o saldo de moedas do jogador
+    class Texture* mPlayerCoinTexture;
+    class Texture* mPlayerHPTexture;
+
     std::vector<ShopItem> mItems;
-    int mSelectedOption;  // índice do item selecionado (ou último = sair)
+    int mSelectedOption;  // 0 a 2
     bool mKeyWasPressed;
 
     void GenerateItems();
     void PurchaseItem(int index);
+
+    // Auxiliar para atualizar a textura de moedas quando gastamos dinheiro
+    void UpdateCoinTexture();
+    void UpdateHPTexture();
 };
 

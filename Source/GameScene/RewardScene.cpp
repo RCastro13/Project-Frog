@@ -10,6 +10,10 @@
 #include "../Actors/ChestNPC.h"
 #include "../Actors/CoinNPC.h"
 
+// Includes necessários para transitar entre as cenas
+#include "../GameScene/GameScene.h"
+#include "../GameScene/ShopScene.h"
+
 RewardScene::RewardScene(Game* game, RewardMode mode)
     : GameScene(game)
     , mMode(mode)
@@ -197,7 +201,13 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             if (keyState[SDL_SCANCODE_RETURN] && !mKeyWasPressed) {
                 GiveRewardToPlayer();
                 mKeyWasPressed = true;
-                mGame->SetScene(new MapScene(mGame));
+
+                // Lógica de Retorno Ajustada
+                if (mMode == RewardMode::TREASURE_CHEST) {
+                    mGame->SetScene(new ShopScene(mGame));
+                } else {
+                    mGame->SetScene(new MapScene(mGame));
+                }
             }
         }
         // CASO 2: ganhou Carta (baú)
@@ -215,7 +225,13 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             {
                 SDL_Log("Jogador recusou a carta.");
                 mKeyWasPressed = true;
-                mGame->SetScene(new MapScene(mGame));
+
+                // Lógica de Retorno Ajustada
+                if (mMode == RewardMode::TREASURE_CHEST) {
+                    mGame->SetScene(new ShopScene(mGame));
+                } else {
+                    mGame->SetScene(new MapScene(mGame));
+                }
             }
         }
     }
@@ -255,7 +271,13 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             }
 
             mKeyWasPressed = true;
-            mGame->SetScene(new MapScene(mGame));
+
+            // Lógica de Retorno Ajustada
+            if (mMode == RewardMode::TREASURE_CHEST) {
+                mGame->SetScene(new ShopScene(mGame));
+            } else {
+                mGame->SetScene(new MapScene(mGame));
+            }
         }
         // cancelar (volta para opção aceitar/recusar da carta)
         else if (keyState[SDL_SCANCODE_ESCAPE] && !mKeyWasPressed)
@@ -472,4 +494,3 @@ void RewardScene::Exit()
         mRewardCard = nullptr;
     }
 }
-
