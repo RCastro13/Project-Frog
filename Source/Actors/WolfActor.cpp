@@ -35,7 +35,7 @@ std::vector<Card*> WolfActor::CreateEnemyDeck() const
     std::vector<Card*> deck;
     deck.push_back(new Card("Wolf Fire Weak", AttackType::Fire, 6, 3, nullptr));
     deck.push_back(new Card("Wolf Fire Strong", AttackType::Fire, 4, 2, nullptr));
-    deck.push_back(new Card("Wolf Plant", AttackType::Plant, 5, 2, nullptr));
+    deck.push_back(new Card("Wolf Plant", AttackType::Plant, 4, 2, nullptr));
     deck.push_back(new Card("Wolf Neutral", AttackType::Neutral, 4, 1, nullptr));
     return deck;
 }

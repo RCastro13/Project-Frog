@@ -24,8 +24,8 @@ BearActor::~BearActor()
 AnimatedCharacterActor::EnemyStats BearActor::GetEnemyStats() const
 {
     return {
-        30,    // health
-        30,    // maxHealth
+        28,    // health
+        28,    // maxHealth
         0.35   // difficulty (balanceado)
     };
 }
@@ -33,7 +33,7 @@ AnimatedCharacterActor::EnemyStats BearActor::GetEnemyStats() const
 std::vector<Card*> BearActor::CreateEnemyDeck() const
 {
     std::vector<Card*> deck;
-    deck.push_back(new Card("Bear Fire", AttackType::Fire, 5, 3, nullptr));
+    deck.push_back(new Card("Bear Fire", AttackType::Fire, 4, 2, nullptr));
     deck.push_back(new Card("Bear Neutral Strong", AttackType::Neutral, 5, 3, nullptr));
     deck.push_back(new Card("Bear Plant", AttackType::Plant, 4, 2, nullptr));
     deck.push_back(new Card("Bear Neutral Weak", AttackType::Neutral, 4, 1, nullptr));
