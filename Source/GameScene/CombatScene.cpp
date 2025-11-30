@@ -97,7 +97,7 @@ void CombatScene::CreateTestCombatants()
     mPlayer = mGame->GetPlayer();
 
     if (!mPlayer) {
-        SDL_Log("CRITICAL ERROR: Player instance not found in Game!");
+        SDL_Log("ERROR: Player instance not found in Game!");
         return;
     }
 

@@ -89,7 +89,6 @@ bool Game::Initialize()
     }
 
     mAudio = new AudioSystem(8);
-    SDL_Log("ERROR: Audio system initialized");
     mAudio->CacheAllSounds();
 
     InitializeActors();
@@ -117,7 +116,6 @@ void Game::InitializeActors()
         card->SetOwner(mPlayer);
     }
 
-    SDL_Log("ERROR: Player instance created via Game::InitializeActors");
 }
 
 std::vector<Card*> Game::CreateStarterDeck()
@@ -216,7 +214,6 @@ void Game::SetScene(GameScene* scene)
 {
     if (mPendingScene)
     {
-        SDL_Log("WARNING: Tentou trocar cena enquanto já há uma transição pendente!");
         delete scene;
         return;
     }
