@@ -935,6 +935,15 @@ void CombatScene::Enter()
     MapNode* currentNode = mGame->GetCurrentMapNode();
     bool isBossFight = (currentNode && currentNode->GetType() == MapNodeType::BOSS);
 
+    if (mGame->GetAudio())
+    {
+        if (isBossFight) {
+            mCombatMusic = mGame->GetAudio()->PlaySound("BossMusic.mp3", true);
+        } else {
+            mCombatMusic = mGame->GetAudio()->PlaySound("CombatMusic01.ogg", true);
+        }
+    }
+
     // Selecionar background baseado no tipo de combate
     if (isBossFight) {
         mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Combat/dungeon.png");
@@ -986,11 +995,11 @@ void CombatScene::CreateTestCombatants()
 
     // Garantir que os cooldowns estejam zerados ou preservados conforme design
     // Se quiser resetar cooldowns a cada batalha:
-    /*
+
     for (Card* card : mPlayer->GetDeck()) {
         card->ResetCooldown();
     }
-    */
+
 
     mSelectedCardIndex = 0;
 }
@@ -1582,6 +1591,11 @@ void CombatScene::TriggerDefenderAnimation()
 
 void CombatScene::Exit()
 {
+
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mCombatMusic);
+    }
     // Limpar sistema de renderização
     if (mCombatRenderer)
     {

@@ -25,7 +25,7 @@ AnimatedCharacterActor::EnemyStats SnakeActor::GetEnemyStats() const
 {
     return {
         2,    // health
-        28,    // maxHealth
+        25,    // maxHealth
         0.40   // difficulty (rápido e inteligente)
     };
 }
@@ -34,8 +34,8 @@ std::vector<Card*> SnakeActor::CreateEnemyDeck() const
 {
     std::vector<Card*> deck;
     deck.push_back(new Card("Snake Fire", AttackType::Fire, 4, 1, nullptr));
-    deck.push_back(new Card("Snake Water", AttackType::Water, 5, 1, nullptr));
+    deck.push_back(new Card("Snake Water Strong", AttackType::Water, 5, 1, nullptr));
     deck.push_back(new Card("Snake Plant", AttackType::Plant, 4, 1, nullptr));
-    deck.push_back(new Card("Snake Neutral", AttackType::Neutral, 4, 0, nullptr));
+    deck.push_back(new Card("Snake Water Weak", AttackType::Water, 3, 0, nullptr));
     return deck;
 }

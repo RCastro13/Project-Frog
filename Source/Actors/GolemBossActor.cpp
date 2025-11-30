@@ -24,8 +24,8 @@ GolemBossActor::~GolemBossActor()
 AnimatedCharacterActor::EnemyStats GolemBossActor::GetEnemyStats() const
 {
     return {
-        50,    // health (muito mais que inimigos normais)
-        50,    // maxHealth
+        40,    // health (muito mais que inimigos normais)
+        40,    // maxHealth
         0.70   // difficulty (muito mais inteligente)
     };
 }

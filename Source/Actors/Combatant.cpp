@@ -41,6 +41,13 @@ void Combatant::RemoveCard(Card* card) {
     }
 }
 
+void Combatant::IncreaseMaxHealth(int amount) {
+    mMaxHealth += amount;
+    // Opcional: Quando aumentamos a vida máxima, geralmente aumentamos a vida atual
+    // junto para "preencher" o novo espaço vazio.
+    mHealth += amount;
+}
+
 void Combatant::GiveCard(Card* card) {
     mDeck.push_back(card);
     card->SetOwner(this);

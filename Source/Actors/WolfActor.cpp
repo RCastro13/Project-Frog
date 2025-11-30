@@ -25,7 +25,7 @@ AnimatedCharacterActor::EnemyStats WolfActor::GetEnemyStats() const
 {
     return {
         2,    // health
-        32,    // maxHealth
+        30,    // maxHealth
         0.38   // difficulty (mais forte)
     };
 }
@@ -33,9 +33,9 @@ AnimatedCharacterActor::EnemyStats WolfActor::GetEnemyStats() const
 std::vector<Card*> WolfActor::CreateEnemyDeck() const
 {
     std::vector<Card*> deck;
-    deck.push_back(new Card("Wolf Fire", AttackType::Fire, 6, 2, nullptr));
-    deck.push_back(new Card("Wolf Water", AttackType::Water, 5, 2, nullptr));
-    deck.push_back(new Card("Wolf Plant", AttackType::Plant, 6, 3, nullptr));
-    deck.push_back(new Card("Wolf Neutral", AttackType::Neutral, 5, 1, nullptr));
+    deck.push_back(new Card("Wolf Fire Weak", AttackType::Fire, 6, 2, nullptr));
+    deck.push_back(new Card("Wolf Fire Strong", AttackType::Fire, 4, 1, nullptr));
+    deck.push_back(new Card("Wolf Plant", AttackType::Plant, 5, 1, nullptr));
+    deck.push_back(new Card("Wolf Neutral", AttackType::Neutral, 4, 0, nullptr));
     return deck;
 }

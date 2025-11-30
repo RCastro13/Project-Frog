@@ -34,9 +34,9 @@ std::vector<Card*> BearActor::CreateEnemyDeck() const
 {
     std::vector<Card*> deck;
     deck.push_back(new Card("Bear Fire", AttackType::Fire, 5, 2, nullptr));
-    deck.push_back(new Card("Bear Water", AttackType::Water, 4, 1, nullptr));
-    deck.push_back(new Card("Bear Plant", AttackType::Plant, 5, 2, nullptr));
-    deck.push_back(new Card("Bear Neutral", AttackType::Neutral, 4, 0, nullptr));
+    deck.push_back(new Card("Bear Neutral Strong", AttackType::Neutral, 5, 1, nullptr));
+    deck.push_back(new Card("Bear Plant", AttackType::Plant, 4, 1, nullptr));
+    deck.push_back(new Card("Bear Neutral Weak", AttackType::Neutral, 4, 0, nullptr));
     return deck;
 }
 

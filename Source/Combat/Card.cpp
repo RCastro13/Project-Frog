@@ -26,6 +26,11 @@ bool Card::HasTypeAdvantageOver(const Card* otherCard) const
     return false;
 }
 
+void Card::ResetCooldown()
+{
+    mCurrentCooldown = 0;
+}
+
 Combatant* Card::Fight(Card* otherCard)
 {
     if (!mOwner || !otherCard->GetOwner())

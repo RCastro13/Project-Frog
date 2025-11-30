@@ -13,9 +13,9 @@ struct MapConfig {
 
     // Probabilidades de cada tipo (soma deve ser ~1.0)
     float combatChance = 0.50f;
-    float eliteChance = 0.10f;
-    float shopChance = 0.15f;
-    float treasureChance = 0.15f;
+    float eliteChance = 0.00f;
+    float shopChance = 0.20f;
+    float treasureChance = 0.20f;
     float restChance = 0.10f;
 };
 
