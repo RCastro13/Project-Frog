@@ -123,8 +123,8 @@ std::vector<Card*> Game::CreateStarterDeck()
     std::vector<Card*> deck;
     deck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 3, nullptr));
     deck.push_back(new Card("Water Shield", AttackType::Water, 4, 2, nullptr));
-    deck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 4, nullptr));
-    deck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
+    deck.push_back(new Card("Plant Whip", AttackType::Plant, 5, 3, nullptr));
+    deck.push_back(new Card("Neutral Punch", AttackType::Neutral, 4, 1, nullptr));
     return deck;
 }
 
