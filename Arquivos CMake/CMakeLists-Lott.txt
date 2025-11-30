@@ -86,6 +86,22 @@ add_executable(${PROJECT_NAME}
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/GameScene/SceneInputHelper.h
+        Source/GameScene/SceneInputHelper.cpp
+        Source/GameScene/MenuTextureHelper.h
+        Source/GameScene/MenuTextureHelper.cpp
+        Source/GameScene/MainMenuScene.h
+        Source/GameScene/MainMenuScene.cpp
+        Source/GameScene/MapScene.h
+        Source/GameScene/MapScene.cpp
+        Source/GameScene/CombatScene.h
+        Source/GameScene/CombatScene.cpp
+        Source/GameScene/GameOverScene.h
+        Source/GameScene/GameOverScene.cpp
+        Source/GameScene/VictoryScene.h
+        Source/GameScene/VictoryScene.cpp
+        Source/GameScene/BlackScreenScene.h
+        Source/GameScene/BlackScreenScene.cpp
         Source/Map/MapNodeType.h
         Source/Map/MapNode.h
         Source/Map/MapNode.cpp
