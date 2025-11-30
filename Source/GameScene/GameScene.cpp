@@ -1253,45 +1253,40 @@ void CombatScene::RenderCardDisplay()
                        CombatConstants::Cards::LARGE_WIDTH / 2.0f;
     float centerY = CombatConstants::Positions::SCREEN_CENTER_Y;
 
+    Vector2 cardSizeLarge(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT);
+
     // Renderizar carta do Player (esquerda)
     if (mDisplayPlayerCard) {
-        Vector2 playerCardPos(playerCardX, centerY);
-        Texture* cardTexture = GetCardTexture(mDisplayPlayerCard->GetType(), true);
         float brilho = mPlayerWonLastTurn ? 1.3f : 1.0f;
 
-        mCombatRenderer->RenderizarTexturaSimples(
-            playerCardPos,
-            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
-            cardTexture,
-            brilho
-        );
-
-        mCombatRenderer->RenderizarTextoPoder(
-            Vector2(playerCardX, centerY + CombatConstants::Cards::LARGE_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE),
-            mDisplayPlayerCard->GetDamage(),
-            Vector3(1.0f, 1.0f, 1.0f),
-            CombatConstants::FontSizes::POWER_LARGE
+        // Usamos RenderizarCarta aqui também para consistência visual
+        mCombatRenderer->RenderizarCarta(
+            Vector2(playerCardX, centerY),
+            cardSizeLarge,
+            mDisplayPlayerCard,
+            false, // Não está selecionada (cursor)
+            brilho,
+            mCardTexturesActive,
+            mCardTexturesCooldown,
+            mTimeIconTexture,
+            false
         );
     }
 
     // Renderizar carta do Enemy (direita)
     if (mDisplayEnemyCard) {
-        Vector2 enemyCardPos(enemyCardX, centerY);
-        Texture* cardTexture = GetCardTexture(mDisplayEnemyCard->GetType(), true);
         float brilho = !mPlayerWonLastTurn ? 1.3f : 1.0f;
 
-        mCombatRenderer->RenderizarTexturaSimples(
-            enemyCardPos,
-            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
-            cardTexture,
-            brilho
-        );
-
-        mCombatRenderer->RenderizarTextoPoder(
-            Vector2(enemyCardX, centerY + CombatConstants::Cards::LARGE_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE),
-            mDisplayEnemyCard->GetDamage(),
-            Vector3(1.0f, 1.0f, 1.0f),
-            CombatConstants::FontSizes::POWER_LARGE
+        mCombatRenderer->RenderizarCarta(
+            Vector2(enemyCardX, centerY),
+            cardSizeLarge,
+            mDisplayEnemyCard,
+            false,
+            brilho,
+            mCardTexturesActive,
+            mCardTexturesCooldown,
+            mTimeIconTexture,
+            false
         );
     }
 
@@ -1300,7 +1295,7 @@ void CombatScene::RenderCardDisplay()
         float winnerX = mPlayerWonLastTurn ? playerCardX : enemyCardX;
         mCombatRenderer->RenderizarMolduraVencedor(
             Vector2(winnerX, centerY),
-            Vector2(CombatConstants::Cards::LARGE_WIDTH, CombatConstants::Cards::LARGE_HEIGHT),
+            cardSizeLarge,
             mWinnerFrameTexture
         );
     }
@@ -1327,37 +1322,20 @@ void CombatScene::RenderCards()
         }
 
         Vector2 cardPos(cardX, cardY);
+        bool isSelecionada = (i == mSelectedCardIndex);
 
-        // Obter textura da carta baseada em tipo e disponibilidade
-        Texture* cardTexture = GetCardTexture(card->GetType(), card->IsAvailable());
-
-        // Renderizar carta
-        mCombatRenderer->RenderizarTexturaSimples(
+        // Em vez de desenhar partes separadas, chamamos a função mestre do Renderer
+        mCombatRenderer->RenderizarCarta(
             cardPos,
             Vector2(CombatConstants::Cards::SMALL_WIDTH, CombatConstants::Cards::SMALL_HEIGHT),
-            cardTexture
+            card,
+            isSelecionada,
+            1.0f, // Brilho normal
+            mCardTexturesActive,
+            mCardTexturesCooldown,
+            mTimeIconTexture, // Passamos o ícone carregado no Enter()
+            true
         );
-
-        // Renderizar número de poder ou ícone
-        if (card->IsAvailable()) {
-            bool isSelecionada = (i == mSelectedCardIndex);
-            Vector3 corTexto = isSelecionada ?
-                Vector3(1.0f, 0.84f, 0.0f) :  // Amarelo dourado
-                Vector3(1.0f, 1.0f, 1.0f);    // Branco
-
-            mCombatRenderer->RenderizarTextoPoder(
-                Vector2(cardX, cardY + CombatConstants::Cards::SMALL_HEIGHT / 2.0f - CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM),
-                card->GetDamage(),
-                corTexto,
-                CombatConstants::FontSizes::POWER_SMALL
-            );
-        } else {
-            mCombatRenderer->RenderizarIconeCooldown(
-                cardPos,
-                CombatConstants::Cards::SMALL_HEIGHT,
-                mTimeIconTexture
-            );
-        }
     }
 }
 

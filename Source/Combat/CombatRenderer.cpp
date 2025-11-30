@@ -24,93 +24,123 @@ void CombatRenderer::RenderizarCarta(
     float brilho,
     const std::map<AttackType, Texture*>& texturasAtivas,
     const std::map<AttackType, Texture*>& texturasCooldown,
-    Texture* iconeTempo)
+    Texture* iconeTempo,
+    bool mostrarInfoCooldown)
 {
     if (!carta) return;
 
     Renderer* renderer = mGame->GetRenderer();
     Texture* texturaCarta = nullptr;
 
-    // Obter textura apropriada
-    if (carta->IsAvailable())
+    // --- LÓGICA DE TEXTURA ---
+    // Se não formos mostrar info de cooldown (ex: no clash),
+    // forçamos o uso da textura ativa para ficar bonito
+    bool usarTexturaAtiva = !mostrarInfoCooldown ? true : carta->IsAvailable();
+
+    if (usarTexturaAtiva)
     {
         auto it = texturasAtivas.find(carta->GetType());
-        if (it != texturasAtivas.end())
-            texturaCarta = it->second;
+        if (it != texturasAtivas.end()) texturaCarta = it->second;
     }
     else
     {
         auto it = texturasCooldown.find(carta->GetType());
-        if (it != texturasCooldown.end())
-            texturaCarta = it->second;
+        if (it != texturasCooldown.end()) texturaCarta = it->second;
     }
 
-    // Renderizar textura da carta
     if (texturaCarta)
     {
         Vector3 tint(brilho, brilho, brilho);
         renderer->DrawTexture(
-            posicao,
-            tamanho,
-            0.0f,
-            tint,
-            texturaCarta,
-            Vector4::UnitRect,
-            Vector2::Zero
+            posicao, tamanho, 0.0f, tint, texturaCarta,
+            Vector4::UnitRect, Vector2::Zero
         );
     }
 
-    // Renderizar poder ou ícone de cooldown
+    // --- LÓGICA DE UI (TEXTOS E ÍCONES) ---
+
+    // Configurações de layout
+    bool isLargeCard = (tamanho.x > 100.0f);
+    int tamanhoFontePoder = isLargeCard ?
+        CombatConstants::FontSizes::POWER_LARGE : CombatConstants::FontSizes::POWER_SMALL;
+    float offsetBottom = isLargeCard ?
+        CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE : CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM;
+
+    // Se NÃO estamos mostrando cooldown (Situação: Clash no centro da tela)
+    // Apenas mostramos o dano, independente do estado da carta
+    if (!mostrarInfoCooldown)
+    {
+        RenderizarTextoGenerico(
+            Vector2(posicao.x, posicao.y + tamanho.y / 2.0f - offsetBottom),
+            carta->GetDamage(),
+            Vector3(1.0f, 1.0f, 1.0f), // Sempre branco no clash
+            tamanhoFontePoder
+        );
+        return; // Sai da função aqui, não desenha mais nada
+    }
+
+    // --- Se chegamos aqui, mostrarInfoCooldown é TRUE (Situação: Mão do Jogador) ---
+
     if (carta->IsAvailable())
     {
-        // Determinar cor do texto
-        Vector3 corTexto = selecionada ?
-            Vector3(1.0f, 0.84f, 0.0f) :  // Amarelo dourado
-            Vector3(1.0f, 1.0f, 1.0f);    // Branco
-
-        // Determinar tamanho da fonte baseado no tamanho da carta
-        int tamanhoFonte = (tamanho.x > 100.0f) ?
-            CombatConstants::FontSizes::POWER_LARGE :
-            CombatConstants::FontSizes::POWER_SMALL;
-
-        // Determinar offset baseado no tamanho da carta
-        float offsetBase = (tamanho.x > 100.0f) ?
-            CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE :
-            CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM;
-
-        RenderizarTextoPoder(
-            Vector2(posicao.x, posicao.y + tamanho.y / 2.0f - offsetBase),
+        // 1. Poder (Embaixo)
+        Vector3 corTexto = selecionada ? Vector3(1.0f, 0.84f, 0.0f) : Vector3(1.0f, 1.0f, 1.0f);
+        RenderizarTextoGenerico(
+            Vector2(posicao.x, posicao.y + tamanho.y / 2.0f - offsetBottom),
             carta->GetDamage(),
             corTexto,
-            tamanhoFonte
+            tamanhoFontePoder
         );
+
+        // 2. Cooldown Total (Topo)
+        if (iconeTempo)
+        {
+            float iconSizeSmall = CombatConstants::Sizes::COOLDOWN_ICON_SIZE * 0.6f;
+            float topY = posicao.y - tamanho.y / 2.0f + offsetBottom;
+
+            renderer->DrawTexture(
+                Vector2(posicao.x - 12.0f, topY - 50.0f),
+                Vector2(iconSizeSmall, iconSizeSmall),
+                0.0f, Vector3(1.0f, 1.0f, 1.0f), iconeTempo,
+                Vector4::UnitRect, Vector2::Zero
+            );
+
+            RenderizarTextoGenerico(
+                Vector2(posicao.x + 12.0f, topY - 50.0f),
+                carta->GetCoolDown(),
+                Vector3(0.6f, 0.8f, 1.0f),
+                tamanhoFontePoder
+            );
+        }
     }
-    else if (iconeTempo)
+    else if (iconeTempo) // Carta em Cooldown
     {
-        // Renderizar ícone de cooldown
-        float offsetBase = (tamanho.x > 100.0f) ?
-            CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM_LARGE :
-            CombatConstants::Offsets::POWER_TEXT_FROM_BOTTOM;
+        // 1. Ícone Grande (Centro-Baixo)
+        Vector2 iconPos = Vector2(posicao.x, posicao.y + tamanho.y / 2.0f - offsetBottom - 4.0f);
 
         renderer->DrawTexture(
-            Vector2(posicao.x, posicao.y + tamanho.y / 2.0f - offsetBase - 4.0f),
-            Vector2(CombatConstants::Sizes::COOLDOWN_ICON_SIZE,
-                    CombatConstants::Sizes::COOLDOWN_ICON_SIZE),
-            0.0f,
-            Vector3(1.0f, 1.0f, 1.0f),
-            iconeTempo,
-            Vector4::UnitRect,
-            Vector2::Zero
+            iconPos,
+            Vector2(CombatConstants::Sizes::COOLDOWN_ICON_SIZE, CombatConstants::Sizes::COOLDOWN_ICON_SIZE),
+            0.0f, Vector3(1.0f, 1.0f, 1.0f), iconeTempo,
+            Vector4::UnitRect, Vector2::Zero
+        );
+
+        // 2. Turnos Restantes (Sobre o ícone)
+        RenderizarTextoGenerico(
+            iconPos - Vector2(0.0f, 100.0f),
+            carta->GetCurrentCooldown(),
+            Vector3(1.0f, 0.2f, 0.2f),
+            tamanhoFontePoder
         );
     }
 }
 
-void CombatRenderer::RenderizarTextoPoder(Vector2 posicao, int poder, Vector3 cor, int tamanhoFonte)
+void CombatRenderer::RenderizarTextoGenerico(Vector2 posicao, int valor, Vector3 cor, int tamanhoFonte)
 {
     if (!mGame->GetFont()) return;
 
     char texto[16];
-    snprintf(texto, sizeof(texto), "%d", poder);
+    snprintf(texto, sizeof(texto), "%d", valor);
 
     Texture* textura = mGame->GetFont()->RenderText(texto, cor, tamanhoFonte);
     if (textura)
@@ -126,6 +156,13 @@ void CombatRenderer::RenderizarTextoPoder(Vector2 posicao, int poder, Vector3 co
         );
         delete textura;
     }
+}
+
+// Mantenha o método antigo como um wrapper se precisar de compatibilidade,
+// ou apenas apague o RenderizarTextoPoder antigo e renomeie no .h
+void CombatRenderer::RenderizarTextoPoder(Vector2 posicao, int poder, Vector3 cor, int tamanhoFonte)
+{
+    RenderizarTextoGenerico(posicao, poder, cor, tamanhoFonte);
 }
 
 void CombatRenderer::RenderizarTexturaSimples(Vector2 posicao, Vector2 tamanho, Texture* textura, float brilho)

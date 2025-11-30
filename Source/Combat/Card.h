@@ -25,7 +25,7 @@ public:
     // Getters
     AttackType GetType() const { return mType; }
     int GetDamage() const { return mValue; }
-    int GetCoolDown() const { return mCoolDown; }
+    int GetCoolDown() const { return mCoolDown - 1; }
     int GetCurrentCooldown() const { return mCurrentCooldown; }
     std::string GetName() const { return mName; }
     Combatant* GetOwner() const { return mOwner; }
