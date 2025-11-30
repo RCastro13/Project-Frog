@@ -8,18 +8,23 @@
 
 #include <algorithm>
 #include <vector>
-#include "Game.h"
-#include "Components/Drawing/DrawComponent.h"
-#include "Random.h"
-#include "Actors/Actor.h"
-
 #include <SDL_ttf.h>
 
-#include "GameScene/GameScene.h"
-#include "Map/MapNode.h"
+#include "Game.h"
+#include "Random.h"
 
+#include "Renderer/Renderer.h"
+#include "Renderer/Font.h"
+#include "Audio/AudioSystem.h"
+
+#include "GameScene/GameScene.h"
+#include "GameScene/MainMenuScene.h"
+
+#include "Actors/Actor.h"
 #include "Actors/Player.h"
-#include "Combat//Card.h"
+#include "Components/Drawing/DrawComponent.h"
+#include "Combat/Card.h"
+#include "Map/MapNode.h"
 
 Game::Game()
         :mWindow(nullptr)
@@ -71,34 +76,27 @@ bool Game::Initialize()
         return false;
     }
 
-    // Inicializar SDL_ttf
     if (TTF_Init() != 0)
     {
         SDL_Log("Failed to initialize SDL_ttf: %s", TTF_GetError());
         return false;
     }
 
-    // Carregar fonte padrão
     mDefaultFont = new Font();
     if (!mDefaultFont->Load("../Assets/Fonts/PressStart2P.ttf"))
     {
         SDL_Log("Failed to load default font");
-        // Não retornar false - continuar sem fonte
     }
 
-    // Inicializar sistema de áudio
     mAudio = new AudioSystem(8);
     SDL_Log("Audio system initialized");
-    mAudio->CacheAllSounds(); //será chamado quando houver sons em Assets/Sounds/
+    mAudio->CacheAllSounds();
 
-    // Init all game actors
     InitializeActors();
 
-    // Iniciar com a cena do menu principal
     mCurrentScene = new MainMenuScene(this);
     mCurrentScene->Enter();
 
-    // Iniciar o jogo com fade in
     StartFade(false, mFadeDuration);
 
     mTicksCount = SDL_GetTicks();
@@ -109,20 +107,12 @@ bool Game::Initialize()
 void Game::InitializeActors()
 {
     if (!mPlayer) {
-        delete mPlayer;     // Para cuando se reinicia el juego.
+        delete mPlayer;
     }
 
-    // criar deck inicial
-    std::vector<Card*> startDeck;
-    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 3, nullptr));
-    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 2, nullptr));
-    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 4, nullptr));
-    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
-
-    // criar instância única do Player
+    std::vector<Card*> startDeck = CreateStarterDeck();
     mPlayer = new Player(this, "Frog Hero", 20, 20, startDeck);
 
-    // configurar owners das cartas
     for (Card* card : mPlayer->GetDeck()) {
         card->SetOwner(mPlayer);
     }
@@ -130,9 +120,18 @@ void Game::InitializeActors()
     SDL_Log("Player instance created via Game::InitializeActors");
 }
 
+std::vector<Card*> Game::CreateStarterDeck()
+{
+    std::vector<Card*> deck;
+    deck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 3, nullptr));
+    deck.push_back(new Card("Water Shield", AttackType::Water, 4, 2, nullptr));
+    deck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 4, nullptr));
+    deck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
+    return deck;
+}
+
 int **Game::LoadLevel(const std::string& fileName, int width, int height)
 {
-    // TODO: Implementar carregamento de nível
     return nullptr;
 }
 
@@ -144,7 +143,6 @@ void Game::RunLoop()
 {
     while (mIsRunning)
     {
-        // Calculate delta time in seconds
         float deltaTime = (SDL_GetTicks() - mTicksCount) / 1000.0f;
         if (deltaTime > 0.05f)
         {
@@ -157,7 +155,6 @@ void Game::RunLoop()
         UpdateGame(deltaTime);
         GenerateOutput();
 
-        // Sleep to maintain frame rate
         int sleepTime = (1000 / FPS) - (SDL_GetTicks() - mTicksCount);
         if (sleepTime > 0)
         {
@@ -182,13 +179,11 @@ void Game::ProcessInput()
     const Uint8* state = SDL_GetKeyboardState(nullptr);
 
     if (!mIsPaused) {
-        // Process input da cena atual
         if (mCurrentScene)
         {
             mCurrentScene->ProcessInput(state);
         }
 
-        // Process input dos atores (mantido para compatibilidade)
         for (auto actor : mActors)
         {
             actor->ProcessInput(state);
@@ -198,43 +193,36 @@ void Game::ProcessInput()
 
 void Game::UpdateGame(float deltaTime)
 {
-    // Update fade (handles scene transition)
     UpdateFade(deltaTime);
 
-    // Update da cena atual
     if (mCurrentScene && !mIsPaused)
     {
         mCurrentScene->Update(deltaTime);
     }
 
-    // Update all actors and pending actors
     if (!mIsPaused) {
         UpdateActors(deltaTime);
     }
 
-    // Update do sistema de áudio
     if (mAudio)
     {
         mAudio->Update(deltaTime);
     }
 
-    // Update camera position
     UpdateCamera();
 }
 
 void Game::SetScene(GameScene* scene)
 {
-    // Se já tem uma cena pendente, não aceitar nova transição
     if (mPendingScene)
     {
         SDL_Log("WARNING: Tentou trocar cena enquanto já há uma transição pendente!");
-        delete scene;  // Evitar memory leak
+        delete scene;
         return;
     }
 
     mPendingScene = scene;
 
-    // Iniciar fade OUT automaticamente
     if (!mIsFading)
     {
         StartFade(true);
@@ -259,67 +247,81 @@ void Game::UpdateFade(float deltaTime)
 
     if (mFadeOut)
     {
-        mFadeAlpha = t;
-
-        if (t >= 1.0f)
-        {
-            mFadeOut = false;
-            mFadeTimer = 0.0f;
-
-            // Trocar cena agora que está escuro
-            if (mPendingScene)
-            {
-                if (mCurrentScene)
-                {
-                    mCurrentScene->Exit();
-                    delete mCurrentScene;
-                }
-
-                mIsChangingScene = true;
-                std::vector<Actor*> actorsToDelete = mActors;
-                mActors.clear();
-                mPendingActors.clear();
-
-                for (auto actor : actorsToDelete)
-                {
-                    // NÃO DELETAR O PLAYER AQUI SE NA LISTA DE ATORES
-                    // pois ele só vai ser deletado se o jogador morrer ou no game::Shutdown
-                    if (actor != mPlayer) {
-                        delete actor;
-                    }
-                }
-
-                // IMPORTANTE: Manter o Player na lista de atores vivos para o Update funcionar
-                if (mPlayer) {
-                    mActors.push_back(mPlayer);
-                }
-
-                mIsChangingScene = false;
-
-                mCurrentScene = mPendingScene;
-                mCurrentScene->Enter();
-                mPendingScene = nullptr;
-
-                // Iniciar fade IN apenas se trocamos de cena
-                StartFade(false, mFadeDuration);
-            }
-            else
-            {
-                // Sem cena pendente, apenas terminar o fade (para casos como sair do jogo)
-                mIsFading = false;
-                mFadeAlpha = 1.0f;  // Manter tela preta
-            }
-        }
+        UpdateFadeOut(t);
     }
     else
     {
-        mFadeAlpha = 1.0f - t;
+        UpdateFadeIn(t);
+    }
+}
 
-        if (t >= 1.0f)
+void Game::UpdateFadeOut(float t)
+{
+    mFadeAlpha = t;
+
+    if (t >= 1.0f)
+    {
+        mFadeOut = false;
+        mFadeTimer = 0.0f;
+
+        if (mPendingScene)
+        {
+            PerformSceneTransition();
+            StartFade(false, mFadeDuration);
+        }
+        else
         {
             mIsFading = false;
-            mFadeAlpha = 0.0f;
+            mFadeAlpha = 1.0f;
         }
+    }
+}
+
+void Game::UpdateFadeIn(float t)
+{
+    mFadeAlpha = 1.0f - t;
+
+    if (t >= 1.0f)
+    {
+        mIsFading = false;
+        mFadeAlpha = 0.0f;
+    }
+}
+
+void Game::PerformSceneTransition()
+{
+    CleanupCurrentScene();
+
+    mIsChangingScene = true;
+    std::vector<Actor*> actorsToDelete = mActors;
+    mActors.clear();
+    mPendingActors.clear();
+
+    for (auto actor : actorsToDelete)
+    {
+        if (actor != mPlayer) {
+            delete actor;
+        }
+    }
+
+    if (mPlayer) {
+        mActors.push_back(mPlayer);
+    }
+
+    mIsChangingScene = false;
+
+    mCurrentScene = mPendingScene;
+    mCurrentScene->Enter();
+    mPendingScene = nullptr;
+}
+
+void Game::CleanupCurrentScene()
+{
+    if (mCurrentScene)
+    {
+        mCurrentScene->Exit();
+        delete mCurrentScene;
+        mCurrentScene = nullptr;
     }
 }
 
@@ -338,7 +340,11 @@ void Game::UpdateActors(float deltaTime)
     }
     mPendingActors.clear();
 
-    // Deletar atores marcados como Destroy
+    DeleteActorsMarkedForDestroy();
+}
+
+void Game::DeleteActorsMarkedForDestroy()
+{
     std::vector<Actor*> actorsToDelete;
     for (auto actor : mActors)
     {
@@ -381,7 +387,6 @@ void Game::AddActor(Actor* actor)
 
 void Game::RemoveActor(Actor* actor)
 {
-    // Prevenir remoção durante transição de cena
     if (mIsChangingScene)
     {
         return;
@@ -430,10 +435,8 @@ void Game::RemoveCollider(AABBColliderComponent* collider)
 
 void Game::GenerateOutput()
 {
-    // Clear back buffer
     mRenderer->Clear();
 
-    // Render scene background (ANTES dos actors)
     if (mCurrentScene)
     {
         mCurrentScene->RenderBackground();
@@ -445,7 +448,6 @@ void Game::GenerateOutput()
 
         if(mIsDebugging)
         {
-           // Call draw for actor components
               for (auto comp : drawable->GetOwner()->GetComponents())
               {
                 comp->DebugDraw(mRenderer);
@@ -453,16 +455,13 @@ void Game::GenerateOutput()
         }
     }
 
-    // Render scene UI (DEPOIS dos actors)
     if (mCurrentScene)
     {
         mCurrentScene->Render();
     }
 
-    // Render fade overlay
     RenderFade();
 
-    // Swap front buffer and back buffer
     mRenderer->Present();
 }
 
@@ -484,14 +483,11 @@ void Game::RenderFade()
 
 void Game::InitializeMap()
 {
-    // Este método pode ser chamado para forçar geração de um novo mapa
-    // Por padrão, o mapa é gerado quando a MapScene é criada pela primeira vez
     ClearMap();
 }
 
 void Game::ClearMap()
 {
-    // Limpar nós do mapa existente
     for (MapNode* node : mMapNodes) {
         delete node;
     }
@@ -501,10 +497,14 @@ void Game::ClearMap()
 
 void Game::Shutdown()
 {
-    // Limpar mapa
     ClearMap();
+    ShutdownActors();
+    ShutdownScenes();
+    ShutdownSystems();
+}
 
-    // Limpar atores ANTES das cenas para evitar acessos inválidos
+void Game::ShutdownActors()
+{
     while (!mActors.empty()) {
         Actor* actor = mActors.back();
         mActors.pop_back();
@@ -512,21 +512,13 @@ void Game::Shutdown()
     }
     mPendingActors.clear();
 
-    // limpeza do player
-    // O mPlayer provavelmente já foi deletado no loop acima se ele estava em mActors
-    // Mas se por algum motivo foi removido da lista mas não deletado:
     if (mPlayer) {
-        // Assumindo que o loop acima limpou tudo, apenas setamos null.
-        // Se mPlayer NÃO estiver em mActors (ex: removido manualmente), delete aqui.
-        // Para segurança, vamos assumir que o loop acima cuidou dele.
-
-        // O destrutor do Player deleta as cartas, entao n precisamos deletar aq
-
-        // Como o loop acima deleta TODOS (assim esperamos ;-;) os atores, e Player é um ator, ele já foi deletado.
         mPlayer = nullptr;
     }
+}
 
-    // Limpar cenas (SEM chamar Exit() pois os atores já foram deletados)
+void Game::ShutdownScenes()
+{
     if (mCurrentScene)
     {
         delete mCurrentScene;
@@ -537,8 +529,10 @@ void Game::Shutdown()
         delete mPendingScene;
         mPendingScene = nullptr;
     }
+}
 
-    // Delete level data
+void Game::ShutdownSystems()
+{
     if (mLevelData) {
         for (int i = 0; i < LEVEL_HEIGHT; ++i) {
             delete[] mLevelData[i];
@@ -547,14 +541,12 @@ void Game::Shutdown()
         mLevelData = nullptr;
     }
 
-    // Desligar sistema de áudio
     if (mAudio)
     {
         delete mAudio;
         mAudio = nullptr;
     }
 
-    // Limpar fonte
     if (mDefaultFont)
     {
         mDefaultFont->Unload();
@@ -562,7 +554,6 @@ void Game::Shutdown()
         mDefaultFont = nullptr;
     }
 
-    // Finalizar SDL_ttf
     TTF_Quit();
 
     mRenderer->Shutdown();

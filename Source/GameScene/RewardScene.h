@@ -1,6 +1,8 @@
 #pragma once
 #include "GameScene.h"
 #include "../Combat/Card.h"
+#include "../Math.h"
+#include <map>
 
 enum class RewardMode
 {

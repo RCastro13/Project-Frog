@@ -1,4 +1,5 @@
 #include "ShopScene.h"
+#include "MapScene.h"
 #include "../Game.h"
 #include "../Renderer/Renderer.h"
 #include "../Renderer/Texture.h"
@@ -25,6 +26,28 @@ ShopScene::ShopScene(Game* game)
 
 ShopScene::~ShopScene()
 {
+    if (mPlayerCoinTexture) {
+        delete mPlayerCoinTexture;
+        mPlayerCoinTexture = nullptr;
+    }
+    if (mPlayerHPTexture) {
+        delete mPlayerHPTexture;
+        mPlayerHPTexture = nullptr;
+    }
+    for (auto& item : mItems) {
+        if (item.nameTexture) {
+            delete item.nameTexture;
+            item.nameTexture = nullptr;
+        }
+        if (item.descTexture) {
+            delete item.descTexture;
+            item.descTexture = nullptr;
+        }
+        if (item.priceTexture) {
+            delete item.priceTexture;
+            item.priceTexture = nullptr;
+        }
+    }
 }
 
 void ShopScene::Enter()

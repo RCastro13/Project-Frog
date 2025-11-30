@@ -1,4 +1,5 @@
 #include "RewardScene.h"
+#include "MapScene.h"
 #include "../Game.h"
 #include "../Renderer/Renderer.h"
 #include "../Renderer/Texture.h"
@@ -33,6 +34,14 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
 
 RewardScene::~RewardScene()
 {
+    if (mTextTexture) {
+        delete mTextTexture;
+        mTextTexture = nullptr;
+    }
+    if (mRewardCard) {
+        delete mRewardCard;
+        mRewardCard = nullptr;
+    }
 }
 
 void RewardScene::Enter()

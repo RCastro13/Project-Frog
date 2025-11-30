@@ -1,4 +1,7 @@
 #include "DebugMenuScene.h"
+#include "MainMenuScene.h"
+#include "GameOverScene.h"
+#include "VictoryScene.h"
 #include "AnimationTestScene.h"
 #include "RewardScene.h"
 #include "ShopScene.h"
