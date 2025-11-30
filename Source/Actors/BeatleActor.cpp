@@ -24,7 +24,7 @@ BeatleActor::~BeatleActor()
 AnimatedCharacterActor::EnemyStats BeatleActor::GetEnemyStats() const
 {
     return {
-        2,    // health
+        20,    // health
         20,    // maxHealth
         0.30   // difficulty (mais fraco, menos esperto)
     };

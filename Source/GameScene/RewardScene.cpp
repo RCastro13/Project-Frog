@@ -124,7 +124,6 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
         {
             if (mRewardType == RewardType::CARD)
             {
-                SDL_Log("[RECOMPENSA] Nova carta encontrada!");
                 GenerateRewardCard();
 
                 std::stringstream ss;
@@ -226,7 +225,6 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             // [2] recusar -> sai
             else if (keyState[SDL_SCANCODE_2] && !mKeyWasPressed)
             {
-                SDL_Log("Jogador recusou a carta.");
                 mKeyWasPressed = true;
 
                 // Retorno
@@ -257,18 +255,18 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             Player* player = mGame->GetPlayer();
             if (player && mRewardCard)
             {
-                std::vector<Card*> deck = player->GetDeck();
+                std::vector<Card*>& deck = player->GetDeck();
                 if (mSelectedDeckIndex >= 0 && mSelectedDeckIndex < deck.size())
                 {
                     Card* oldCard = deck[mSelectedDeckIndex];
 
                     SDL_Log("Trocando %s por %s", oldCard->GetName().c_str(), mRewardCard->GetName().c_str());
 
-                    // lógica de troca
-                    player->RemoveCard(oldCard);
+                    // Substituir diretamente no índice para manter a ordem
+                    deck[mSelectedDeckIndex] = mRewardCard;
+                    mRewardCard->SetOwner(player);
                     delete oldCard; // deleto a carta antiga
 
-                    player->GiveCard(mRewardCard);
                     mRewardCard = nullptr; // o player agora é dono, então, n precisa deletar no Exit
                 }
             }

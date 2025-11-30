@@ -24,7 +24,7 @@ class Combatant : public Actor
 
     virtual void Death();
 
-    std::vector<Card*> GetDeck(){return mDeck;}
+    std::vector<Card*>& GetDeck(){return mDeck;}
 
 private:
     std::string mName;

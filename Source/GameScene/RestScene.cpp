@@ -60,10 +60,6 @@ void RestScene::Enter()
             500
         );
     }
-
-    SDL_Log("[REST] Local de descanso encontrado");
-    //SDL_Log("  [1] Descansar (+10 HP)");
-    //SDL_Log("  [2] Meditar (Reduzir cooldown de 1 carta)");
 }
 
 void RestScene::Update(float deltaTime)

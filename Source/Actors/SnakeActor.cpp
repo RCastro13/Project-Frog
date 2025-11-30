@@ -24,7 +24,7 @@ SnakeActor::~SnakeActor()
 AnimatedCharacterActor::EnemyStats SnakeActor::GetEnemyStats() const
 {
     return {
-        2,    // health
+        25,    // health
         25,    // maxHealth
         0.40   // difficulty (rápido e inteligente)
     };

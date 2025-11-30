@@ -82,7 +82,6 @@ MainMenuScene::MainMenuScene(Game* game)
     , mSelectedOption(0)
     , mKeyWasPressed(false)
     , mOptionStartTexture(nullptr)
-    , mOptionDebugTexture(nullptr)
     , mOptionExitTexture(nullptr)
 {
 }
@@ -91,9 +90,6 @@ MainMenuScene::~MainMenuScene()
 {
     if (mOptionStartTexture) {
         delete mOptionStartTexture;
-    }
-    if (mOptionDebugTexture) {
-        delete mOptionDebugTexture;
     }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
@@ -136,10 +132,6 @@ void MainMenuScene::UpdateMenuTextures()
         delete mOptionExitTexture;
         mOptionExitTexture = nullptr;
     }
-    if (mOptionDebugTexture) {
-        delete mOptionDebugTexture;
-        mOptionDebugTexture = nullptr;
-    }
 
     // Criar textura "Jogar" com cor apropriada
     Vector3 startColor = (mSelectedOption == 0) ? goldColor : whiteColor;
@@ -158,15 +150,6 @@ void MainMenuScene::UpdateMenuTextures()
         22,
         400
     );
-
-    // Criar textura "Debugar" com cor apropriada
-    Vector3 debugColor = (mSelectedOption == 2) ? goldColor : whiteColor;
-    mOptionDebugTexture = mGame->GetFont()->RenderText(
-        "Debugar",
-        debugColor,
-        22,
-        400
-    );
 }
 
 void MainMenuScene::Update(float deltaTime)
@@ -177,14 +160,14 @@ void MainMenuScene::Update(float deltaTime)
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante o fade
-    if (mFadeAlpha > 0.0f)
+    // Bloquear inputs durante o fade ou se já está trocando de cena
+    if (mFadeAlpha > 0.0f || mGame->IsFading())
         return;
 
     // Navegar para baixo (Seta baixo ou S)
     if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
     {
-        mSelectedOption = (mSelectedOption + 1) % 3;
+        mSelectedOption = (mSelectedOption + 1) % 2;
         UpdateMenuTextures();
         mKeyWasPressed = true;
         mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
@@ -192,7 +175,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     // Navegar para cima (Seta cima ou W)
     else if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {
-        mSelectedOption = (mSelectedOption - 1 + 3) % 3;
+        mSelectedOption = (mSelectedOption - 1 + 2) % 2;
         UpdateMenuTextures();
         mKeyWasPressed = true;
         mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
@@ -206,9 +189,6 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         } else if (mSelectedOption == 1) {
             // Sair -> Vai para tela preta que fechará o jogo
             mGame->SetScene(new BlackScreenScene(mGame));
-        } else {
-            // Debugar -> Vai para menu de debug
-            mGame->SetScene(new class DebugMenuScene(mGame));
         }
         mKeyWasPressed = true;
     }
@@ -268,19 +248,6 @@ void MainMenuScene::Render()
         );
     }
 
-    // Opção 3: "Debugar"
-    if (mOptionDebugTexture) {
-        mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, startY + optionSpacing * 2),
-            Vector2(mOptionDebugTexture->GetWidth(), mOptionDebugTexture->GetHeight()),
-            0.0f,
-            Vector3(1.0f, 1.0f, 1.0f),
-            mOptionDebugTexture,
-            Vector4::UnitRect,
-            Vector2::Zero
-        );
-    }
-
     // Renderizar fade
     RenderFade();
 }
@@ -291,10 +258,6 @@ void MainMenuScene::Exit()
     if (mOptionStartTexture) {
         delete mOptionStartTexture;
         mOptionStartTexture = nullptr;
-    }
-    if (mOptionDebugTexture) {
-        delete mOptionDebugTexture;
-        mOptionDebugTexture = nullptr;
     }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
@@ -317,6 +280,7 @@ MapScene::MapScene(Game* game)
     , mCurrentNode(nullptr)
     , mSelectedNode(nullptr)
     , mSelectedIndex(0)
+    , mConfirming(false)
     , mBackgroundTexture(nullptr)
     , mCameraPosition(Vector2::Zero)
     , mMinCameraX(-200.0f)
@@ -336,9 +300,10 @@ MapScene::~MapScene()
 void MapScene::Enter()
 {
     mStateTime = 0.0f;
+    mConfirming = false;  // Reset do flag de confirmação
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - MAPA [↑↓=Navegar ENTER=Selecionar]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
     // Carregar background do mapa
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Map/mapa.png");
@@ -428,8 +393,8 @@ void MapScene::Update(float deltaTime)
 
 void MapScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante o fade in
-    if (mFadeAlpha > 0.0f)
+    // Bloquear inputs durante o fade in ou se já está trocando de cena
+    if (mFadeAlpha > 0.0f || mGame->IsFading())
         return;
 
     static bool upWasPressed = false;
@@ -471,7 +436,7 @@ void MapScene::ProcessInput(const Uint8* keyState)
     }
 
     // Confirmar seleção
-    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed) {
+    if (keyState[SDL_SCANCODE_RETURN] && !enterWasPressed && !mConfirming) {
         // Capturar tipo ANTES de confirmar (pois ConfirmSelection seta mSelectedNode = nullptr)
         MapNodeType nodeType = mSelectedNode ? mSelectedNode->GetType() : MapNodeType::START;
 
@@ -746,6 +711,10 @@ void MapScene::SelectPreviousAccessibleNode()
 
 void MapScene::ConfirmSelection()
 {
+    // Prevenir múltiplas confirmações (verificar e setar ANTES de qualquer lógica)
+    if (mConfirming) return;
+    mConfirming = true;
+
     if (!mSelectedNode || !CanSelectNode(mSelectedNode)) {
         return;
     }
@@ -787,17 +756,14 @@ void MapScene::ConfirmSelection()
             break;
 
         case MapNodeType::SHOP:
-            SDL_Log("==> Entrando na loja");
             mGame->SetScene(new ShopScene(mGame));
             break;
 
         case MapNodeType::TREASURE:
-            SDL_Log("==> Abrindo baú de tesouro");
             mGame->SetScene(new RewardScene(mGame, RewardMode::TREASURE_CHEST));
             break;
 
         case MapNodeType::REST:
-            SDL_Log("==> Local de descanso");
             mGame->SetScene(new RestScene(mGame));
             break;
     }
@@ -929,7 +895,7 @@ void CombatScene::Enter()
     mStateTime = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - COMBATE [Setas=Selecionar Enter=Confirmar]");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
     // Verificar se é boss fight
     MapNode* currentNode = mGame->GetCurrentMapNode();
@@ -1438,18 +1404,6 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     {
         mKeyWasPressed = false;
     }
-
-    // ESC para voltar ao menu
-    static bool escWasPressed = false;
-    if (keyState[SDL_SCANCODE_ESCAPE] && !escWasPressed)
-    {
-        mGame->SetScene(new MainMenuScene(mGame));
-        escWasPressed = true;
-    }
-    else if (!keyState[SDL_SCANCODE_ESCAPE])
-    {
-        escWasPressed = false;
-    }
 }
 
 const char* CombatScene::GetTypeName(AttackType type)
@@ -1472,32 +1426,21 @@ void CombatScene::HandleCombatEnd()
 
     mCombatEndHandled = true;
 
-    SDL_Log("\n========================================");
     if (mCombatManager->IsPlayerVictorious())
     {
-        SDL_Log("       ✨ VITÓRIA! ✨");
-        SDL_Log("========================================");
-        SDL_Log("Recompensa: %d moedas", mCombatManager->GetReward());
-        SDL_Log("========================================\n");
         SDL_Delay(1000);
 
         // Verificar se era o boss
         MapNode* currentNode = mGame->GetCurrentMapNode();
         if (currentNode && currentNode->GetType() == MapNodeType::BOSS) {
-            SDL_Log("🏆 VOCÊ DERROTOU O BOSS! JOGO COMPLETO! 🏆");
             mGame->SetScene(new VictoryScene(mGame));
         } else {
             // Ir para tela de recompensa após vitória
-            SDL_Log("Vitória! Indo para tela de recompensa...");
             mGame->SetScene(new RewardScene(mGame, RewardMode::COMBAT_VICTORY));
         }
     }
     else
     {
-        SDL_Log("       💀 DERROTA! 💀");
-        SDL_Log("========================================");
-        SDL_Log("O sapo foi derrotado...");
-        SDL_Log("========================================\n");
         SDL_Delay(1000);
         mGame->SetScene(new GameOverScene(mGame));
     }
@@ -1651,14 +1594,10 @@ void GameOverScene::Enter()
     mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - GAME OVER");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/gameover.png");
-    if (!mBackgroundTexture)
-    {
-        SDL_Log("Erro ao carregar background de Game Over!");
-    }
 
     // Criar textura do texto "MENU"
     mMenuTexture = mGame->GetFont()->RenderText(
@@ -1687,7 +1626,6 @@ void GameOverScene::ProcessInput(const Uint8* keyState)
     // Pressionar ENTER ou SPACE para voltar ao menu
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> Game Over -> Menu Principal");
         mGame->ClearMap();  // Limpar mapa para permitir novo jogo
         mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;
@@ -1781,14 +1719,10 @@ void VictoryScene::Enter()
     mPulseTimer = 0.0f;
 
     // Atualizar título da janela
-    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog - VITÓRIA!");
+    SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/youwin.png");
-    if (!mBackgroundTexture)
-    {
-        SDL_Log("Erro ao carregar background de Vitória!");
-    }
 
     mPlayAgainTexture = mGame->GetFont()->RenderText(
         "Menu",
@@ -1816,7 +1750,6 @@ void VictoryScene::ProcessInput(const Uint8* keyState)
     // Pressionar ENTER ou SPACE para voltar ao menu
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("==> Vitória -> Menu Principal");
         mGame->ClearMap();
         mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;

@@ -120,7 +120,7 @@ void Game::InitializeActors()
     startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
 
     // criar instância única do Player
-    mPlayer = new Player(this, "Frog Hero", 100, 100, startDeck);
+    mPlayer = new Player(this, "Frog Hero", 20, 20, startDeck);
 
     // configurar owners das cartas
     for (Card* card : mPlayer->GetDeck()) {
@@ -224,6 +224,14 @@ void Game::UpdateGame(float deltaTime)
 
 void Game::SetScene(GameScene* scene)
 {
+    // Se já tem uma cena pendente, não aceitar nova transição
+    if (mPendingScene)
+    {
+        SDL_Log("WARNING: Tentou trocar cena enquanto já há uma transição pendente!");
+        delete scene;  // Evitar memory leak
+        return;
+    }
+
     mPendingScene = scene;
 
     // Iniciar fade OUT automaticamente

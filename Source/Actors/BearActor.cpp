@@ -24,7 +24,7 @@ BearActor::~BearActor()
 AnimatedCharacterActor::EnemyStats BearActor::GetEnemyStats() const
 {
     return {
-        2,    // health
+        30,    // health
         30,    // maxHealth
         0.35   // difficulty (balanceado)
     };

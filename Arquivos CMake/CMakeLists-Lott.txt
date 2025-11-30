@@ -27,7 +27,6 @@ include_directories(
         ${GLEW_INCLUDE_DIRS}
         ${OPENGL_INCLUDE_DIR}
 )
-
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
         Source/Renderer/Shader.h
@@ -124,6 +123,10 @@ add_executable(${PROJECT_NAME}
         Source/Actors/WolfActor.cpp
         Source/Actors/GolemBossActor.h
         Source/Actors/GolemBossActor.cpp
+        Source/Actors/ChestNPC.h
+        Source/Actors/ChestNPC.cpp
+        Source/Actors/CoinNPC.h
+        Source/Actors/CoinNPC.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
         Source/Actors/NPCActor.h
