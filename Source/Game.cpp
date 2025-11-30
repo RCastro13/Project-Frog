@@ -114,13 +114,13 @@ void Game::InitializeActors()
 
     // criar deck inicial
     std::vector<Card*> startDeck;
-    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
-    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 1, nullptr));
-    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
-    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
+    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 3, nullptr));
+    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 2, nullptr));
+    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 4, nullptr));
+    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
 
     // criar instância única do Player
-    mPlayer = new Player(this, "Frog Hero", 20, 20, startDeck);
+    mPlayer = new Player(this, "Frog Hero", 100, 100, startDeck);
 
     // configurar owners das cartas
     for (Card* card : mPlayer->GetDeck()) {

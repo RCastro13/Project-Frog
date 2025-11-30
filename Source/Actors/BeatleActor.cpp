@@ -33,9 +33,9 @@ AnimatedCharacterActor::EnemyStats BeatleActor::GetEnemyStats() const
 std::vector<Card*> BeatleActor::CreateEnemyDeck() const
 {
     std::vector<Card*> deck;
-    deck.push_back(new Card("Beatle Plant Strong", AttackType::Plant, 4, 1, nullptr));
-    deck.push_back(new Card("Beatle Water", AttackType::Water, 3, 0, nullptr));
-    deck.push_back(new Card("Beatle Plant Weak", AttackType::Plant, 3, 0, nullptr));
-    deck.push_back(new Card("Beatle Neutral", AttackType::Neutral, 3, 0, nullptr));
+    deck.push_back(new Card("Beatle Plant Strong", AttackType::Plant, 4, 2, nullptr));
+    deck.push_back(new Card("Beatle Water", AttackType::Water, 3, 1, nullptr));
+    deck.push_back(new Card("Beatle Plant Weak", AttackType::Plant, 3, 1, nullptr));
+    deck.push_back(new Card("Beatle Neutral", AttackType::Neutral, 3, 1, nullptr));
     return deck;
 }
