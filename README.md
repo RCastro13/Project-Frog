@@ -1,11 +1,32 @@
 # Project-Frog
 Jogo Roguelike - Projeto final da disciplina de Desenvolvimento de Jogos Digitais UFMG
 
-# AVISOS:
+Project Frog é um jogo roguelike com combate de turnos com grande inspiração em jogos como "Slay The Spire" e "Card Jutsu" (Club Penguim). O jogador deve planejar seu caminho pelo mundo e escolher seu destino em trilhas de combate, tesouros, lojas misteriosas e descansos, pois nenhum guerreiro é de ferro.
 
-Incluí a versão do CMake que funcionou no meu computador. Como o CMake varia de computador para 
-computador, criei uma pasta chamada **Arquivos CMake** onde você pode **salvar seus arquivos CMake**. 
-Dessa forma, sempre que precisar executar o projeto, basta **copiar e colar o arquivo CMake** no 
-diretório raiz do projeto.
+O jogador inicia sua jornada com 4 cartas e deve coletar ao longo de seu caminho cartas raras e mais poderosas em busca de alcançar seu objetivo final. Fogo, água, planta e neutro, escolher as melhores combinações é vital para o progresso.
 
-Lembrem-se de colocar os Dlls na pasta "cmake-build-debug". Eu coloquei o glew32.dll, SDL2.dll e o SDL2_image.dll
+A cada tentativa o jogador deve encarar um mapa novo e utilizar os conhecimentos de suas tentativas passadas para alcançar o final e levar o sapo a glória eterna!
+
+## Funcionalidades a serem testadas
+
+- Mapas aleatórios a cada tentativa;
+- Mecânica de combate de turnos: vitória por elemento/poder da carta;
+- Decisão correta de quem vence o turno;
+- Cooldown das cartas;
+- Itens recebidos pelo baús (após vitória em combate, após nó de baú no mapa ou pela loja);
+- Animações dos ataques e personagens nas cenas;
+- Itens funcionais da loja + recuperação após o descanso;
+  
+## Créditos
+
+**Facundo Sanchez**
+-  Programação e enemy/player design;
+
+**Kayque Meira Siqueira**
+- Programação e música/aúdio;
+
+**Marcos Lott de Araújo**
+- Programação, arte e level design;
+
+**Rubens da Cunha Castro**
+- Programação, arte e game design;
