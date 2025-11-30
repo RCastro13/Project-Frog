@@ -114,10 +114,10 @@ void Game::InitializeActors()
 
     // criar deck inicial
     std::vector<Card*> startDeck;
-    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 2, nullptr));
-    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 1, nullptr));
-    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 3, nullptr));
-    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 0, nullptr));
+    startDeck.push_back(new Card("Fire Strike", AttackType::Fire, 5, 3, nullptr));
+    startDeck.push_back(new Card("Water Shield", AttackType::Water, 4, 2, nullptr));
+    startDeck.push_back(new Card("Plant Whip", AttackType::Plant, 6, 4, nullptr));
+    startDeck.push_back(new Card("Neutral Punch", AttackType::Neutral, 3, 1, nullptr));
 
     // criar instância única do Player
     mPlayer = new Player(this, "Frog Hero", 20, 20, startDeck);
@@ -224,6 +224,14 @@ void Game::UpdateGame(float deltaTime)
 
 void Game::SetScene(GameScene* scene)
 {
+    // Se já tem uma cena pendente, não aceitar nova transição
+    if (mPendingScene)
+    {
+        SDL_Log("WARNING: Tentou trocar cena enquanto já há uma transição pendente!");
+        delete scene;  // Evitar memory leak
+        return;
+    }
+
     mPendingScene = scene;
 
     // Iniciar fade OUT automaticamente

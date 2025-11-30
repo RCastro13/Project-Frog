@@ -24,11 +24,14 @@ public:
         float brilho,
         const std::map<AttackType, Texture*>& texturasAtivas,
         const std::map<AttackType, Texture*>& texturasCooldown,
-        Texture* iconeTempo
+        Texture* iconeTempo,
+        bool mostrarInfoCooldown = true
     );
 
     // Renderiza barra de HP
     void RenderizarBarraHP(Vector2 posicao, int hpAtual, int hpMax, bool isInimigo);
+
+    void RenderizarTextoGenerico(Vector2 posicao, int valor, Vector3 cor, int tamanhoFonte);
 
     // Renderiza número de poder de uma carta
     void RenderizarTextoPoder(Vector2 posicao, int poder, Vector3 cor, int tamanhoFonte);

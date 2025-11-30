@@ -102,7 +102,7 @@ private:
     class Texture* mBackgroundTexture;
 
     // Sistema de menu com opções
-    int mSelectedOption;      // 0 = Jogar, 1 = Sair, 2 = Debugar
+    int mSelectedOption;      // 0 = Jogar, 1 = Sair
     bool mKeyWasPressed;      // Controle de input
 
     // Variavel de audio para controle
@@ -110,7 +110,6 @@ private:
 
     // Texturas das opções do menu
     class Texture* mOptionStartTexture;
-    class Texture* mOptionDebugTexture;
     class Texture* mOptionExitTexture;
 };
 
@@ -138,6 +137,7 @@ private:
     class MapNode* mCurrentNode;
     class MapNode* mSelectedNode;  // Nó que o cursor/seleção está apontando
     int mSelectedIndex;            // Índice do nó selecionado entre os acessíveis
+    bool mConfirming;              // Flag para prevenir múltiplas confirmações
 
     // Background
     class Texture* mBackgroundTexture;

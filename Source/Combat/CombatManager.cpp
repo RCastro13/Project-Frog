@@ -93,11 +93,6 @@ void CombatManager::EnemySelectCard()
         case AttackType::Plant:   typeName = "🌿 Plant"; break;
         case AttackType::Neutral: typeName = "⚪ Neutral"; break;
     }
-
-    SDL_Log("Enemy usou: %s (Tipo: %s, Dano: %d)",
-            mEnemySelectedCard->GetName().c_str(),
-            typeName,
-            mEnemySelectedCard->GetDamage());
 }
 
 // CompareTypes foi removido, pois agora é tratado por Card::Fight
@@ -119,7 +114,6 @@ void CombatManager::ResolveCombat()
     int enemyDamage = enemyHPBefore - mEnemy->GetHealth();
 
     // Logar resultado do turno
-    SDL_Log("");
     if (winner == mPlayer)
     {
         SDL_Log("✅ PLAYER VENCEU O TURNO! (Causou %d de dano)", enemyDamage);
