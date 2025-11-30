@@ -18,6 +18,10 @@ VictoryScene::VictoryScene(Game* game)
 
 VictoryScene::~VictoryScene()
 {
+    if (mPlayAgainTexture) {
+        delete mPlayAgainTexture;
+        mPlayAgainTexture = nullptr;
+    }
 }
 
 void VictoryScene::Enter()

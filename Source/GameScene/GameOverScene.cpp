@@ -18,6 +18,10 @@ GameOverScene::GameOverScene(Game* game)
 
 GameOverScene::~GameOverScene()
 {
+    if (mMenuTexture) {
+        delete mMenuTexture;
+        mMenuTexture = nullptr;
+    }
 }
 
 void GameOverScene::Enter()

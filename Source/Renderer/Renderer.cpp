@@ -21,6 +21,11 @@ Renderer::~Renderer()
 
 bool Renderer::Initialize(float width, float height)
 {
+    if (IMG_Init(IMG_INIT_PNG) == 0) {
+        SDL_Log("Unable to initialize SDL_image: %s", IMG_GetError());
+        return false;
+    }
+
     // Specify version 3.3 (core profile)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -90,6 +95,8 @@ void Renderer::Shutdown()
 
     SDL_GL_DeleteContext(mContext);
 	SDL_DestroyWindow(mWindow);
+
+    IMG_Quit();
 }
 
 void Renderer::Clear()

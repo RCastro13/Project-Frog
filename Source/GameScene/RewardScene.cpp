@@ -34,6 +34,14 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
 
 RewardScene::~RewardScene()
 {
+    if (mTextTexture) {
+        delete mTextTexture;
+        mTextTexture = nullptr;
+    }
+    if (mRewardCard) {
+        delete mRewardCard;
+        mRewardCard = nullptr;
+    }
 }
 
 void RewardScene::Enter()

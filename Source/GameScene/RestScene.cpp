@@ -17,6 +17,18 @@ RestScene::RestScene(Game* game)
 
 RestScene::~RestScene()
 {
+    if (mTitleTexture) {
+        delete mTitleTexture;
+        mTitleTexture = nullptr;
+    }
+    if (mOption1Texture) {
+        delete mOption1Texture;
+        mOption1Texture = nullptr;
+    }
+    if (mOption2Texture) {
+        delete mOption2Texture;
+        mOption2Texture = nullptr;
+    }
 }
 
 void RestScene::Enter()
@@ -171,6 +183,18 @@ void RestScene::Render()
 
 void RestScene::Exit()
 {
+    if (mTitleTexture) {
+        delete mTitleTexture;
+        mTitleTexture = nullptr;
+    }
+    if (mOption1Texture) {
+        delete mOption1Texture;
+        mOption1Texture = nullptr;
+    }
+    if (mOption2Texture) {
+        delete mOption2Texture;
+        mOption2Texture = nullptr;
+    }
     mBackgroundTexture = nullptr;
 }
 
