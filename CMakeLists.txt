@@ -1,26 +1,59 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
+# Detectar sistema operacional e configurar dependências
+if(APPLE)
+    message(STATUS "Configurando para macOS...")
 
-find_package(SDL2 2.32.2 EXACT REQUIRED)
-find_package(SDL2_image REQUIRED)
-find_package(SDL2_mixer REQUIRED)
-find_package(SDL2_ttf REQUIRED)
+    # macOS - SDL2 via Frameworks
+    set(CMAKE_PREFIX_PATH "/opt/homebrew")
 
-set(GLEW_ROOT "C:/Program Files/GLEW")
-set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
-set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+    # SDL2 Frameworks
+    find_library(SDL2_LIBRARY SDL2 PATHS /Library/Frameworks)
+    find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS /Library/Frameworks)
+    find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS /Library/Frameworks)
+    find_library(SDL2_MIXER_LIBRARY SDL2_mixer PATHS /Library/Frameworks)
 
-include_directories(${GLEW_INCLUDE_DIRS})
+    # GLEW e OpenGL via Homebrew
+    find_package(GLEW REQUIRED)
+    find_package(OpenGL REQUIRED)
 
-include_directories(
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2_IMAGE_INCLUDE_DIR}
-        ${GLEW_INCLUDE_DIRS}
-)
+    include_directories(
+            /Library/Frameworks/SDL2.framework/Headers
+            /Library/Frameworks/SDL2_image.framework/Headers
+            /Library/Frameworks/SDL2_ttf.framework/Headers
+            /Library/Frameworks/SDL2_mixer.framework/Headers
+            ${GLEW_INCLUDE_DIRS}
+            ${OPENGL_INCLUDE_DIR}
+    )
+
+elseif(WIN32)
+    message(STATUS "Configurando para Windows...")
+
+    # Windows - SDL2 via vcpkg/cmake packages
+    find_package(SDL2 2.32.2 EXACT REQUIRED)
+    find_package(SDL2_image REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+    find_package(SDL2_ttf REQUIRED)
+
+    # GLEW no Windows
+    set(GLEW_ROOT "C:/Program Files/GLEW")
+    set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
+    set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
+
+    include_directories(
+            ${GLEW_INCLUDE_DIRS}
+            ${SDL2_INCLUDE_DIRS}
+            ${SDL2_IMAGE_INCLUDE_DIR}
+    )
+
+else()
+    message(FATAL_ERROR "Sistema operacional não suportado!")
+endif()
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
         Source/Renderer/Shader.h
@@ -145,14 +178,26 @@ add_executable(${PROJECT_NAME}
         Source/Actors/RabbitNPC.cpp
 )
 
-# Libs
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        ${GLEW_LIBRARIES}
-        SDL2::SDL2main
-        SDL2_image::SDL2_image
-        SDL2_mixer::SDL2_mixer
-        SDL2_ttf::SDL2_ttf
-        SDL2::SDL2
-        opengl32
-)
+# Libs - configuração por plataforma
+if(APPLE)
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+            ${SDL2_LIBRARY}
+            ${SDL2_IMAGE_LIBRARY}
+            ${SDL2_TTF_LIBRARY}
+            ${SDL2_MIXER_LIBRARY}
+            GLEW::GLEW
+            OpenGL::GL
+    )
+elseif(WIN32)
+    target_link_libraries(${PROJECT_NAME}
+            PRIVATE
+            ${GLEW_LIBRARIES}
+            SDL2::SDL2main
+            SDL2_image::SDL2_image
+            SDL2_mixer::SDL2_mixer
+            SDL2_ttf::SDL2_ttf
+            SDL2::SDL2
+            opengl32
+    )
+endif()
