@@ -9,7 +9,7 @@
 #include "../Math.h"
 #include <SDL.h>
 
-constexpr bool SHOW_DEBUG_OPTION = true;
+constexpr bool SHOW_DEBUG_OPTION = false;
 
 MainMenuScene::MainMenuScene(Game* game)
     : GameScene(game)
