@@ -41,6 +41,7 @@ protected:
 
     void UpdateFade(float deltaTime);
     void RenderFade();
+    bool ShouldBlockInput() const;
 };
 
 class MainMenuScene;

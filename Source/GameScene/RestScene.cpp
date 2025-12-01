@@ -10,6 +10,9 @@
 RestScene::RestScene(Game* game)
     : GameScene(game)
     , mBackgroundTexture(nullptr)
+    , mTitleTexture(nullptr)
+    , mOption1Texture(nullptr)
+    , mOption2Texture(nullptr)
     , mSelectedOption(0)
     , mKeyWasPressed(false)
 {
@@ -83,8 +86,7 @@ void RestScene::Update(float deltaTime)
 
 void RestScene::ProcessInput(const Uint8* keyState)
 {
-    // Bloquear inputs durante fade
-    if (mFadeAlpha > 0.0f)
+    if (ShouldBlockInput())
         return;
 
     // Opção 1: Descansar (+10 HP)
@@ -151,7 +153,9 @@ void RestScene::Render()
             Vector2(static_cast<float>(mTitleTexture->GetWidth()), static_cast<float>(mTitleTexture->GetHeight())),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mTitleTexture
+            mTitleTexture,
+            Vector4::UnitRect,
+            Vector2::Zero
         );
     }
 
@@ -163,7 +167,9 @@ void RestScene::Render()
             Vector2(static_cast<float>(mOption1Texture->GetWidth()), static_cast<float>(mOption1Texture->GetHeight())),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mOption1Texture
+            mOption1Texture,
+            Vector4::UnitRect,
+            Vector2::Zero
         );
     }
 
@@ -175,7 +181,9 @@ void RestScene::Render()
             Vector2(static_cast<float>(mOption2Texture->GetWidth()), static_cast<float>(mOption2Texture->GetHeight())),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mOption2Texture
+            mOption2Texture,
+            Vector4::UnitRect,
+            Vector2::Zero
         );
     }
     RenderFade();

@@ -174,7 +174,7 @@ void DebugMenuScene::Update(float deltaTime)
 
 void DebugMenuScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f)
+    if (ShouldBlockInput())
         return;
 
     if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)

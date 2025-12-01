@@ -214,6 +214,7 @@ void Game::SetScene(GameScene* scene)
 {
     if (mPendingScene)
     {
+        SDL_Log("WARNING: Tentou trocar cena enquanto já há uma transição pendente!");
         delete scene;
         return;
     }

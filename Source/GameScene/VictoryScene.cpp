@@ -53,7 +53,7 @@ void VictoryScene::Update(float deltaTime)
 
 void VictoryScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f || mGame->IsFading())
+    if (ShouldBlockInput())
         return;
 
     if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed && !mConfirming)

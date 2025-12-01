@@ -161,7 +161,7 @@ void ShopScene::Update(float deltaTime)
 
 void ShopScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f) return;
+    if (ShouldBlockInput()) return;
 
     if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !mKeyWasPressed)
     {

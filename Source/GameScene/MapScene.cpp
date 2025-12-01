@@ -111,7 +111,7 @@ void MapScene::Update(float deltaTime)
 
 void MapScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f || mGame->IsFading())
+    if (ShouldBlockInput())
         return;
 
     static bool upWasPressed = false;
@@ -480,7 +480,7 @@ std::string MapScene::GetIconPathForNodeType(MapNodeType type)
         case MapNodeType::REST:
             return "../Assets/Icons/White/icon_heart.png";
         case MapNodeType::BOSS:
-            return "../Assets/Icons/White/icon_trophy.png";
+            return "../Assets/Icons/White/icon_skull.png";
         default:
             return "../Assets/Icons/White/icon_circle.png";
     }

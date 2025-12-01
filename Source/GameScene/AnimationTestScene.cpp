@@ -225,6 +225,9 @@ void AnimationTestScene::RenderInstructions()
 
 void AnimationTestScene::ProcessInput(const Uint8* keyState)
 {
+    if (ShouldBlockInput())
+        return;
+
     // ESC - voltar ao menu
     if (keyState[SDL_SCANCODE_ESCAPE] && !mKeyWasPressed)
     {

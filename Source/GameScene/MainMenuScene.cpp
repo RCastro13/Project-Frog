@@ -9,7 +9,7 @@
 #include "../Math.h"
 #include <SDL.h>
 
-constexpr bool SHOW_DEBUG_OPTION = false;
+constexpr bool SHOW_DEBUG_OPTION = true;
 
 MainMenuScene::MainMenuScene(Game* game)
     : GameScene(game)
@@ -95,7 +95,7 @@ void MainMenuScene::Update(float deltaTime)
 
 void MainMenuScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f || mGame->IsFading())
+    if (ShouldBlockInput())
         return;
 
     int totalOptions = SHOW_DEBUG_OPTION ? 3 : 2;
