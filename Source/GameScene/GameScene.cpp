@@ -34,3 +34,8 @@ void GameScene::UpdateFade(float deltaTime)
 void GameScene::RenderFade()
 {
 }
+
+bool GameScene::ShouldBlockInput() const
+{
+    return mFadeAlpha > 0.0f || mGame->IsFading();
+}

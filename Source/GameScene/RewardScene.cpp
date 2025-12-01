@@ -199,8 +199,7 @@ void RewardScene::Update(float deltaTime)
 
 void RewardScene::ProcessInput(const Uint8* keyState)
 {
-    // bloquear inputs durante fade
-    if (mFadeAlpha > 0.0f) return;
+    if (ShouldBlockInput()) return;
 
     // se a animação do baú ainda não acabou, não processa input
     if (mState == SceneState::ANIMATING_CHEST) return;

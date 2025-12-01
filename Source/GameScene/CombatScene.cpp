@@ -424,7 +424,7 @@ void CombatScene::ProcessInput(const Uint8* keyState)
     if (!mCombatManager)
         return;
 
-    if (mFadeAlpha > 0.0f)
+    if (ShouldBlockInput())
         return;
 
     if (mShowingCards)

@@ -111,7 +111,7 @@ void MapScene::Update(float deltaTime)
 
 void MapScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f || mGame->IsFading())
+    if (ShouldBlockInput())
         return;
 
     static bool upWasPressed = false;
