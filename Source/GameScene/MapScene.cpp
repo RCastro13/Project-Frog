@@ -480,7 +480,7 @@ std::string MapScene::GetIconPathForNodeType(MapNodeType type)
         case MapNodeType::REST:
             return "../Assets/Icons/White/icon_heart.png";
         case MapNodeType::BOSS:
-            return "../Assets/Icons/White/icon_trophy.png";
+            return "../Assets/Icons/White/icon_skull.png";
         default:
             return "../Assets/Icons/White/icon_circle.png";
     }
