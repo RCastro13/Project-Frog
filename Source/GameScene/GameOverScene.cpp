@@ -13,6 +13,7 @@ GameOverScene::GameOverScene(Game* game)
     , mMenuTexture(nullptr)
     , mPulseTimer(0.0f)
     , mKeyWasPressed(false)
+    , mConfirming(false)
 {
 }
 
@@ -28,6 +29,7 @@ void GameOverScene::Enter()
 {
     mStateTime = 0.0f;
     mPulseTimer = 0.0f;
+    mConfirming = false;
 
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
@@ -51,11 +53,12 @@ void GameOverScene::Update(float deltaTime)
 
 void GameOverScene::ProcessInput(const Uint8* keyState)
 {
-    if (mFadeAlpha > 0.0f)
+    if (mFadeAlpha > 0.0f || mGame->IsFading())
         return;
 
-    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed && !mConfirming)
     {
+        mConfirming = true;
         mGame->ClearMap();
         mGame->SetScene(new MainMenuScene(mGame));
         mKeyWasPressed = true;

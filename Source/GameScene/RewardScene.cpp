@@ -64,6 +64,9 @@ void RewardScene::Enter()
     // carregar texturas de cartas
     LoadCardTextures();
 
+    // Carregar ícone de tempo para cooldown
+    mTimeIconTexture = mGame->GetRenderer()->GetTexture("../Assets/Icons/White/icon_time.png");
+
     //criar e posicionar o bau
     mChestNPC = new ChestNPC(mGame);
     mChestNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 + 50));
@@ -345,10 +348,7 @@ void RewardScene::RenderRewardCard()
         );
 
         //renderizar o valor de poder da carta
-        if (mRewardCard->IsAvailable())
-        {
-            RenderCardInfo(mRewardCard);
-        }
+        RenderCardInfo(mRewardCard);
     }
 }
 
@@ -386,7 +386,37 @@ void RewardScene::RenderCardInfo(Card* card, Vector2 customPos, Vector2 customSi
         tamanhoFonte
     );
 
-    //se quisermos renderizar mais coisas de texto aq, é só criar mais uma função parecida com o RenderCardValueText
+    // Renderizar cooldown no topo
+    RenderCardCooldown(card, cardPosition, cardSize);
+}
+
+void RewardScene::RenderCardCooldown(Card* card, Vector2 cardPosition, Vector2 cardSize) {
+    if (!mTimeIconTexture) return;
+
+    int tamanhoFonte = (cardSize.x > 100.0f) ? FontSizes::POWER_LARGE : FontSizes::POWER_SMALL;
+    float offsetTop = (cardSize.x > 100.0f) ?
+        Offsets::POWER_TEXT_FROM_BOTTOM_LARGE :
+        Offsets::POWER_TEXT_FROM_BOTTOM;
+
+    // Renderiza cooldown total pequeno no topo
+    float iconSizeSmall = 20.0f * (cardSize.x / 80.0f); // escala com tamanho da carta
+    float topY = cardPosition.y - cardSize.y / 2.0f + offsetTop;
+
+    // Ícone do tempo
+    mGame->GetRenderer()->DrawTexture(
+        Vector2(cardPosition.x - 12.0f, topY),
+        Vector2(iconSizeSmall, iconSizeSmall),
+        0.0f, Vector3(1.0f, 1.0f, 1.0f), mTimeIconTexture,
+        Vector4::UnitRect, Vector2::Zero
+    );
+
+    // Número do cooldown
+    RenderCardValueText(
+        Vector2(cardPosition.x + 12.0f, topY),
+        card->GetCoolDown(),
+        Vector3(0.6f, 0.8f, 1.0f), // Azul claro
+        tamanhoFonte
+    );
 }
 
 void RewardScene::RenderCardValueText(Vector2 pos, int value, Vector3 color, int fontSize)
@@ -432,9 +462,7 @@ void RewardScene::RenderDeckSelection()
                0.0f, Vector3(1,1,1), newTex, Vector4::UnitRect, Vector2::Zero
            );
 
-            if (mRewardCard->IsAvailable()) {
-                RenderCardInfo(mRewardCard, cardPosition, cardSize);
-            }
+            RenderCardInfo(mRewardCard, cardPosition, cardSize);
         }
     }
 
@@ -461,9 +489,7 @@ void RewardScene::RenderDeckSelection()
                 0.0f, Vector3(1,1,1), tex, Vector4::UnitRect, Vector2::Zero
             );
 
-            if (card->IsAvailable()) {
-                RenderCardInfo(card, Vector2(x, y), Vector2(RewardConstants::CARD_WIDTH, RewardConstants::CARD_HEIGHT));
-            }
+            RenderCardInfo(card, Vector2(x, y), Vector2(RewardConstants::CARD_WIDTH, RewardConstants::CARD_HEIGHT));
         }
     }
 }

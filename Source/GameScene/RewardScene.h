@@ -79,6 +79,7 @@ private:
     // Texturas das cartas (Copiado de CombatScene)
     std::map<AttackType, class Texture*> mCardTextures;
     class Texture* mCardSelectedHighlight; // Opcional: textura para destacar seleção
+    class Texture* mTimeIconTexture; // Ícone de tempo para cooldown
 
     bool mCoinSpawned; // para saber quando spawnar a moeda saindo do bau
 
@@ -92,6 +93,7 @@ private:
     void SpawnText(std::string text); // função pra spawnar o texto na tela
     void RenderCardValueText(Vector2 pos, int value, Vector3 color, int fontSize);
     void RenderCardInfo(Card* card, Vector2 customPos = Vector2(0.0f, 0.0f), Vector2 customCardSize = Vector2(0.0f, 0.0f));
+    void RenderCardCooldown(Card* card, Vector2 cardPosition, Vector2 cardSize);
 
     // Helpers visuais
     void LoadCardTextures();

@@ -26,8 +26,10 @@ private:
     Texture* mBackgroundTexture;
     int mSelectedOption;
     bool mKeyWasPressed;
+    bool mConfirming;
 
     Texture* mOptionStartTexture;
+    Texture* mOptionDebugTexture;
     Texture* mOptionExitTexture;
 
     SoundHandle mMenuSound;

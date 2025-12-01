@@ -21,7 +21,7 @@ Renderer::~Renderer()
 
 bool Renderer::Initialize(float width, float height)
 {
-    if (IMG_Init(IMG_INIT_PNG) == 0) {
+    if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0) {
         SDL_Log("ERROR: Unable to initialize SDL_image: %s", IMG_GetError());
         return false;
     }

@@ -54,22 +54,30 @@ DebugMenuScene::~DebugMenuScene()
 
 void DebugMenuScene::Enter()
 {
+
     mStateTime = 0.0f;
     mFadeAlpha = 1.0f;
     mFadeTimer = 0.0f;
     mFadingIn = true;
 
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/debug.jpeg");
+    if (!mBackgroundTexture) {
+        mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/menu.png");
+    }
 
     UpdateMenuTextures();
 }
 
 void DebugMenuScene::UpdateMenuTextures()
 {
+
     Vector3 goldColor(1.0f, 0.84f, 0.0f);
     Vector3 whiteColor(1.0f, 1.0f, 1.0f);
 
-    if (!mGame->GetFont()) return;
+    if (!mGame->GetFont()) {
+        SDL_Log("ERROR: Font is null in UpdateMenuTextures()!");
+        return;
+    }
 
     if (mOptionAnimTestTexture) {
         delete mOptionAnimTestTexture;
@@ -155,6 +163,7 @@ void DebugMenuScene::UpdateMenuTextures()
         18,
         400
     );
+
 }
 
 void DebugMenuScene::Update(float deltaTime)
@@ -335,4 +344,34 @@ void DebugMenuScene::Render()
 
 void DebugMenuScene::Exit()
 {
+    if (mOptionAnimTestTexture) {
+        delete mOptionAnimTestTexture;
+        mOptionAnimTestTexture = nullptr;
+    }
+    if (mOptionGameOverTexture) {
+        delete mOptionGameOverTexture;
+        mOptionGameOverTexture = nullptr;
+    }
+    if (mOptionVictoryTexture) {
+        delete mOptionVictoryTexture;
+        mOptionVictoryTexture = nullptr;
+    }
+    if (mOptionRewardTexture) {
+        delete mOptionRewardTexture;
+        mOptionRewardTexture = nullptr;
+    }
+    if (mOptionShopTexture) {
+        delete mOptionShopTexture;
+        mOptionShopTexture = nullptr;
+    }
+    if (mOptionRestTexture) {
+        delete mOptionRestTexture;
+        mOptionRestTexture = nullptr;
+    }
+    if (mOptionBackTexture) {
+        delete mOptionBackTexture;
+        mOptionBackTexture = nullptr;
+    }
+
+    mBackgroundTexture = nullptr;
 }

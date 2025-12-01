@@ -24,5 +24,6 @@ private:
     Texture* mMenuTexture;
     float mPulseTimer;
     bool mKeyWasPressed;
+    bool mConfirming;
 };
 

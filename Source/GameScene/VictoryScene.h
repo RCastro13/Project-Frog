@@ -24,5 +24,6 @@ private:
     Texture* mPlayAgainTexture;
     float mPulseTimer;
     bool mKeyWasPressed;
+    bool mConfirming;
 };
 
