@@ -404,7 +404,7 @@ void RewardScene::RenderCardCooldown(Card* card, Vector2 cardPosition, Vector2 c
 
     // Ícone do tempo
     mGame->GetRenderer()->DrawTexture(
-        Vector2(cardPosition.x - 12.0f, topY),
+        Vector2(cardPosition.x - 20.0f, topY - 60.0f),
         Vector2(iconSizeSmall, iconSizeSmall),
         0.0f, Vector3(1.0f, 1.0f, 1.0f), mTimeIconTexture,
         Vector4::UnitRect, Vector2::Zero
@@ -412,7 +412,7 @@ void RewardScene::RenderCardCooldown(Card* card, Vector2 cardPosition, Vector2 c
 
     // Número do cooldown
     RenderCardValueText(
-        Vector2(cardPosition.x + 12.0f, topY),
+        Vector2(cardPosition.x + 20.0f, topY - 60.0f),
         card->GetCoolDown(),
         Vector3(0.6f, 0.8f, 1.0f), // Azul claro
         tamanhoFonte
