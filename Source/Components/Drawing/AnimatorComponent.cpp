@@ -13,6 +13,8 @@ AnimatorComponent::AnimatorComponent(class Actor* owner, const std::string &texP
         :DrawComponent(owner,  drawOrder)
         ,mAnimTimer(0.0f)
         ,mIsPaused(false)
+        ,mIsLooping(true)
+        ,mIsFinished(false)
         ,mWidth(width)
         ,mHeight(height)
         ,mTextureFactor(1.0f)
@@ -32,14 +34,14 @@ bool AnimatorComponent::LoadSpriteSheetData(const std::string& dataPath)
     std::ifstream spriteSheetFile(dataPath);
 
     if (!spriteSheetFile.is_open()) {
-        SDL_Log("Failed to open sprite sheet data file: %s", dataPath.c_str());
+        SDL_Log("ERROR: Failed to open sprite sheet data file: %s", dataPath.c_str());
         return false;
     }
 
     nlohmann::json spriteSheetData = nlohmann::json::parse(spriteSheetFile);
 
     if (spriteSheetData.is_null()) {
-        SDL_Log("Failed to parse sprite sheet data file: %s", dataPath.c_str());
+        SDL_Log("ERROR: Failed to parse sprite sheet data file: %s", dataPath.c_str());
         return false;
     }
 
@@ -116,18 +118,42 @@ void AnimatorComponent::Update(float deltaTime)
 
     mAnimTimer += mAnimFPS * deltaTime;
 
-    while (mAnimTimer >= static_cast<float>(it->second.size())) {
-        mAnimTimer -= static_cast<float>(it->second.size());
+    float duration = static_cast<float>(it->second.size());
+
+    if (mIsLooping)
+    { //se for uma animação que fica em looping
+        while (mAnimTimer >= duration) {
+            mAnimTimer -= duration;
+        }
+    }
+    else
+    {
+        //se for uma animação que roda só uma vez
+        if (mAnimTimer >= duration) {
+            // trava o timer levemente antes do fim para exibir o último frame estático
+            mAnimTimer = duration - 0.01f;
+            mIsFinished = true;
+        }
+    }
+}
+
+void AnimatorComponent::SetFrameTime(float seconds)
+{
+    if (seconds > 0.0f) {
+        mAnimFPS = 1.0f / seconds;
+    } else {
+        mAnimFPS = 0.0f; // Evita divisão por zero
     }
 }
 
 void AnimatorComponent::SetAnimation(const std::string& name)
 {
     if (mAnimations.find(name) != mAnimations.end()) {
-    mAnimName = name;
+        mAnimName = name;
         mAnimTimer = 0.0f;
+        mIsFinished = false;
     } else {
-        SDL_Log("Warning: Animation '%s' not found", name.c_str());
+        SDL_Log("ERROR: Animation '%s' not found", name.c_str());
     }
 }
 

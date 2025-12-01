@@ -1,33 +1,26 @@
 cmake_minimum_required(VERSION 3.26)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(PROJECT_NAME "Project-Frog")
 project(${PROJECT_NAME})
 
 
-# macOS - SDL2 via Frameworks (padrão do time)
-set(CMAKE_PREFIX_PATH "/opt/homebrew")
+find_package(SDL2 2.32.2 EXACT REQUIRED)
+find_package(SDL2_image REQUIRED)
+find_package(SDL2_mixer REQUIRED)
+find_package(SDL2_ttf REQUIRED)
 
-# SDL2 Frameworks
-find_library(SDL2_LIBRARY SDL2 PATHS /Library/Frameworks)
-find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS /Library/Frameworks)
-find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS /Library/Frameworks)
-find_library(SDL2_MIXER_LIBRARY SDL2_mixer PATHS /Library/Frameworks)
+set(GLEW_ROOT "C:/Program Files/GLEW")
+set(GLEW_INCLUDE_DIRS "${GLEW_ROOT}/include")
+set(GLEW_LIBRARIES "${GLEW_ROOT}/lib/Release/x64/glew32.lib")
 
-# GLEW e OpenGL via Homebrew
-find_package(GLEW REQUIRED)
-find_package(OpenGL REQUIRED)
+include_directories(${GLEW_INCLUDE_DIRS})
 
 include_directories(
-        /Library/Frameworks/SDL2.framework/Headers
-        /Library/Frameworks/SDL2_image.framework/Headers
-        /Library/Frameworks/SDL2_ttf.framework/Headers
-        /Library/Frameworks/SDL2_mixer.framework/Headers
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2_IMAGE_INCLUDE_DIR}
         ${GLEW_INCLUDE_DIRS}
-        ${OPENGL_INCLUDE_DIR}
 )
-
 add_executable(${PROJECT_NAME}
         Source/Renderer/Shader.cpp
         Source/Renderer/Shader.h
@@ -76,11 +69,33 @@ add_executable(${PROJECT_NAME}
         Source/GameScene/AnimationTestScene.cpp
         Source/GameScene/DebugMenuScene.h
         Source/GameScene/DebugMenuScene.cpp
+        Source/GameScene/RewardScene.h
+        Source/GameScene/RewardScene.cpp
+        Source/GameScene/ShopScene.h
+        Source/GameScene/ShopScene.cpp
+        Source/GameScene/RestScene.h
+        Source/GameScene/RestScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
         Source/Interface/UIText.cpp
         Source/GameScene/GameScene.cpp
+        Source/GameScene/SceneInputHelper.h
+        Source/GameScene/SceneInputHelper.cpp
+        Source/GameScene/MenuTextureHelper.h
+        Source/GameScene/MenuTextureHelper.cpp
+        Source/GameScene/MainMenuScene.h
+        Source/GameScene/MainMenuScene.cpp
+        Source/GameScene/MapScene.h
+        Source/GameScene/MapScene.cpp
+        Source/GameScene/CombatScene.h
+        Source/GameScene/CombatScene.cpp
+        Source/GameScene/GameOverScene.h
+        Source/GameScene/GameOverScene.cpp
+        Source/GameScene/VictoryScene.h
+        Source/GameScene/VictoryScene.cpp
+        Source/GameScene/BlackScreenScene.h
+        Source/GameScene/BlackScreenScene.cpp
         Source/Map/MapNodeType.h
         Source/Map/MapNode.h
         Source/Map/MapNode.cpp
@@ -116,17 +131,28 @@ add_executable(${PROJECT_NAME}
         Source/Actors/SnakeActor.cpp
         Source/Actors/WolfActor.h
         Source/Actors/WolfActor.cpp
+        Source/Actors/GolemBossActor.h
+        Source/Actors/GolemBossActor.cpp
+        Source/Actors/ChestNPC.h
+        Source/Actors/ChestNPC.cpp
+        Source/Actors/CoinNPC.h
+        Source/Actors/CoinNPC.cpp
         Source/Actors/MagicProjectileActor.h
         Source/Actors/MagicProjectileActor.cpp
+        Source/Actors/NPCActor.h
+        Source/Actors/NPCActor.cpp
+        Source/Actors/RabbitNPC.h
+        Source/Actors/RabbitNPC.cpp
 )
 
 # Libs
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
-        ${SDL2_LIBRARY}
-        ${SDL2_IMAGE_LIBRARY}
-        ${SDL2_TTF_LIBRARY}
-        ${SDL2_MIXER_LIBRARY}
-        GLEW::GLEW
-        OpenGL::GL
+        ${GLEW_LIBRARIES}
+        SDL2::SDL2main
+        SDL2_image::SDL2_image
+        SDL2_mixer::SDL2_mixer
+        SDL2_ttf::SDL2_ttf
+        SDL2::SDL2
+        opengl32
 )

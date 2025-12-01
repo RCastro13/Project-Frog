@@ -59,7 +59,7 @@ MapNodeType MapGenerator::SelectRandomType(int layer, int totalLayers, const Map
         float rand = Random::GetFloat();
         if (rand < 0.7f) return MapNodeType::COMBAT;
         if (rand < 0.9f) return MapNodeType::TREASURE;
-        return MapNodeType::ELITE;
+        return MapNodeType::TREASURE;
     }
 
     // Distribuição normal para camadas intermediárias
@@ -70,7 +70,7 @@ MapNodeType MapGenerator::SelectRandomType(int layer, int totalLayers, const Map
     if (rand < accumulated) return MapNodeType::COMBAT;
 
     accumulated += config.eliteChance;
-    if (rand < accumulated) return MapNodeType::ELITE;
+    //if (rand < accumulated) return MapNodeType::ELITE;
 
     accumulated += config.shopChance;
     if (rand < accumulated) return MapNodeType::SHOP;

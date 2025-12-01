@@ -21,6 +21,11 @@ Renderer::~Renderer()
 
 bool Renderer::Initialize(float width, float height)
 {
+    if (IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) == 0) {
+        SDL_Log("ERROR: Unable to initialize SDL_image: %s", IMG_GetError());
+        return false;
+    }
+
     // Specify version 3.3 (core profile)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -41,13 +46,13 @@ bool Renderer::Initialize(float width, float height)
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
-        SDL_Log("Failed to initialize GLEW.");
+        SDL_Log("ERROR: Failed to initialize GLEW.");
         return false;
     }
 
 	// Make sure we can create/compile shaders
 	if (!LoadShaders()) {
-		SDL_Log("Failed to load shaders.");
+		SDL_Log("ERROR: Failed to load shaders.");
 		return false;
 	}
 
@@ -90,6 +95,8 @@ void Renderer::Shutdown()
 
     SDL_GL_DeleteContext(mContext);
 	SDL_DestroyWindow(mWindow);
+
+    IMG_Quit();
 }
 
 void Renderer::Clear()

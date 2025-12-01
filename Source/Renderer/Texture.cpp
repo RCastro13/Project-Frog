@@ -11,18 +11,18 @@ Texture::Texture()
 
 Texture::~Texture()
 {
+    if (mTextureID != 0)
+    {
+        glDeleteTextures(1, &mTextureID);
+        mTextureID = 0;
+    }
 }
 
 bool Texture::Load(const std::string &filePath)
 {
-    if (IMG_Init(IMG_INIT_PNG) == 0) {
-        SDL_Log("Unable to initialize SDL_image: %s", SDL_GetError());
-        return false;
-    }
-
     SDL_Surface* surf = IMG_Load(filePath.c_str());
     if (!surf) {
-        SDL_Log("Falha ao carregar textura: %s", filePath.c_str());
+        SDL_Log("ERROR: Failed to load texture: %s", filePath.c_str());
         return false;
     }
 
@@ -51,7 +51,7 @@ bool Texture::Load(const std::string &filePath)
 void Texture::CreateFromSurface(SDL_Surface* surf)
 {
     if (!surf) {
-        SDL_Log("Não é possível criar textura de surface nulo");
+        SDL_Log("ERROR: Cannot create texture from null surface");
         return;
     }
 

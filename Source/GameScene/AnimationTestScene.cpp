@@ -1,4 +1,5 @@
 #include "AnimationTestScene.h"
+#include "MainMenuScene.h"
 #include "../Game.h"
 #include "../Actors/BearActor.h"
 #include "../Actors/BeatleActor.h"

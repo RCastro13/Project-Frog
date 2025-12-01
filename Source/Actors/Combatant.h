@@ -5,7 +5,7 @@
 #include "../Combat/Card.h"
 
 
-class Combatant : Actor
+class Combatant : public Actor
 {
     public:
     Combatant(Game* game, std::string name, int health, int maxHealth, std::vector<Card*> deck = std::vector<Card*>());
@@ -20,9 +20,11 @@ class Combatant : Actor
     int GetHealth() const { return mHealth; }
     int GetMaxHealth() const { return mMaxHealth; }
 
+    void IncreaseMaxHealth(int amount);
+
     virtual void Death();
 
-    std::vector<Card*> GetDeck(){return mDeck;}
+    std::vector<Card*>& GetDeck(){return mDeck;}
 
 private:
     std::string mName;

@@ -22,11 +22,14 @@ private:
 
     class Texture* mBackgroundTexture;
 
-    int mSelectedOption;      // 0 = Teste Animações, 1 = Game Over, 2 = Vitória, 3 = Voltar
+    int mSelectedOption;      // 0-6 = opções, 6 = Voltar
     bool mKeyWasPressed;
 
     class Texture* mOptionAnimTestTexture;
     class Texture* mOptionGameOverTexture;
     class Texture* mOptionVictoryTexture;
+    class Texture* mOptionRewardTexture;
+    class Texture* mOptionShopTexture;
+    class Texture* mOptionRestTexture;
     class Texture* mOptionBackTexture;
 };

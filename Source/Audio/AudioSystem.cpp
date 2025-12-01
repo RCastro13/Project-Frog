@@ -207,7 +207,7 @@ void AudioSystem::CacheAllSounds()
 {
 #ifndef __clang_analyzer__
     std::error_code ec{};
-    for (const auto& rootDirEntry : std::filesystem::directory_iterator{"Assets/Sounds", ec})
+    for (const auto& rootDirEntry : std::filesystem::directory_iterator{"../Assets/Sounds", ec})
     {
         std::string extension = rootDirEntry.path().extension().string();
         if (extension == ".ogg" || extension == ".wav")
@@ -237,7 +237,7 @@ void AudioSystem::CacheSound(const std::string& soundName)
 //       "Assets/Sounds/ChompLoop.wav".
 Mix_Chunk* AudioSystem::GetSound(const std::string& soundName)
 {
-    std::string fileName = "Assets/Sounds/";
+    std::string fileName = "../Assets/Sounds/";
     fileName += soundName;
 
     Mix_Chunk* chunk = nullptr;
@@ -266,7 +266,6 @@ void AudioSystem::ProcessInput(const Uint8* keyState)
     // Debugging code that outputs all active sounds on leading edge of period key
     if (keyState[SDL_SCANCODE_PERIOD] && !mLastDebugKey)
     {
-        SDL_Log("[AudioSystem] Active Sounds:");
         for (size_t i = 0; i < mChannels.size(); i++)
         {
             if (mChannels[i].IsValid())
@@ -275,14 +274,6 @@ void AudioSystem::ProcessInput(const Uint8* keyState)
                 if (iter != mHandleMap.end())
                 {
                     HandleInfo& hi = iter->second;
-                    SDL_Log("Channel %d: %s, %s, looping = %d, paused = %d",
-                            static_cast<unsigned>(i), mChannels[i].GetDebugStr(),
-                            hi.mSoundName.c_str(), hi.mIsLooping, hi.mIsPaused);
-                }
-                else
-                {
-                    SDL_Log("Channel %d: %s INVALID", static_cast<unsigned>(i),
-                            mChannels[i].GetDebugStr());
                 }
             }
         }

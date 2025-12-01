@@ -3,9 +3,27 @@
 Player::Player(Game *game, std::string name, int health, int maxHealth, std::vector<Card *> deck)
     : Combatant(game, name, health, maxHealth, deck)
     ,mInventory(std::vector<Item*>())
-    ,mCoins(0)
+    ,mCoins(100)  // Quantidade de moedas que o player começa
 {
 
+}
+
+Player::~Player() {
+    if (this->GetDeck().size() > 0) {
+        for (Card* card : this->GetDeck()) {
+            delete card;
+        }
+    }
+}
+
+bool Player::SpendCoins(int amount)
+{
+    if (mCoins >= amount)
+    {
+        mCoins -= amount;
+        return true;
+    }
+    return false;
 }
 
 void Player::Death() {

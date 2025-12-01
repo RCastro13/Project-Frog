@@ -2,9 +2,21 @@
 #include "Actor.h"
 #include <vector>
 
+class Card;
+
 class AnimatedCharacterActor : public Actor
 {
 public:
+    // Estrutura para stats de inimigos
+    struct EnemyStats {
+        int health;
+        int maxHealth;
+        double difficulty;
+    };
+
+    // Métodos virtuais para configuração de cada inimigo
+    virtual EnemyStats GetEnemyStats() const = 0;
+    virtual std::vector<Card*> CreateEnemyDeck() const = 0;
     AnimatedCharacterActor(Game* game,
                           const char* idleTexturePath,
                           const char* idleJsonPath,
@@ -13,7 +25,9 @@ public:
                           const std::vector<int>& idleFrames,
                           const std::vector<int>& attackFrames,
                           const std::vector<int>& hurtFrames,
-                          const std::vector<int>& deathFrames);
+                          const std::vector<int>& deathFrames,
+                          int width = 64,
+                          int height = 64);
     virtual ~AnimatedCharacterActor();
 
     void OnUpdate(float deltaTime) override;
@@ -24,6 +38,8 @@ public:
     void PlayDeath();
 
     bool IsInAnimation() const;
+
+    int GetSpriteHeight() const { return mSpriteHeight; }
 
 protected:
     enum class AnimState
@@ -38,5 +54,6 @@ protected:
     class AnimatorComponent* mAnimatorAttack;
     AnimState mCurrentState;
     float mAttackTimer;
+    int mSpriteHeight;
 };
 
