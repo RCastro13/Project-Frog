@@ -29,6 +29,11 @@ A cada tentativa o jogador deve encarar um mapa novo e utilizar os conhecimentos
 ![Baú de Moedas](screenshots/bau-moeda-playetst.png)
 *Coleta de moedas que podem ser usadas na loja para comprar itens e melhorias*
 
+## Controles
+- W,A,S, D | ⬆️,⬅️,⬇️,➡️ - Controlesde menu e seleção.
+- Enter - Confirmar seleção
+- Esc - Sair da cena atual, quando possível.
+
 ## Funcionalidades a serem testadas
 
 - Mapas aleatórios a cada tentativa;
