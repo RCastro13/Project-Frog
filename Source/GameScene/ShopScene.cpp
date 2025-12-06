@@ -173,12 +173,14 @@ void ShopScene::ProcessInput(const Uint8* keyState)
         mSelectedOption--;
         if (mSelectedOption < 0) mSelectedOption = 0;
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("SwitchShop.ogg", false);
     }
     else if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !mKeyWasPressed)
     {
         mSelectedOption++;
         if (mSelectedOption >= (int)mItems.size()) mSelectedOption = (int)mItems.size() - 1;
         mKeyWasPressed = true;
+        mGame->GetAudio()->PlaySound("SwitchShop.ogg", false);
     }
     else if ((keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
     {
@@ -214,6 +216,7 @@ void ShopScene::PurchaseItem(int index)
     {
         player->SpendCoins(item.price);
         UpdateCoinTexture();
+        mGame->GetAudio()->PlaySound("BuyShop.ogg", false);
 
         SDL_Log("💰 Comprou %s por %d moedas.", item.name.c_str(), item.price);
 
@@ -236,6 +239,7 @@ void ShopScene::PurchaseItem(int index)
     }
     else
     {
+        mGame->GetAudio()->PlaySound("BuyError.ogg", false);
         SDL_Log("🚫 Moedas insuficientes! Voce tem %d, precisa de %d.", player->GetCoins(), item.price);
     }
 }
