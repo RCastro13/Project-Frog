@@ -75,46 +75,47 @@ void CutsceneScene::CreateTextLines()
         "Em uma floresta antiga e esquecida,",
         "existe uma lenda sussurrada pelos ventos...",
         "",
-        "A Victoria-Regia Lendaria,",
-        "uma flor mistica capaz de conceder",
-        "um desejo a quem a alcancar.",
+        "A 'Vitória-Régia Lendária',",
+        "uma flor mística capaz de conceder",
+        "um desejo a quem a alcançar.",
         "",
         "Muitos tentaram.",
         "Poucos sobreviveram.",
         "",
-        "Voce e um sapo aventureiro,",
+        "Você é um sapo aventureiro,",
         "armado apenas com sua coragem",
-        "e um pequeno grimorio de magias elementais.",
+        "e um pequeno grimório de magias elementais.",
         "",
-        "Seu caminho sera perigoso:",
+        "Seu caminho será perigoso:",
         "criaturas selvagens guardam os segredos da floresta,",
         "tesouros escondidos aguardam os corajosos,",
-        "e cada escolha pode ser a diferenca",
-        "entre a gloria e o esquecimento.",
+        "e cada escolha pode ser a diferença",
+        "entre a glória e o esquecimento.",
         "",
         "Fogo queima Planta.",
-        "Planta domina Agua.",
-        "Agua apaga Fogo.",
+        "Planta domina Água.",
+        "Água apaga Fogo.",
         "",
         "Use sua sabedoria,",
         "colete novas magias,",
         "e prepare-se para o desafio final...",
         "",
-        "A Victoria-Regia espera.",
+        "A Vitória-Régia o espera.",
         "",
         "",
-        "=== COMANDOS ===",
+        "O pergaminho finaliza dizendo:",
+        "=== COMANDOS PARA NÃO SE PERDER NESSE MUNDO ===",
         "",
         "Setas/WASD - Navegar",
         "ENTER - Confirmar",
-        "ESC - Sair (quando possivel)"
+        "ESC - Sair (quando possível)"
     };
 
     // Marcar quais linhas são especiais (douradas)
     mLineIsSpecial.resize(mNarrativeLines.size(), false);
     mLineIsSpecial[3] = true;  // "A Victoria-Regia Lendaria,"
     mLineIsSpecial[28] = true; // "A Victoria-Regia espera."
-    mLineIsSpecial[31] = true; // "=== COMANDOS ==="
+    mLineIsSpecial[32] = true; // "=== COMANDOS ==="
 
     Font* font = mGame->GetFont();
     if (!font) return;
