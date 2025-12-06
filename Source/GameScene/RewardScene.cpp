@@ -26,9 +26,11 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
     , mTextTexture(nullptr)
     , mChestNPC(nullptr)
     , mCoinNPC(nullptr)
+    , mTimeIconTexture(nullptr)
     , mCoinSpawned(false)
     , mSelectedDeckIndex(0)
     , mKeyWasPressed(false)
+    , mTransitioning(false)
 {
 }
 
@@ -237,6 +239,7 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             else if (keyState[SDL_SCANCODE_2] && !mKeyWasPressed)
             {
                 mKeyWasPressed = true;
+                mTransitioning = true;
 
                 // Retorno
                 if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
@@ -283,6 +286,7 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             }
 
             mKeyWasPressed = true;
+            mTransitioning = true;
 
             // Retorno
             if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
@@ -495,6 +499,12 @@ void RewardScene::RenderDeckSelection()
 
 void RewardScene::Render()
 {
+    // Não renderizar se estamos transitando para outra cena
+    if (mTransitioning) {
+        RenderFade();
+        return;
+    }
+
     // renderizar texto de instrução
     if (mTextTexture) {
         mGame->GetRenderer()->DrawTexture(

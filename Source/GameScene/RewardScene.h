@@ -85,6 +85,7 @@ private:
 
     int mSelectedDeckIndex; // Qual carta do deck do player está selecionada para troca
     bool mKeyWasPressed;
+    bool mTransitioning;
 
     void DetermineReward();
     void GiveRewardToPlayer();
