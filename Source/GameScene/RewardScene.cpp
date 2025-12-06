@@ -53,6 +53,11 @@ void RewardScene::Enter()
     mCoinSpawned = false;
     mState = SceneState::ANIMATING_CHEST;
 
+    if (mGame->GetAudio())
+    {
+        mRewardMusic = mGame->GetAudio()->PlaySound("RewardMusicNewEra.mp3", true);
+    }
+
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Rewards/rewards.png");
     if (!mBackgroundTexture)
@@ -523,6 +528,11 @@ void RewardScene::Render()
 
 void RewardScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mRewardMusic);
+    }
+
     mBackgroundTexture = nullptr;
     if (mTextTexture) {
         delete mTextTexture;

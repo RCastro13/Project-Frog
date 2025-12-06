@@ -492,6 +492,7 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         }
         else
         {
+            mGame->GetAudio()->PlaySound("AttackInCooldown.ogg", false);
             SDL_Log("❌ Carta em cooldown! (%d turnos restantes)",
                     selectedCard->GetCurrentCooldown());
             mKeyWasPressed = true;
@@ -566,12 +567,13 @@ void CombatScene::LaunchProjectile()
     {
         if (mEnemyActor) mEnemyActor->PlayAttack();
     }
-
+    mGame->GetAudio()->PlaySound("AttackRelease.ogg", false);
     mProjectile = new MagicProjectileActor(mGame, type, startPos, endPos, 1.0f, rotate180);
 }
 
 void CombatScene::TriggerDefenderAnimation()
 {
+    mGame->GetAudio()->PlaySound("AttackImpact.ogg", false);
     if (mPlayerWonLastTurn)
     {
         int enemyHP = mEnemy->GetHealth();

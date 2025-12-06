@@ -3,6 +3,7 @@
 #include "../Combat/Card.h"
 #include "../Math.h"
 #include <map>
+#include "../Audio/AudioSystem.h"
 
 enum class RewardMode
 {
@@ -66,6 +67,7 @@ private:
     RewardMode mMode;
     RewardType mRewardType;
     SceneState mState; // Novo controle de estado
+    SoundHandle mRewardMusic;
 
     int mCoinsAmount;
     Card* mRewardCard; // A nova carta gerada

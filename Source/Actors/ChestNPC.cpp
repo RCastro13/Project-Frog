@@ -18,7 +18,7 @@ ChestNPC::ChestNPC(Game* game)
         mAnimatorIdle->SetLooping(false);
         mAnimatorIdle->SetIsPaused(true);
         mAnimatorIdle->SetAnimation("idle");
-        mAnimatorIdle->SetFrameTime(0.6f); //0.6 segundos cada frame pois o audio de abrir bau tem 4 segundos e a animação do bau tem 7 frames -> 4/7 ~= 0.6
+        mAnimatorIdle->SetFrameTime(0.4f); //0.6 segundos cada frame pois o audio de abrir bau tem 4 segundos e a animação do bau tem 7 frames -> 4/7 ~= 0.6
 
         //aplicando barulho de som
         mGame->GetAudio()->PlaySound("ChestOpening.mp3", false);
