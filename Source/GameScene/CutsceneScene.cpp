@@ -45,6 +45,11 @@ void CutsceneScene::Enter()
 
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
+    if (mGame->GetAudio())
+    {
+        mCutsceneMusic = mGame->GetAudio()->PlaySound("CutsceneMusic.mp3", true);
+    }
+
     // Carregar background da cutscene
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/cutscene.png");
 
@@ -253,6 +258,11 @@ void CutsceneScene::Render()
 
 void CutsceneScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mCutsceneMusic);
+    }
+
     for (auto* texture : mTextTextures)
     {
         if (texture)

@@ -567,7 +567,25 @@ void CombatScene::LaunchProjectile()
     {
         if (mEnemyActor) mEnemyActor->PlayAttack();
     }
-    mGame->GetAudio()->PlaySound("AttackRelease.ogg", false);
+
+    switch (type)
+    {
+        case AttackType::Fire:
+            mGame->GetAudio()->PlaySound("Spell_Fire.wav", false);
+            break;
+        case AttackType::Water:
+            mGame->GetAudio()->PlaySound("Spell_Water.wav", false);
+            break;
+        case AttackType::Plant:
+            mGame->GetAudio()->PlaySound("Spell_Earth.wav", false);
+            break;
+        case AttackType::Neutral:
+            mGame->GetAudio()->PlaySound("Spell_Neutral.wav", false);
+            break;
+        default:
+            mGame->GetAudio()->PlaySound("AttackRelease.ogg", false);
+            break;
+    }
     mProjectile = new MagicProjectileActor(mGame, type, startPos, endPos, 1.0f, rotate180);
 }
 

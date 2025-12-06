@@ -127,9 +127,18 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
     {
         mCoinSpawned = true; // Trava para não entrar aqui de novo
 
-        if (mMode == RewardMode::COMBAT_VICTORY)
+        if (mRewardType == RewardType::CARD)
         {
-            // spawno a animação da moeda girando
+            GenerateRewardCard();
+
+            std::stringstream ss;
+            ss << "Carta Nova! [1] Aceitar [2] Recusar";
+            SpawnText(ss.str());
+
+            mState = SceneState::SHOWING_REWARD;
+        }
+        else
+        {
             mCoinNPC = new CoinNPC(mGame);
             mCoinNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 - 100));
 
@@ -139,30 +148,7 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
 
             mState = SceneState::SHOWING_REWARD;
         }
-        else // TREASURE_CHEST ou SHOP_TREASURE_CHEST
-        {
-            if (mRewardType == RewardType::CARD)
-            {
-                GenerateRewardCard();
 
-                std::stringstream ss;
-                ss << "Carta Nova! [1] Aceitar [2] Recusar";
-                SpawnText(ss.str());
-
-                mState = SceneState::SHOWING_REWARD;
-            }
-            else
-            {
-                mCoinNPC = new CoinNPC(mGame);
-                mCoinNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 - 100));
-
-                std::stringstream ss;
-                ss << "Você ganhou " << mCoinsAmount << " moedas! (ENTER)";
-                SpawnText(ss.str());
-
-                mState = SceneState::SHOWING_REWARD;
-            }
-        }
     }
 }
 

@@ -16,7 +16,7 @@ GameScene::~GameScene()
 
 void GameScene::UpdateFade(float deltaTime)
 {
-    const float FADE_DURATION = 0.5f;
+    const float FADE_DURATION = 0.3f;
 
     if (mFadingIn)
     {

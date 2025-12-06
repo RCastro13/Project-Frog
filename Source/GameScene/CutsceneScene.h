@@ -2,6 +2,7 @@
 #include "GameScene.h"
 #include <vector>
 #include <string>
+#include "../Audio/AudioSystem.h"
 
 class Texture;
 
@@ -24,6 +25,7 @@ public:
 private:
     void CreateTextLines();
 
+    SoundHandle mCutsceneMusic;
     class Texture* mBackgroundTexture;
     float mScrollOffset;
     float mScrollSpeed;
