@@ -31,6 +31,7 @@ private:
     std::vector<class Texture*> mTextTextures;
     std::vector<bool> mLineIsSpecial; // Para linhas com cor dourada
     bool mKeyWasPressed;
+    bool mConfirming;
     class Texture* mSkipTexture;
     float mTotalTextHeight;
 };

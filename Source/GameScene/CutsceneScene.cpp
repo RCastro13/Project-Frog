@@ -11,8 +11,9 @@ CutsceneScene::CutsceneScene(Game* game)
     : GameScene(game)
     , mBackgroundTexture(nullptr)
     , mScrollOffset(0.0f)
-    , mScrollSpeed(30.0f)
+    , mScrollSpeed(20.0f)
     , mKeyWasPressed(false)
+    , mConfirming(false)
     , mSkipTexture(nullptr)
     , mTotalTextHeight(0.0f)
 {
@@ -40,6 +41,7 @@ void CutsceneScene::Enter()
 {
     mStateTime = 0.0f;
     mScrollOffset = 448.0f - 150.0f; // Começa abaixo da margem inferior (448 - 150 = 298)
+    mConfirming = false;
 
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
@@ -147,8 +149,9 @@ void CutsceneScene::Update(float deltaTime)
     mScrollOffset -= mScrollSpeed * deltaTime;
 
     // Se o texto todo já passou, vai para o mapa
-    if (mScrollOffset < -mTotalTextHeight - 100.0f)
+    if (mScrollOffset < -mTotalTextHeight - 100.0f && !mConfirming)
     {
+        mConfirming = true;
         mGame->SetScene(new MapScene(mGame));
     }
 }
@@ -159,9 +162,10 @@ void CutsceneScene::ProcessInput(const Uint8* keyState)
         return;
 
     // ESC ou ENTER para pular a cutscene
-    if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed && !mConfirming)
     {
         mKeyWasPressed = true;
+        mConfirming = true;
         mGame->SetScene(new MapScene(mGame));
         return;
     }
