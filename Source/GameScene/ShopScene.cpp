@@ -72,9 +72,7 @@ void ShopScene::Enter()
 
     GenerateItems();
     UpdateCoinTexture();
-    UpdateHPTexture(); // Gera a textura de HP inicial
-
-    SDL_Log("🏪 Bem-vindo a loja!");
+    UpdateHPTexture();
 }
 
 void ShopScene::UpdateCoinTexture()
@@ -88,7 +86,6 @@ void ShopScene::UpdateCoinTexture()
     if (player && mGame->GetFont())
     {
         std::string coinText = "Moedas: " + std::to_string(player->GetCoins());
-        // Cor amarela
         mPlayerCoinTexture = mGame->GetFont()->RenderText(coinText, Vector3(1.0f, 0.9f, 0.2f), 20);
     }
 }
@@ -104,10 +101,18 @@ void ShopScene::UpdateHPTexture()
     Player* player = mGame->GetPlayer();
     if (player && mGame->GetFont())
     {
-        // Formato: HP: 50/100
         std::string hpText = "HP: " + std::to_string(player->GetHealth()) + "/" + std::to_string(player->GetMaxHealth());
-        // Cor Vermelha/Rosada para vida
-        mPlayerHPTexture = mGame->GetFont()->RenderText(hpText, Vector3(1.0f, 0.4f, 0.4f), 20);
+
+        float hpPercentage = static_cast<float>(player->GetHealth()) / static_cast<float>(player->GetMaxHealth());
+
+        Vector3 hpColor;
+        if (hpPercentage < 0.4f) {
+            hpColor = Vector3(1.0f, 0.4f, 0.4f);
+        }  else {
+            hpColor = Vector3(0.0f, 1.0f, 0.0f);
+        }
+
+        mPlayerHPTexture = mGame->GetFont()->RenderText(hpText, hpColor, 20);
     }
 }
 
@@ -122,8 +127,8 @@ void ShopScene::GenerateItems()
     item1.price = 20;
     item1.type = ItemType::HEAL_POTION;
     if (font) {
-        item1.nameTexture = font->RenderText(item1.name, Vector3(1,1,1), 20);
-        item1.descTexture = font->RenderText("Recupera 10 HP", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item1.nameTexture = font->RenderText(item1.name, Vector3(1,1,1), 16);
+        item1.descTexture = font->RenderText("Recupera 10 HP", Vector3(0.8f, 0.8f, 0.8f), 12);
         item1.priceTexture = font->RenderText("$ " + std::to_string(item1.price), Vector3(1, 1, 0), 20);
     }
     mItems.push_back(item1);
@@ -134,8 +139,8 @@ void ShopScene::GenerateItems()
     item2.price = 50;
     item2.type = ItemType::MAX_HP_INCREASE;
     if (font) {
-        item2.nameTexture = font->RenderText(item2.name, Vector3(1,1,1), 20);
-        item2.descTexture = font->RenderText("+5 Vida Maxima", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item2.nameTexture = font->RenderText(item2.name, Vector3(1,1,1), 16);
+        item2.descTexture = font->RenderText("+5 Vida Maxima", Vector3(0.8f, 0.8f, 0.8f), 12);
         item2.priceTexture = font->RenderText("$ " + std::to_string(item2.price), Vector3(1, 1, 0), 20);
     }
     mItems.push_back(item2);
@@ -146,8 +151,8 @@ void ShopScene::GenerateItems()
     item3.price = 100;
     item3.type = ItemType::MYSTERY_CHEST;
     if (font) {
-        item3.nameTexture = font->RenderText(item3.name, Vector3(1,1,1), 20);
-        item3.descTexture = font->RenderText("??? Surpresa ???", Vector3(0.8f, 0.8f, 0.8f), 16);
+        item3.nameTexture = font->RenderText(item3.name, Vector3(1,1,1), 16);
+        item3.descTexture = font->RenderText("??? Surpresa ???", Vector3(0.8f, 0.8f, 0.8f), 12);
         item3.priceTexture = font->RenderText("$ " + std::to_string(item3.price), Vector3(1, 1, 0), 20);
     }
     mItems.push_back(item3);
@@ -182,7 +187,6 @@ void ShopScene::ProcessInput(const Uint8* keyState)
     }
     else if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_BACKSPACE]) && !mKeyWasPressed)
     {
-        SDL_Log("🏪 Saindo da loja...");
         mKeyWasPressed = true;
         mGame->SetScene(new MapScene(mGame));
     }

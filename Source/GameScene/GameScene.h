@@ -13,7 +13,8 @@ enum class SceneType
     BLACK_SCREEN,
     REWARD,
     SHOP,
-    REST
+    REST,
+    CUTSCENE
 };
 
 class GameScene
