@@ -185,8 +185,14 @@ void RewardScene::DetermineReward()
     }
     else //ganhou uma luta
     {
-        mRewardType = RewardType::COINS;
-        mCoinsAmount = 30;
+        // 20% chance de carta, 80% chance de moedas
+        int roll = Random::GetIntRange(0, 99);
+        if (roll < 20) {
+            mRewardType = RewardType::CARD;
+        } else {
+            mRewardType = RewardType::COINS;
+            mCoinsAmount = Random::GetIntRange(25, 40);
+        }
     }
 }
 
