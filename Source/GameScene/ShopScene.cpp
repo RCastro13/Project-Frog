@@ -58,6 +58,11 @@ void ShopScene::Enter()
     mFadingIn = true;
     mSelectedOption = 0;
 
+    if (mGame->GetAudio())
+    {
+        mShopMusic = mGame->GetAudio()->PlaySound("StoreMusicClockWork.mp3", true);
+    }
+
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Shop/shop.png");
     if (!mBackgroundTexture)
@@ -361,6 +366,11 @@ void ShopScene::Render()
 
 void ShopScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mShopMusic);
+    }
+
     if (mRabbitNPC)
     {
         mRabbitNPC->SetState(ActorState::Destroy);

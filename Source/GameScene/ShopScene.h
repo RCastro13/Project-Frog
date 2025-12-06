@@ -1,5 +1,6 @@
 #pragma once
 #include "GameScene.h"
+#include "../Audio/AudioSystem.h"
 #include <vector>
 #include <string>
 
@@ -38,6 +39,8 @@ private:
         class Texture* descTexture = nullptr;
         class Texture* priceTexture = nullptr;
     };
+
+    SoundHandle mShopMusic;
 
     class Texture* mBackgroundTexture;
     class RabbitNPC* mRabbitNPC;  // NPC vendedor

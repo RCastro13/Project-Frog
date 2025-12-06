@@ -27,6 +27,11 @@ VictoryScene::~VictoryScene()
 
 void VictoryScene::Enter()
 {
+    if (mGame->GetAudio())
+    {
+        mVictoryMusic = mGame->GetAudio()->PlaySound("GameWinDrummingSticks.ogg", true);
+    }
+
     mStateTime = 0.0f;
     mPulseTimer = 0.0f;
     mConfirming = false;
@@ -114,6 +119,11 @@ void VictoryScene::Render()
 
 void VictoryScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mVictoryMusic);
+    }
+
     if (mPlayAgainTexture)
     {
         mPlayAgainTexture->Unload();
