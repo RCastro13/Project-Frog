@@ -2,6 +2,7 @@
 #include "MapScene.h"
 #include "BlackScreenScene.h"
 #include "DebugMenuScene.h"
+#include "CutsceneScene.h"
 #include "../Game.h"
 #include "../Renderer/Texture.h"
 #include "../Renderer/Renderer.h"
@@ -118,7 +119,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     {
         mConfirming = true;
         if (mSelectedOption == 0) {
-            mGame->SetScene(new MapScene(mGame));
+            mGame->SetScene(new CutsceneScene(mGame));
         } else if (SHOW_DEBUG_OPTION && mSelectedOption == 1) {
             mGame->SetScene(new DebugMenuScene(mGame));
         } else if ((!SHOW_DEBUG_OPTION && mSelectedOption == 1) || (SHOW_DEBUG_OPTION && mSelectedOption == 2)) {
