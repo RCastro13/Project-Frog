@@ -108,6 +108,8 @@ add_executable(${PROJECT_NAME}
         Source/GameScene/ShopScene.cpp
         Source/GameScene/RestScene.h
         Source/GameScene/RestScene.cpp
+        Source/GameScene/CutsceneScene.h
+        Source/GameScene/CutsceneScene.cpp
         Source/Interface/UIButton.cpp
         Source/Interface/UIImage.cpp
         Source/Interface/UIScreen.cpp
