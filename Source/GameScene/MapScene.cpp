@@ -11,6 +11,8 @@
 #include <SDL.h>
 #include <SDL_log.h>
 
+bool MapScene::s_HasShownMapIntro = false;
+
 MapScene::MapScene(Game* game)
     : GameScene(game)
     , mCurrentNode(nullptr)
@@ -20,7 +22,10 @@ MapScene::MapScene(Game* game)
     , mBackgroundTexture(nullptr)
     , mCameraPosition(Vector2::Zero)
     , mMinCameraX(-200.0f)
-    , mMaxCameraX( Game::WINDOW_WIDTH + 200.0f)
+    , mMaxCameraX(Game::WINDOW_WIDTH + 200.0f)
+    , mIntroSpeed(350.0f)
+    , mWaitTimer(0.0f)
+    , mSceneState(SceneState::PLAYING)
 {
 }
 
@@ -83,6 +88,13 @@ void MapScene::Enter()
         Vector2 startPos = mCurrentNode->GetPosition();
         mCameraPosition = Vector2(startPos.x - 100.0f, 0.0f);
     }
+
+    if (!s_HasShownMapIntro) {
+        mSceneState = SceneState::INTRO_PAN_RIGHT;
+        mCameraPosition.x = mMinCameraX; // Força a câmera para o extremo esquerdo
+    } else {
+        mSceneState = SceneState::PLAYING;
+    }
 }
 
 void MapScene::Update(float deltaTime)
@@ -91,21 +103,63 @@ void MapScene::Update(float deltaTime)
 
     UpdateFade(deltaTime);
 
-    const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-    static const float scrollSpeed = 300.0f;
+    if (mSceneState == SceneState::INTRO_PAN_RIGHT)
+    {
+        // 1. Indo para a direita
+        mCameraPosition.x += mIntroSpeed * deltaTime;
 
-    if (keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) {
-        mCameraPosition.x -= scrollSpeed * deltaTime;
-    }
-    if (keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) {
-        mCameraPosition.x += scrollSpeed * deltaTime;
-    }
+        if (mCameraPosition.x >= mMaxCameraX)
+        {
+            mCameraPosition.x = mMaxCameraX;
 
-    if (mCameraPosition.x < mMinCameraX) {
-        mCameraPosition.x = mMinCameraX;
+            // Em vez de voltar imediatamente, vamos esperar
+            mWaitTimer = 0.0f;                  // Zera o cronômetro
+            mSceneState = SceneState::INTRO_WAIT; // Muda para estado de espera
+        }
     }
-    if (mCameraPosition.x > mMaxCameraX) {
-        mCameraPosition.x = mMaxCameraX;
+    else if (mSceneState == SceneState::INTRO_WAIT)
+    {
+        // 2. Esperando no canto direito
+        mWaitTimer += deltaTime; // Conta o tempo
+
+        if (mWaitTimer >= 1.0f) // Se passou 1 segundo
+        {
+            mSceneState = SceneState::INTRO_PAN_LEFT; // Começa a voltar
+        }
+    }
+    else if (mSceneState == SceneState::INTRO_PAN_LEFT)
+    {
+        // 3. Voltando para a esquerda
+        mCameraPosition.x -= mIntroSpeed * deltaTime;
+
+        // Define onde deve parar (perto do jogador)
+        float targetX = -100.0f;
+        if (mCurrentNode) {
+            targetX = mCurrentNode->GetPosition().x - 100.0f;
+        }
+
+        if (mCameraPosition.x <= targetX)
+        {
+            mCameraPosition.x = targetX;
+            mSceneState = SceneState::PLAYING; // Libera o jogo
+            s_HasShownMapIntro = true;
+        }
+    }
+    else if (mSceneState == SceneState::PLAYING)
+    {
+        // 4. Jogo Normal (Controle do Jogador)
+        const Uint8* keyState = SDL_GetKeyboardState(nullptr);
+        const float scrollSpeed = 300.0f;
+
+        if (keyState[SDL_SCANCODE_LEFT] || keyState[SDL_SCANCODE_A]) {
+            mCameraPosition.x -= scrollSpeed * deltaTime;
+        }
+        if (keyState[SDL_SCANCODE_RIGHT] || keyState[SDL_SCANCODE_D]) {
+            mCameraPosition.x += scrollSpeed * deltaTime;
+        }
+
+        if (mCameraPosition.x < mMinCameraX) mCameraPosition.x = mMinCameraX;
+        if (mCameraPosition.x > mMaxCameraX) mCameraPosition.x = mMaxCameraX;
     }
 }
 
@@ -114,11 +168,24 @@ void MapScene::ProcessInput(const Uint8* keyState)
     if (ShouldBlockInput())
         return;
 
+    if (mSceneState != SceneState::PLAYING)
+    {
+        // Opcional: Permitir pular a animação com Enter ou Espaço
+        if (keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE] || keyState[SDL_SCANCODE_ESCAPE]) {
+            if (mCurrentNode) {
+                mCameraPosition.x = mCurrentNode->GetPosition().x - 100.0f;
+            }
+            mSceneState = SceneState::PLAYING;
+            s_HasShownMapIntro = true;
+        }
+        return;
+    }
+
     static bool upWasPressed = false;
     static bool downWasPressed = false;
     static bool enterWasPressed = false;
 
-    if (keyState[SDL_SCANCODE_UP] && !upWasPressed) {
+    if ((keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W]) && !upWasPressed) {
         MapNode* previousSelection = mSelectedNode;
         SelectPreviousAccessibleNode();
 
@@ -128,11 +195,11 @@ void MapScene::ProcessInput(const Uint8* keyState)
             mGame->GetAudio()->PlaySound(audio, false);
         }
         upWasPressed = true;
-    } else if (!keyState[SDL_SCANCODE_UP]) {
+    } else if (!(keyState[SDL_SCANCODE_UP] || keyState[SDL_SCANCODE_W])) {
         upWasPressed = false;
     }
 
-    if (keyState[SDL_SCANCODE_DOWN] && !downWasPressed) {
+    if ((keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S]) && !downWasPressed) {
         MapNode* previousSelection = mSelectedNode;
         SelectNextAccessibleNode();
 
@@ -142,7 +209,7 @@ void MapScene::ProcessInput(const Uint8* keyState)
             mGame->GetAudio()->PlaySound(audio, false);
         }
         downWasPressed = true;
-    } else if (!keyState[SDL_SCANCODE_DOWN]) {
+    } else if (!(keyState[SDL_SCANCODE_DOWN] || keyState[SDL_SCANCODE_S])) {
         downWasPressed = false;
     }
 

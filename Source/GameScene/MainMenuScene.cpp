@@ -64,23 +64,23 @@ void MainMenuScene::UpdateMenuTextures()
         delete mOptionStartTexture;
         mOptionStartTexture = nullptr;
     }
-    if (mOptionDebugTexture) {
-        delete mOptionDebugTexture;
-        mOptionDebugTexture = nullptr;
-    }
     if (mOptionExitTexture) {
         delete mOptionExitTexture;
         mOptionExitTexture = nullptr;
+    }
+    if (mOptionDebugTexture) {
+        delete mOptionDebugTexture;
+        mOptionDebugTexture = nullptr;
     }
 
     Vector3 startColor = (mSelectedOption == 0) ? goldColor : whiteColor;
     mOptionStartTexture = mGame->GetFont()->RenderText("Jogar", startColor, 22, 400);
 
     if (SHOW_DEBUG_OPTION) {
-        Vector3 debugColor = (mSelectedOption == 1) ? goldColor : whiteColor;
+        Vector3 debugColor = (mSelectedOption == 2) ? goldColor : whiteColor;
         mOptionDebugTexture = mGame->GetFont()->RenderText("Debug", debugColor, 22, 400);
 
-        Vector3 exitColor = (mSelectedOption == 2) ? goldColor : whiteColor;
+        Vector3 exitColor = (mSelectedOption == 1) ? goldColor : whiteColor;
         mOptionExitTexture = mGame->GetFont()->RenderText("Sair", exitColor, 22, 400);
     } else {
         Vector3 exitColor = (mSelectedOption == 1) ? goldColor : whiteColor;
@@ -120,9 +120,9 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
         mConfirming = true;
         if (mSelectedOption == 0) {
             mGame->SetScene(new CutsceneScene(mGame));
-        } else if (SHOW_DEBUG_OPTION && mSelectedOption == 1) {
+        } else if (SHOW_DEBUG_OPTION && mSelectedOption == 2) {
             mGame->SetScene(new DebugMenuScene(mGame));
-        } else if ((!SHOW_DEBUG_OPTION && mSelectedOption == 1) || (SHOW_DEBUG_OPTION && mSelectedOption == 2)) {
+        } else if ((!SHOW_DEBUG_OPTION && mSelectedOption == 2) || (SHOW_DEBUG_OPTION && mSelectedOption == 1)) {
             mGame->SetScene(new BlackScreenScene(mGame));
         }
         mKeyWasPressed = true;
@@ -167,26 +167,25 @@ void MainMenuScene::Render()
         );
     }
 
-    if (SHOW_DEBUG_OPTION && mOptionDebugTexture) {
+    if (mOptionExitTexture) {
         mGame->GetRenderer()->DrawTexture(
             Vector2(320.0f, startY + optionSpacing),
-            Vector2(mOptionDebugTexture->GetWidth(), mOptionDebugTexture->GetHeight()),
+            Vector2(mOptionExitTexture->GetWidth(), mOptionExitTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mOptionDebugTexture,
+            mOptionExitTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );
     }
 
-    if (mOptionExitTexture) {
-        float exitY = SHOW_DEBUG_OPTION ? (startY + optionSpacing * 2) : (startY + optionSpacing);
+    if (SHOW_DEBUG_OPTION && mOptionDebugTexture) {
         mGame->GetRenderer()->DrawTexture(
-            Vector2(320.0f, exitY),
-            Vector2(mOptionExitTexture->GetWidth(), mOptionExitTexture->GetHeight()),
+            Vector2(320.0f, startY + optionSpacing * 2), // Sempre na terceira linha
+            Vector2(mOptionDebugTexture->GetWidth(), mOptionDebugTexture->GetHeight()),
             0.0f,
             Vector3(1.0f, 1.0f, 1.0f),
-            mOptionExitTexture,
+            mOptionDebugTexture,
             Vector4::UnitRect,
             Vector2::Zero
         );

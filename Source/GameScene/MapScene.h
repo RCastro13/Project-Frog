@@ -40,6 +40,21 @@ private:
     const char* GetNodeTypeName(MapNodeType type);
     void SetCurrentNode(MapNode* node);
 
+    // Estados para a animação da câmera
+    enum class SceneState {
+        INTRO_PAN_RIGHT, // Indo para a direita
+        INTRO_PAN_LEFT,  // Voltando para a esquerda
+        INTRO_WAIT,      // Pequena espera
+        PLAYING          // Jogador controla
+    };
+
+    SceneState mSceneState;
+    float mIntroSpeed; // Velocidade da câmera automática
+    float mWaitTimer;
+
+    // Variável estática para saber se já mostramos a intro nessa execução do jogo
+    static bool s_HasShownMapIntro;
+
     std::vector<MapNode*> mMapNodes;
     std::map<MapNode*, Texture*> mNodeIcons;
     std::vector<std::string> mAvailableIcons;
