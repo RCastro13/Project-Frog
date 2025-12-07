@@ -239,6 +239,11 @@ void MapScene::Exit()
     mGame->GetAudio()->StopSound(mMapSound);
 }
 
+void MapScene::ResetMapIntro()
+{
+    s_HasShownMapIntro = false;
+}
+
 void MapScene::SetCurrentNode(MapNode* node)
 {
     if (mCurrentNode) {

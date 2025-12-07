@@ -16,6 +16,8 @@ public:
     MapScene(class Game* game);
     ~MapScene();
 
+    static void ResetMapIntro();
+
     void Enter() override;
     void Update(float deltaTime) override;
     void ProcessInput(const Uint8* keyState) override;

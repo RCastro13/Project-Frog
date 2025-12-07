@@ -119,6 +119,7 @@ void MainMenuScene::ProcessInput(const Uint8* keyState)
     {
         mConfirming = true;
         if (mSelectedOption == 0) {
+            MapScene::ResetMapIntro();
             mGame->SetScene(new CutsceneScene(mGame));
         } else if (SHOW_DEBUG_OPTION && mSelectedOption == 2) {
             mGame->SetScene(new DebugMenuScene(mGame));

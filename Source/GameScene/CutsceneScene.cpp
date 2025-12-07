@@ -12,6 +12,7 @@ CutsceneScene::CutsceneScene(Game* game)
     , mBackgroundTexture(nullptr)
     , mScrollOffset(0.0f)
     , mScrollSpeed(20.0f)
+    , mSoundTimer(0.0f)
     , mKeyWasPressed(false)
     , mConfirming(false)
     , mSkipTexture(nullptr)
@@ -150,6 +151,14 @@ void CutsceneScene::Update(float deltaTime)
 {
     mStateTime += deltaTime;
     UpdateFade(deltaTime);
+
+    mSoundTimer += deltaTime; // Conta o tempo
+
+    if (mSoundTimer >= 3.5f) // Se passou 2 segundos ou mais
+    {
+        //mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
+        mSoundTimer = 0.0f; // Reseta o timer para contar do zero novamente
+    }
 
     // Scroll do texto para cima
     mScrollOffset -= mScrollSpeed * deltaTime;

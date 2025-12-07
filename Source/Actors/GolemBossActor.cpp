@@ -36,8 +36,8 @@ std::vector<Card*> GolemBossActor::CreateEnemyDeck() const
     // Deck mais forte que inimigos normais
     deck.push_back(new Card("Golem Fire", AttackType::Fire, 8, 4, nullptr));
     deck.push_back(new Card("Golem Water", AttackType::Water, 7, 3, nullptr));
-    deck.push_back(new Card("Golem Plant", AttackType::Plant, 7, 3, nullptr));
-    deck.push_back(new Card("Golem Crush", AttackType::Neutral, 7, 1, nullptr));
+    deck.push_back(new Card("Golem Plant", AttackType::Plant, 6, 2, nullptr));
+    deck.push_back(new Card("Golem Crush", AttackType::Neutral, 6, 2, nullptr));
     return deck;
 }
 

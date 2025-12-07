@@ -26,6 +26,7 @@ private:
     void CreateTextLines();
 
     SoundHandle mCutsceneMusic;
+    float mSoundTimer;
     class Texture* mBackgroundTexture;
     float mScrollOffset;
     float mScrollSpeed;
