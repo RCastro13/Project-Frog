@@ -218,6 +218,16 @@ void ShopScene::PurchaseItem(int index)
 
     if (player->GetCoins() >= item.price)
     {
+        if (item.type == ItemType::HEAL_POTION)
+        {
+            if (player->GetHealth() >= player->GetMaxHealth())
+            {
+                mGame->GetAudio()->PlaySound("BuyError.ogg", false);
+                SDL_Log("🚫 Vida cheia! Nao e possivel comprar pocao.");
+                return;
+            }
+        }
+
         player->SpendCoins(item.price);
         UpdateCoinTexture();
         mGame->GetAudio()->PlaySound("BuyShop.ogg", false);
