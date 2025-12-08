@@ -364,12 +364,22 @@ void MapScene::RenderConnections()
         for (MapNode* child : node->GetChildren()) {
             Vector2 endPos = child->GetPosition();
 
+            // Cor padrão (Caminho não acessível/futuro distante) - Cinza Escuro
             Vector3 lineColor = Vector3(0.3f, 0.3f, 0.3f);
+
+            // Se é um caminho possível agora ou próximo - Cinza Claro
             if (node->IsAccessible() || child->IsAccessible()) {
                 lineColor = Vector3(0.6f, 0.6f, 0.6f);
             }
-            if (node->IsCompleted()) {
-                lineColor = Vector3(0.0f, 0.7f, 0.0f);
+
+            // Para a linha ser verde, o jogador tem que ter saído do 'node' e ido para o 'child'.
+            // Isso significa que o 'node' já foi completado...
+            bool parentWasVisited = node->IsCompleted();
+
+            bool childIsOnPath = child->IsCompleted() || child == mCurrentNode;
+
+            if (parentWasVisited && childIsOnPath) {
+                lineColor = Vector3(0.0f, 0.7f, 0.0f); // Verde
             }
 
             Vector2 diff = endPos - startPos;
