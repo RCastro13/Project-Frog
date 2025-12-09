@@ -9,6 +9,6 @@ class EnemyFactory
 public:
     static AnimatedCharacterActor* CreateRandomEnemy(Game* game);
     static AnimatedCharacterActor* CreateEnemy(Game* game, EnemyType type);
-    static EnemyType GetRandomEnemyType();
+    static EnemyType GetRandomEnemyType(Game* game);
 };
 

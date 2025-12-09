@@ -41,6 +41,11 @@ void RestScene::Enter()
     mFadeTimer = 0.0f;
     mFadingIn = true;
 
+    if (mGame->GetAudio())
+    {
+        mRestMusic = mGame->GetAudio()->PlaySound("RestMusicDiceMenu.mp3", true);
+    }
+
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Rest/rest.png");
     if (!mBackgroundTexture)
@@ -191,6 +196,11 @@ void RestScene::Render()
 
 void RestScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mRestMusic);
+    }
+
     if (mTitleTexture) {
         delete mTitleTexture;
         mTitleTexture = nullptr;

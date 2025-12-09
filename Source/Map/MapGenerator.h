@@ -4,7 +4,7 @@
 #include <map>
 
 struct MapConfig {
-    int minLayers = 8;           // Número mínimo de camadas
+    int minLayers = 9;           // Número mínimo de camadas
     int maxLayers = 9;          // Número máximo de camadas
     int minNodesPerLayer = 2;    // Mínimo de nós por camada
     int maxNodesPerLayer = 3;    // Máximo de nós por camada
@@ -14,8 +14,8 @@ struct MapConfig {
     // Probabilidades de cada tipo (soma deve ser ~1.0)
     float combatChance = 0.45f;
     float eliteChance = 0.00f;
-    float shopChance = 0.20f;
-    float treasureChance = 0.20f;
+    float shopChance = 0.18f;
+    float treasureChance = 0.22f;
     float restChance = 0.15f;
 };
 

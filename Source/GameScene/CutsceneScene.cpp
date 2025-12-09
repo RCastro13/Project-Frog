@@ -11,8 +11,10 @@ CutsceneScene::CutsceneScene(Game* game)
     : GameScene(game)
     , mBackgroundTexture(nullptr)
     , mScrollOffset(0.0f)
-    , mScrollSpeed(30.0f)
+    , mScrollSpeed(20.0f)
+    , mSoundTimer(0.0f)
     , mKeyWasPressed(false)
+    , mConfirming(false)
     , mSkipTexture(nullptr)
     , mTotalTextHeight(0.0f)
 {
@@ -40,8 +42,14 @@ void CutsceneScene::Enter()
 {
     mStateTime = 0.0f;
     mScrollOffset = 448.0f - 150.0f; // Começa abaixo da margem inferior (448 - 150 = 298)
+    mConfirming = false;
 
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
+
+    if (mGame->GetAudio())
+    {
+        mCutsceneMusic = mGame->GetAudio()->PlaySound("CutsceneMusic.mp3", true);
+    }
 
     // Carregar background da cutscene
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/cutscene.png");
@@ -68,46 +76,47 @@ void CutsceneScene::CreateTextLines()
         "Em uma floresta antiga e esquecida,",
         "existe uma lenda sussurrada pelos ventos...",
         "",
-        "A Victoria-Regia Lendaria,",
-        "uma flor mistica capaz de conceder",
-        "um desejo a quem a alcancar.",
+        "A 'Vitória-Régia Lendária',",
+        "uma flor mística capaz de conceder",
+        "um desejo a quem a alcançar.",
         "",
         "Muitos tentaram.",
         "Poucos sobreviveram.",
         "",
-        "Voce e um sapo aventureiro,",
+        "Você é um sapo aventureiro,",
         "armado apenas com sua coragem",
-        "e um pequeno grimorio de magias elementais.",
+        "e um pequeno grimório de magias elementais.",
         "",
-        "Seu caminho sera perigoso:",
+        "Seu caminho será perigoso:",
         "criaturas selvagens guardam os segredos da floresta,",
         "tesouros escondidos aguardam os corajosos,",
-        "e cada escolha pode ser a diferenca",
-        "entre a gloria e o esquecimento.",
+        "e cada escolha pode ser a diferença",
+        "entre a glória e o esquecimento.",
         "",
         "Fogo queima Planta.",
-        "Planta domina Agua.",
-        "Agua apaga Fogo.",
+        "Planta domina Água.",
+        "Água apaga Fogo.",
         "",
         "Use sua sabedoria,",
         "colete novas magias,",
         "e prepare-se para o desafio final...",
         "",
-        "A Victoria-Regia espera.",
+        "A Vitória-Régia o espera.",
         "",
         "",
-        "=== COMANDOS ===",
+        "O pergaminho finaliza dizendo:",
+        "=== COMANDOS PARA NÃO SE PERDER NESSE MUNDO ===",
         "",
         "Setas/WASD - Navegar",
         "ENTER - Confirmar",
-        "ESC - Sair (quando possivel)"
+        "ESC - Sair (quando possível)"
     };
 
     // Marcar quais linhas são especiais (douradas)
     mLineIsSpecial.resize(mNarrativeLines.size(), false);
     mLineIsSpecial[3] = true;  // "A Victoria-Regia Lendaria,"
     mLineIsSpecial[28] = true; // "A Victoria-Regia espera."
-    mLineIsSpecial[31] = true; // "=== COMANDOS ==="
+    mLineIsSpecial[32] = true; // "=== COMANDOS ==="
 
     Font* font = mGame->GetFont();
     if (!font) return;
@@ -143,12 +152,21 @@ void CutsceneScene::Update(float deltaTime)
     mStateTime += deltaTime;
     UpdateFade(deltaTime);
 
+    mSoundTimer += deltaTime; // Conta o tempo
+
+    if (mSoundTimer >= 3.5f) // Se passou 2 segundos ou mais
+    {
+        //mGame->GetAudio()->PlaySound("ChangeOption.wav", false);
+        mSoundTimer = 0.0f; // Reseta o timer para contar do zero novamente
+    }
+
     // Scroll do texto para cima
     mScrollOffset -= mScrollSpeed * deltaTime;
 
     // Se o texto todo já passou, vai para o mapa
-    if (mScrollOffset < -mTotalTextHeight - 100.0f)
+    if (mScrollOffset < -mTotalTextHeight - 100.0f && !mConfirming)
     {
+        mConfirming = true;
         mGame->SetScene(new MapScene(mGame));
     }
 }
@@ -159,9 +177,10 @@ void CutsceneScene::ProcessInput(const Uint8* keyState)
         return;
 
     // ESC ou ENTER para pular a cutscene
-    if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed)
+    if ((keyState[SDL_SCANCODE_ESCAPE] || keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_SPACE]) && !mKeyWasPressed && !mConfirming)
     {
         mKeyWasPressed = true;
+        mConfirming = true;
         mGame->SetScene(new MapScene(mGame));
         return;
     }
@@ -249,6 +268,11 @@ void CutsceneScene::Render()
 
 void CutsceneScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mCutsceneMusic);
+    }
+
     for (auto* texture : mTextTextures)
     {
         if (texture)

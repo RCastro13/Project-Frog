@@ -31,6 +31,11 @@ void GameOverScene::Enter()
     mPulseTimer = 0.0f;
     mConfirming = false;
 
+    if (mGame->GetAudio())
+    {
+        mGameOverMusic = mGame->GetAudio()->PlaySound("GameOver.ogg", true);
+    }
+
     SDL_SetWindowTitle(mGame->GetWindow(), "Project Frog");
 
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Menu/gameover.png");
@@ -114,6 +119,11 @@ void GameOverScene::Render()
 
 void GameOverScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mGameOverMusic);
+    }
+
     if (mMenuTexture)
     {
         mMenuTexture->Unload();

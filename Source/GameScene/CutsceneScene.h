@@ -2,6 +2,7 @@
 #include "GameScene.h"
 #include <vector>
 #include <string>
+#include "../Audio/AudioSystem.h"
 
 class Texture;
 
@@ -24,6 +25,8 @@ public:
 private:
     void CreateTextLines();
 
+    SoundHandle mCutsceneMusic;
+    float mSoundTimer;
     class Texture* mBackgroundTexture;
     float mScrollOffset;
     float mScrollSpeed;
@@ -31,6 +34,7 @@ private:
     std::vector<class Texture*> mTextTextures;
     std::vector<bool> mLineIsSpecial; // Para linhas com cor dourada
     bool mKeyWasPressed;
+    bool mConfirming;
     class Texture* mSkipTexture;
     float mTotalTextHeight;
 };

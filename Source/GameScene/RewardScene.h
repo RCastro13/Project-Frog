@@ -3,6 +3,7 @@
 #include "../Combat/Card.h"
 #include "../Math.h"
 #include <map>
+#include "../Audio/AudioSystem.h"
 
 enum class RewardMode
 {
@@ -66,6 +67,7 @@ private:
     RewardMode mMode;
     RewardType mRewardType;
     SceneState mState; // Novo controle de estado
+    SoundHandle mRewardMusic;
 
     int mCoinsAmount;
     Card* mRewardCard; // A nova carta gerada
@@ -85,6 +87,7 @@ private:
 
     int mSelectedDeckIndex; // Qual carta do deck do player está selecionada para troca
     bool mKeyWasPressed;
+    bool mTransitioning;
 
     void DetermineReward();
     void GiveRewardToPlayer();

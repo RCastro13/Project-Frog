@@ -492,6 +492,7 @@ void CombatScene::ProcessInput(const Uint8* keyState)
         }
         else
         {
+            mGame->GetAudio()->PlaySound("AttackInCooldown.ogg", false);
             SDL_Log("❌ Carta em cooldown! (%d turnos restantes)",
                     selectedCard->GetCurrentCooldown());
             mKeyWasPressed = true;
@@ -567,11 +568,30 @@ void CombatScene::LaunchProjectile()
         if (mEnemyActor) mEnemyActor->PlayAttack();
     }
 
+    switch (type)
+    {
+        case AttackType::Fire:
+            mGame->GetAudio()->PlaySound("Spell_Fire.wav", false);
+            break;
+        case AttackType::Water:
+            mGame->GetAudio()->PlaySound("Spell_Water.wav", false);
+            break;
+        case AttackType::Plant:
+            mGame->GetAudio()->PlaySound("Spell_Earth.wav", false);
+            break;
+        case AttackType::Neutral:
+            mGame->GetAudio()->PlaySound("Spell_Neutral.wav", false);
+            break;
+        default:
+            mGame->GetAudio()->PlaySound("AttackRelease.ogg", false);
+            break;
+    }
     mProjectile = new MagicProjectileActor(mGame, type, startPos, endPos, 1.0f, rotate180);
 }
 
 void CombatScene::TriggerDefenderAnimation()
 {
+    mGame->GetAudio()->PlaySound("AttackImpact.ogg", false);
     if (mPlayerWonLastTurn)
     {
         int enemyHP = mEnemy->GetHealth();

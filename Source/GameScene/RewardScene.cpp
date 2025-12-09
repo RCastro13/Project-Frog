@@ -26,9 +26,11 @@ RewardScene::RewardScene(Game* game, RewardMode mode)
     , mTextTexture(nullptr)
     , mChestNPC(nullptr)
     , mCoinNPC(nullptr)
+    , mTimeIconTexture(nullptr)
     , mCoinSpawned(false)
     , mSelectedDeckIndex(0)
     , mKeyWasPressed(false)
+    , mTransitioning(false)
 {
 }
 
@@ -52,6 +54,11 @@ void RewardScene::Enter()
     mFadingIn = true;
     mCoinSpawned = false;
     mState = SceneState::ANIMATING_CHEST;
+
+    if (mGame->GetAudio())
+    {
+        mRewardMusic = mGame->GetAudio()->PlaySound("RewardMusicNewEra.mp3", true);
+    }
 
     // Carregar background
     mBackgroundTexture = mGame->GetRenderer()->GetTexture("../Assets/Background/Rewards/rewards.png");
@@ -120,9 +127,18 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
     {
         mCoinSpawned = true; // Trava para não entrar aqui de novo
 
-        if (mMode == RewardMode::COMBAT_VICTORY)
+        if (mRewardType == RewardType::CARD)
         {
-            // spawno a animação da moeda girando
+            GenerateRewardCard();
+
+            std::stringstream ss;
+            ss << "Carta Nova! [1] Aceitar [2] Recusar";
+            SpawnText(ss.str());
+
+            mState = SceneState::SHOWING_REWARD;
+        }
+        else
+        {
             mCoinNPC = new CoinNPC(mGame);
             mCoinNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 - 100));
 
@@ -132,30 +148,7 @@ void RewardScene::DecideRewardSpawnLogic(float deltatime) {
 
             mState = SceneState::SHOWING_REWARD;
         }
-        else // TREASURE_CHEST ou SHOP_TREASURE_CHEST
-        {
-            if (mRewardType == RewardType::CARD)
-            {
-                GenerateRewardCard();
 
-                std::stringstream ss;
-                ss << "Carta Nova! [1] Aceitar [2] Recusar";
-                SpawnText(ss.str());
-
-                mState = SceneState::SHOWING_REWARD;
-            }
-            else
-            {
-                mCoinNPC = new CoinNPC(mGame);
-                mCoinNPC->SetPosition(Vector2(Game::WINDOW_WIDTH / 2, Game::WINDOW_HEIGHT / 2 - 100));
-
-                std::stringstream ss;
-                ss << "Você ganhou " << mCoinsAmount << " moedas! (ENTER)";
-                SpawnText(ss.str());
-
-                mState = SceneState::SHOWING_REWARD;
-            }
-        }
     }
 }
 
@@ -185,8 +178,14 @@ void RewardScene::DetermineReward()
     }
     else //ganhou uma luta
     {
-        mRewardType = RewardType::COINS;
-        mCoinsAmount = 30;
+        // 20% chance de carta, 80% chance de moedas
+        int roll = Random::GetIntRange(0, 99);
+        if (roll < 20) {
+            mRewardType = RewardType::CARD;
+        } else {
+            mRewardType = RewardType::COINS;
+            mCoinsAmount = Random::GetIntRange(25, 40);
+        }
     }
 }
 
@@ -237,6 +236,7 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             else if (keyState[SDL_SCANCODE_2] && !mKeyWasPressed)
             {
                 mKeyWasPressed = true;
+                mTransitioning = true;
 
                 // Retorno
                 if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
@@ -283,6 +283,7 @@ void RewardScene::ProcessInput(const Uint8* keyState)
             }
 
             mKeyWasPressed = true;
+            mTransitioning = true;
 
             // Retorno
             if (mMode == RewardMode::SHOP_TREASURE_CHEST) {
@@ -495,6 +496,12 @@ void RewardScene::RenderDeckSelection()
 
 void RewardScene::Render()
 {
+    // Não renderizar se estamos transitando para outra cena
+    if (mTransitioning) {
+        RenderFade();
+        return;
+    }
+
     // renderizar texto de instrução
     if (mTextTexture) {
         mGame->GetRenderer()->DrawTexture(
@@ -517,6 +524,11 @@ void RewardScene::Render()
 
 void RewardScene::Exit()
 {
+    if (mGame->GetAudio())
+    {
+        mGame->GetAudio()->StopSound(mRewardMusic);
+    }
+
     mBackgroundTexture = nullptr;
     if (mTextTexture) {
         delete mTextTexture;

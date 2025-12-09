@@ -1,5 +1,6 @@
 #pragma once
 #include "GameScene.h"
+#include "../Audio/AudioSystem.h"
 
 class RestScene : public GameScene
 {
@@ -19,6 +20,8 @@ public:
 
 private:
     class Texture* mBackgroundTexture;
+
+    SoundHandle mRestMusic;
 
     class Texture* mTitleTexture;
     class Texture* mOption1Texture;

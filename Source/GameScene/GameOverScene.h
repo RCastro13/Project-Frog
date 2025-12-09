@@ -1,5 +1,6 @@
 #pragma once
 #include "GameScene.h"
+#include "../Audio/AudioSystem.h"
 
 class Texture;
 
@@ -20,6 +21,7 @@ public:
     const char* GetName() const override { return "GameOver"; }
 
 private:
+    SoundHandle mGameOverMusic;
     Texture* mBackgroundTexture;
     Texture* mMenuTexture;
     float mPulseTimer;
